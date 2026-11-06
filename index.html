@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Allied Forces — DayZ Community Servers</title>
+<meta name="description" content="Allied Forces is a DayZ community running Nasdara | Scorched Earth and Chernarus Badlands. PvE with PvP zones, monthly wipes, active Discord.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#121110; --bg2:#1a1816; --panel:#211e1b; --line:#34302b;
+    --text:#ece6dc; --muted:#a59d90; --accent:#e0662b; --accent2:#f0a24a; --ok:#7fb069;
+    --radius:10px; --max:1120px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--text);font-family:Barlow,system-ui,sans-serif;font-size:17px;line-height:1.6;min-height:100vh;display:flex;flex-direction:column}
+  a{color:var(--accent2)}
+  h1,h2,h3,.brand,.btn,.nav a,.tag{font-family:"Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.04em}
+  h1{font-size:clamp(2.6rem,7vw,4.8rem);line-height:.95;font-weight:800}
+  h2{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:700;margin-bottom:.6rem}
+  h3{font-size:1.35rem;font-weight:700;margin-bottom:.35rem}
+  p{margin-bottom:.9rem}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 20px}
+  .muted{color:var(--muted)}
+
+  /* header */
+  header{position:sticky;top:0;z-index:20;background:rgba(18,17,16,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .bar{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.4rem;color:var(--text);text-decoration:none}
+  .brand svg{width:34px;height:34px}
+  .nav{display:flex;gap:4px;align-items:center}
+  .nav a{color:var(--muted);text-decoration:none;font-weight:600;font-size:1.05rem;padding:8px 12px;border-radius:6px}
+  .nav a:hover,.nav a.active{color:var(--text);background:var(--panel)}
+  .nav .btn{margin-left:8px}
+  .menu-btn{display:none;background:none;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 10px;font-size:1.2rem;cursor:pointer}
+  @media(max-width:820px){
+    .menu-btn{display:block}
+    .nav{display:none;position:absolute;top:64px;left:0;right:0;flex-direction:column;align-items:stretch;background:var(--bg2);border-bottom:1px solid var(--line);padding:10px 20px 16px}
+    .nav.open{display:flex}
+    .nav .btn{margin:8px 0 0;text-align:center}
+  }
+
+  .btn{display:inline-block;background:var(--accent);color:#1a0d05;font-weight:700;font-size:1.1rem;padding:11px 22px;border-radius:8px;text-decoration:none;border:0;cursor:pointer}
+  .btn:hover{background:var(--accent2)}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--accent);color:var(--accent2)}
+  .btn.sm{font-size:.95rem;padding:7px 14px}
+
+  /* views */
+  main{flex:1}
+  .view{display:none}
+  .view.active{display:block}
+  section{padding:64px 0}
+  section+section{border-top:1px solid var(--line)}
+
+  .hero{position:relative;overflow:hidden;padding:96px 0 80px;
+    background:
+      radial-gradient(900px 400px at 85% 10%,rgba(224,102,43,.22),transparent 60%),
+      radial-gradient(700px 400px at 0% 100%,rgba(240,162,74,.08),transparent 60%),
+      repeating-linear-gradient(135deg,rgba(255,255,255,.015) 0 2px,transparent 2px 14px),
+      var(--bg)}
+  .hero .kicker{color:var(--accent2);font-family:"Barlow Condensed";font-weight:600;letter-spacing:.2em;text-transform:uppercase;margin-bottom:14px}
+  .hero p.lead{font-size:1.2rem;color:var(--muted);max-width:620px;margin:18px 0 28px}
+  .hero .ctas{display:flex;gap:12px;flex-wrap:wrap}
+  .stats{display:flex;gap:36px;flex-wrap:wrap;margin-top:48px}
+  .stats div b{display:block;font-family:"Barlow Condensed";font-size:2rem;color:var(--text)}
+  .stats div span{color:var(--muted);font-size:.95rem}
+
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+  .g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px}
+  .card.hl{border-color:var(--accent)}
+  .tag{display:inline-block;font-size:.8rem;font-weight:700;padding:3px 9px;border-radius:4px;background:#2c2723;color:var(--accent2);margin:0 6px 8px 0}
+  .tag.ok{color:var(--ok)}
+  ul.clean{list-style:none}
+  ul.clean li{padding:6px 0 6px 22px;position:relative}
+  ul.clean li::before{content:"";position:absolute;left:2px;top:15px;width:8px;height:8px;background:var(--accent);transform:rotate(45deg)}
+
+  .server-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+  .ip{display:flex;align-items:center;gap:10px;background:var(--bg);border:1px dashed var(--line);border-radius:8px;padding:10px 12px;margin:14px 0;font-family:ui-monospace,Menlo,monospace;font-size:.95rem;flex-wrap:wrap}
+  .ip span{flex:1;min-width:150px}
+
+  .cal{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:18px}
+  .cal .card b{font-family:"Barlow Condensed";font-size:2.4rem;color:var(--accent);line-height:1;display:block}
+
+  .rules ol{counter-reset:r;list-style:none}
+  .rules ol li{counter-increment:r;padding:14px 0 14px 54px;position:relative;border-bottom:1px solid var(--line)}
+  .rules ol li::before{content:counter(r,decimal-leading-zero);position:absolute;left:0;top:10px;font-family:"Barlow Condensed";font-weight:800;font-size:1.6rem;color:var(--accent)}
+
+  .notice{border-left:4px solid var(--accent2);background:#241f1a;padding:16px 18px;border-radius:0 8px 8px 0;margin:18px 0}
+  .price{font-family:"Barlow Condensed";font-size:2.2rem;font-weight:800}
+  .legal{max-width:820px}
+  .legal h3{margin-top:28px}
+  .legal p,.legal li{color:#d6cfc4}
+  .legal ul{margin:0 0 1rem 1.2rem}
+
+  footer{border-top:1px solid var(--line);background:var(--bg2);padding:36px 0 28px;font-size:.95rem}
+  .foot{display:grid;grid-template-columns:2fr 1fr 1fr;gap:28px}
+  .foot a{color:var(--muted);text-decoration:none;display:block;padding:3px 0}
+  .foot a:hover{color:var(--text)}
+  .foot h4{font-family:"Barlow Condensed";text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+  .disclaimer{margin-top:26px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem}
+  @media(max-width:700px){.foot{grid-template-columns:1fr}}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--accent);color:#1a0d05;font-weight:700;padding:10px 18px;border-radius:8px;transition:transform .25s;z-index:50}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="#home">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 37 11v18L20 38 3 29V11z" fill="none" stroke="#e0662b" stroke-width="2.5"/><path d="M13 27 20 11l7 16M15.5 22h9" fill="none" stroke="#ece6dc" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Allied Forces
+    </a>
+    <button class="menu-btn" aria-label="Menu" onclick="document.querySelector('.nav').classList.toggle('open')">☰</button>
+    <nav class="nav">
+      <a href="#home" data-v="home">Home</a>
+      <a href="#servers" data-v="servers">Servers</a>
+      <a href="#rules" data-v="rules">Rules</a>
+      <a href="#support" data-v="support">Support Us</a>
+      <a href="#team" data-v="team">Team</a>
+      <a class="btn sm discord-link" href="#">Join Discord</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- HOME -->
+<div class="view" id="v-home">
+  <div class="hero">
+    <div class="wrap">
+      <div class="kicker">DayZ Community Servers · Est. ~2019</div>
+      <h1>Survive together.<br>Build your own legacy.</h1>
+      <p class="lead">Allied Forces is a DayZ hosting community — not a faction. Form your own group, build your base, trade, and fight in the PvP zones on our modded PvE servers.</p>
+      <div class="ctas">
+        <a class="btn discord-link" href="#">Join the Discord</a>
+        <a class="btn ghost" href="#servers">View Servers</a>
+      </div>
+      <div class="stats">
+        <div><b>2</b><span>Active servers</span></div>
+        <div><b>PvE + PvP</b><span>PvP zones, raid weeks</span></div>
+        <div><b>Monthly</b><span>Staggered wipes</span></div>
+        <div><b>Ryzen 9</b><span>Dedicated hardware</span></div>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <h2>What you'll find here</h2>
+      <p class="muted" style="max-width:700px">Two different maps, one community. Admins are active, tickets get answered, and the servers keep evolving based on player feedback.</p>
+      <div class="grid g3" style="margin-top:22px">
+        <div class="card"><h3>Your faction, your rules</h3><p class="muted">Allied Forces is the community, not a team you're forced into. Create your own faction with LBmaster Advanced Groups and make a name for yourself.</p></div>
+        <div class="card"><h3>PvE with teeth</h3><p class="muted">Explore in peace, then step into PvP zones like The Watering Hole when you want a fight. AI convoys, airdrops and a black market keep the map moving.</p></div>
+        <div class="card"><h3>Fresh starts every month</h3><p class="muted">Wipes are staggered across both servers, so there's always one in its early game and one heading into raid week.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Wipe &amp; raid calendar</h2>
+      <div class="cal">
+        <div class="card"><b>15th</b><h3>Nasdara wipes</h3><p class="muted">Full wipe every month. Chernarus enters raid week.</p></div>
+        <div class="card"><b>30th</b><h3>Chernarus wipes</h3><p class="muted">Full wipe every month. Nasdara enters raid week.</p></div>
+        <div class="card"><b>Raid week</b><h3>How it works</h3><p class="muted">First week: raiding in PvP zones only. Final week: the whole map is open.</p></div>
+      </div>
+      <p class="muted" style="margin-top:14px">Exact dates and any changes are announced in Discord.</p>
+    </div>
+  </section>
+</div>
+
+<!-- SERVERS -->
+<div class="view" id="v-servers">
+  <section>
+    <div class="wrap">
+      <h2>Our servers</h2>
+      <p class="muted">Both servers are PC only and run on a dedicated GTX Gaming Ryzen 9 9950X machine. Server IPs can change after hardware moves — Discord always has the current one.</p>
+      <div class="grid g2" style="margin-top:24px" id="server-list"></div>
+    </div>
+  </section>
+</div>
+
+<!-- RULES -->
+<div class="view" id="v-rules">
+  <section>
+    <div class="wrap rules">
+      <h2>Server rules</h2>
+      <p class="muted">The full, current rulebook lives in Discord. Joining our servers means you agree to these rules and our <a href="#terms">Terms of Service</a>.</p>
+      <ol style="margin-top:18px">
+        <li><b>Respect everyone.</b> No hate speech, harassment, threats or discrimination — in game, in voice or in Discord.</li>
+        <li><b>No cheating or exploiting.</b> Hacks, macros, duping, glitching into bases and abusing bugs lead to a permanent ban. Report bugs in a ticket instead.</li>
+        <li><b>PvP only where it's allowed.</b> Outside PvP zones and raid windows, the server is PvE. Check the map and the current raid schedule.</li>
+        <li><b>Raid within the rules.</b> Raiding is only allowed during raid week, following the zone rules announced for that wipe.</li>
+        <li><b>Build fairly.</b> No blocking roads, traders, POIs or loot spawns, and no building in restricted areas.</li>
+        <li><b>Vehicles.</b> Use parking meters to protect your vehicles. Vehicle loss from server issues is handled through a ticket.</li>
+        <li><b>Staff decisions.</b> Disputes go through a Discord ticket, not public channels. Staff have the final say.</li>
+      </ol>
+    </div>
+  </section>
+</div>
+
+<!-- SUPPORT -->
+<div class="view" id="v-support">
+  <section>
+    <div class="wrap">
+      <h2>Support Allied Forces</h2>
+      <p class="muted" style="max-width:760px">Running dedicated hardware, mods and a Discord costs real money every month. Everything we offer follows Bohemia Interactive's server monetization rules: <b style="color:var(--text)">nothing you can pay for affects gameplay.</b> No weapons, gear, vehicles, in-game money, bases or loot advantages — ever.</p>
+
+      <div class="notice" id="store-status"></div>
+
+      <div class="grid g3" style="margin-top:22px">
+        <div class="card hl">
+          <span class="tag ok">Available now</span>
+          <h3>Server donation</h3>
+          <div class="price">Any amount</div>
+          <p class="muted">A straight donation toward hosting costs. You get nothing in return — and that's the point. It just keeps the lights on.</p>
+          <a class="btn donate-link" href="#">Donate</a>
+        </div>
+        <div class="card">
+          <span class="tag">After approval</span>
+          <h3>Supporter</h3>
+          <div class="price">$<span class="p-supporter">5</span><span class="muted" style="font-size:1rem">/mo</span></div>
+          <ul class="clean">
+            <li>Supporter role &amp; color in Discord</li>
+            <li>Supporter-only Discord channel</li>
+            <li>Our thanks in the monthly wipe announcement</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="tag">After approval</span>
+          <h3>Reserved slot</h3>
+          <div class="price">$<span class="p-slot">10</span><span class="muted" style="font-size:1rem">/mo</span></div>
+          <ul class="clean">
+            <li>Everything in Supporter</li>
+            <li>A reserved slot so you can get in when the server is full</li>
+            <li>No in-game items or advantages</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:22px">
+        <h3>Earn Supporter for free</h3>
+        <p class="muted" style="margin:0">You don't have to pay to be recognized. Wear the <b style="color:var(--text)">[AF]</b> tag in your name or log 60+ hours on our servers and open a ticket to get the Supporter role.</p>
+      </div>
+    </div>
+  </section>
+  <section>
+    <div class="wrap" style="max-width:820px">
+      <h2>Monetization compliance</h2>
+      <p>Allied Forces follows the <a href="https://www.bohemia.net/monetization" target="_blank" rel="noopener">Bohemia Interactive Server Monetization Rules</a> for DayZ private shard servers. In short:</p>
+      <ul class="clean">
+        <li>Donations are voluntary and give nothing in return.</li>
+        <li>Paid supporter packages are only sold once our server is approved and listed by Bohemia Interactive.</li>
+        <li>Nothing sold affects gameplay: no weapons, ammo, gear, vehicles, in-game currency, discounts, bases or spawns.</li>
+        <li>We do not sell content from mods without permission from the mod authors.</li>
+        <li>If Bohemia's rules change, these packages change with them.</li>
+      </ul>
+      <p class="muted">Think something we offer breaks these rules? Tell us in a Discord ticket, or report it to Bohemia Interactive directly.</p>
+    </div>
+  </section>
+</div>
+
+<!-- TEAM -->
+<div class="view" id="v-team">
+  <section>
+    <div class="wrap">
+      <h2>The team</h2>
+      <p class="muted" style="max-width:720px">Allied Forces was founded by two friends who met gaming on console, moved to PC together for DayZ, and decided to build the kind of server they wanted to play on.</p>
+      <div class="grid g2" style="margin-top:22px">
+        <div class="card"><span class="tag">Co-founder · Admin</span><h3>Legacy</h3><p class="muted">Server owner, builder and streamer. Catch the live streams through the #live-alert channel in Discord.</p></div>
+        <div class="card"><span class="tag">Co-founder · Admin</span><h3>V2 Mojo</h3><p class="muted">Co-owner and in-game admin. Ten-plus years of gaming with Legacy and the other half of Allied Forces.</p></div>
+      </div>
+      <div class="card" style="margin-top:18px">
+        <h3>Join the staff</h3>
+        <p class="muted" style="margin:0">We're recruiting Discord moderators. Open a ticket in Discord if you're interested.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- TERMS -->
+<div class="view" id="v-terms">
+  <section>
+    <div class="wrap legal">
+      <h2>Terms of Service</h2>
+      <p class="muted">Last updated: <span class="updated"></span></p>
+      <p>These terms apply to the Allied Forces DayZ servers, Discord server and website (together, "Allied Forces"). By joining or purchasing from Allied Forces you agree to them.</p>
+      <h3>1. Who we are</h3>
+      <p>Allied Forces is an independent community run by its owners. We are not affiliated with, endorsed by, or sponsored by Bohemia Interactive a.s.</p>
+      <h3>2. Eligibility</h3>
+      <p>You must own a legitimate copy of DayZ and follow the DayZ End User License Agreement. Purchases require you to be 18 or older, or to have permission from a parent or guardian.</p>
+      <h3>3. Conduct</h3>
+      <p>You must follow our <a href="#rules">server rules</a>. We may warn, kick, suspend or permanently ban anyone who breaks them, at our discretion.</p>
+      <h3>4. Donations and supporter packages</h3>
+      <ul>
+        <li>Donations are voluntary and do not entitle you to any goods, services or benefits.</li>
+        <li>Supporter packages provide only the non-gameplay perks listed on the Support page and are offered in line with Bohemia Interactive's monetization rules.</li>
+        <li>Perks are a license to use a feature while it exists, not property. Wipes, server changes, or rule changes by Bohemia Interactive may change or remove them.</li>
+        <li>A ban for breaking the rules ends your perks without a refund.</li>
+      </ul>
+      <h3>5. Service availability</h3>
+      <p>We work to keep servers online, but we don't guarantee uptime. Servers may be wiped, restarted, changed, moved or shut down. Game updates and mods are outside our control.</p>
+      <h3>6. Liability</h3>
+      <p>Allied Forces is provided "as is". To the extent allowed by law, our total liability for any claim is limited to what you paid us in the 30 days before the claim.</p>
+      <h3>7. Changes</h3>
+      <p>We may update these terms. Changes are posted here and announced in Discord.</p>
+      <h3>8. Contact</h3>
+      <p>Open a ticket in our <a class="discord-link" href="#">Discord</a> or email <span class="contact-email"></span>.</p>
+    </div>
+  </section>
+</div>
+
+<!-- PRIVACY -->
+<div class="view" id="v-privacy">
+  <section>
+    <div class="wrap legal">
+      <h2>Privacy Policy</h2>
+      <p class="muted">Last updated: <span class="updated"></span></p>
+      <h3>What we collect</h3>
+      <ul>
+        <li><b>Game data:</b> your Steam ID, in-game name, connection logs and in-game activity, used to run the servers and enforce rules.</li>
+        <li><b>Discord data:</b> your Discord username and ID, and messages or tickets you send us.</li>
+        <li><b>Payment data:</b> payments are handled by our payment provider. We receive your name, email, Steam/Discord ID and what you bought — never your full card details.</li>
+      </ul>
+      <h3>How we use it</h3>
+      <p>To run the servers, deliver supporter perks, handle tickets, prevent cheating and comply with the law. We don't sell your data.</p>
+      <h3>Who we share it with</h3>
+      <p>Only with services we need to operate: our game server host, Discord, our payment provider, and anti-cheat or admin tools. We may share data if the law requires it.</p>
+      <h3>How long we keep it</h3>
+      <p>As long as needed for the purposes above. Ban records may be kept indefinitely to enforce bans.</p>
+      <h3>Your choices</h3>
+      <p>You can ask us to see or delete your data by opening a Discord ticket or emailing <span class="contact-email"></span>. Some data (like ban and payment records) may need to be kept.</p>
+    </div>
+  </section>
+</div>
+
+<!-- REFUNDS -->
+<div class="view" id="v-refunds">
+  <section>
+    <div class="wrap legal">
+      <h2>Refund Policy</h2>
+      <p class="muted">Last updated: <span class="updated"></span></p>
+      <ul>
+        <li><b>Donations</b> are voluntary and non-refundable.</li>
+        <li><b>Supporter packages:</b> if your perk wasn't delivered, open a ticket within 14 days and we'll fix it or refund you.</li>
+        <li>You can cancel a monthly package anytime. It stays active until the end of the period you paid for.</li>
+        <li>No refunds for bans caused by breaking the rules, or for perks lost to normal wipes.</li>
+        <li><b>Chargebacks:</b> please talk to us first. Filing a chargeback without contacting us may result in removal of perks and access.</li>
+      </ul>
+      <p>Refund requests: Discord ticket or <span class="contact-email"></span>.</p>
+    </div>
+  </section>
+</div>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <div class="brand" style="margin-bottom:8px">Allied Forces</div>
+        <p class="muted" style="max-width:380px">A DayZ community running Nasdara | Scorched Earth and Chernarus Badlands.</p>
+      </div>
+      <div>
+        <h4>Community</h4>
+        <a class="discord-link" href="#">Discord</a>
+        <a href="#servers">Servers</a>
+        <a href="#rules">Rules</a>
+        <a href="#support">Support Us</a>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <a href="#terms">Terms of Service</a>
+        <a href="#privacy">Privacy Policy</a>
+        <a href="#refunds">Refund Policy</a>
+        <a href="#support">Monetization</a>
+      </div>
+    </div>
+    <div class="disclaimer">
+      © <span class="year"></span> Allied Forces. DayZ is a trademark of Bohemia Interactive a.s. Allied Forces is a community server and is not affiliated with, endorsed by, or sponsored by Bohemia Interactive.
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+/* ====== EDIT THESE ====== */
+const CONFIG = {
+  discord: "https://discord.gg/W87ypFyNrp",
+  donateUrl: "",               // e.g. your PayPal / Ko-fi / Tebex donation link
+  contactEmail: "alliedforces@example.com", // replace with a real contact email
+  bohemiaApproved: false,      // set true once you're on Bohemia's approved DayZ list
+  storeUrl: "",                // your store link once approved
+  prices: { supporter: 5, slot: 10 },
+  updated: "November 6, 2026",
+  servers: [
+    {
+      name: "Nasdara | Scorched Earth",
+      tags: ["PvE + PvP zones", "DayZ Expansion", "PC"],
+      ip: "",                  // paste current IP:port
+      wipe: "15th of every month",
+      features: [
+        "BS Base Building + RaG base items",
+        "LBmaster Advanced Groups for factions",
+        "The Watering Hole — black market PvP zone",
+        "The Underground trader, AI convoys, airdrops",
+        "Snafu weapons, Windstrides clothing, Infinite Stamina"
+      ]
+    },
+    {
+      name: "Chernarus Badlands",
+      tags: ["PvE + PvP zones", "DayZ Expansion", "PC"],
+      ip: "154.16.200.253:2869",
+      wipe: "30th of every month",
+      features: [
+        "LBmaster Advanced Groups",
+        "Drugs Plus farming and The Underground trader",
+        "Rare finds at the nuclear facility",
+        "Monthly raid weeks",
+        "Expansion traders and AI"
+      ]
+    }
+  ]
+};
+/* ======================== */
+
+const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
+$$(".discord-link").forEach(a => { a.href = CONFIG.discord; a.target = "_blank"; a.rel = "noopener"; });
+$$(".contact-email").forEach(e => e.textContent = CONFIG.contactEmail);
+$$(".updated").forEach(e => e.textContent = CONFIG.updated);
+$(".year").textContent = new Date().getFullYear();
+$(".p-supporter").textContent = CONFIG.prices.supporter;
+$(".p-slot").textContent = CONFIG.prices.slot;
+
+const donate = $(".donate-link");
+if (CONFIG.donateUrl) { donate.href = CONFIG.donateUrl; donate.target = "_blank"; donate.rel = "noopener"; }
+else { donate.href = CONFIG.discord; donate.target = "_blank"; donate.textContent = "Donate via Discord"; }
+
+$("#store-status").innerHTML = CONFIG.bohemiaApproved
+  ? `<b>We're approved and listed by Bohemia Interactive.</b> ${CONFIG.storeUrl ? `<a href="${CONFIG.storeUrl}" target="_blank" rel="noopener">Open the store →</a>` : ""}`
+  : `<b>Supporter packages are coming soon.</b> We've applied for Bohemia Interactive's monetization approval. Until we're approved and listed, only no-strings donations are accepted.`;
+
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1600); }
+$("#server-list").innerHTML = CONFIG.servers.map((s,i)=>`
+  <div class="card">
+    <div class="server-head"><h3>${s.name}</h3></div>
+    <div>${s.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+    <div class="ip"><span>${s.ip || "IP posted in Discord #server-info"}</span>
+      ${s.ip ? `<button class="btn sm ghost" data-ip="${i}">Copy IP</button>` : `<a class="btn sm ghost" href="${CONFIG.discord}" target="_blank" rel="noopener">Get IP</a>`}</div>
+    <p class="muted" style="margin-bottom:6px"><b style="color:var(--text)">Wipes:</b> ${s.wipe}</p>
+    <ul class="clean">${s.features.map(f=>`<li>${f}</li>`).join("")}</ul>
+  </div>`).join("");
+$$("[data-ip]").forEach(b => b.addEventListener("click", async () => {
+  const ip = CONFIG.servers[b.dataset.ip].ip;
+  try { await navigator.clipboard.writeText(ip); toast("IP copied!"); } catch(e){ toast(ip); }
+}));
+
+const views = ["home","servers","rules","support","team","terms","privacy","refunds"];
+function route(){
+  const v = views.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
+  $$(".view").forEach(el => el.classList.toggle("active", el.id === "v-"+v));
+  $$(".nav a[data-v]").forEach(a => a.classList.toggle("active", a.dataset.v === v));
+  $(".nav").classList.remove("open");
+  window.scrollTo(0,0);
+}
+window.addEventListener("hashchange", route); route();
+</script>
+</body>
+</html>
