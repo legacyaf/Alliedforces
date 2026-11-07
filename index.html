@@ -36,7 +36,7 @@
   .nav a:hover,.nav a.active{color:var(--text);background:var(--panel)}
   .nav .btn{margin-left:8px}
   .menu-btn{display:none;background:none;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 10px;font-size:1.2rem;cursor:pointer}
-  @media(max-width:820px){
+  @media(max-width:1180px){
     .menu-btn{display:block}
     .nav{display:none;position:absolute;top:64px;left:0;right:0;flex-direction:column;align-items:stretch;background:var(--bg2);border-bottom:1px solid var(--line);padding:10px 20px 16px}
     .nav.open{display:flex}
@@ -212,6 +212,92 @@
   .lb-you{font-size:.7rem;background:var(--accent);color:#1a0d05;border-radius:4px;padding:1px 6px;margin-left:6px;font-weight:700;vertical-align:2px}
   .lb-note{color:var(--muted);font-size:.88rem;margin-top:14px}
 
+  /* community + inbox */
+  .av{border-radius:50%;object-fit:cover;flex:none;background:var(--bg2);display:inline-flex;align-items:center;justify-content:center;font-family:"Barlow Condensed";font-weight:800;color:var(--accent);border:1px solid var(--line)}
+  .adm{font-size:.68rem;background:var(--accent);color:#1a0d05;border-radius:4px;padding:1px 6px;margin-left:6px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;vertical-align:2px;font-family:Barlow,sans-serif}
+  .feed-wrap{max-width:680px;margin:0 auto}
+  .composer textarea,.cm-form textarea,.dm-send textarea,.modal-card textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font:inherit;padding:10px 12px;resize:vertical;min-height:46px}
+  .composer textarea:focus,.cm-form textarea:focus,.dm-send textarea:focus,.modal-card textarea:focus,.picker input:focus{outline:none;border-color:var(--accent)}
+  .composer .kf-filters{margin-bottom:10px}
+  .star-pick{display:flex;gap:2px;margin-bottom:8px}
+  .star-pick button{background:none;border:0;font-size:1.6rem;line-height:1;color:#4a443d;cursor:pointer;padding:0 2px}
+  .star-pick button.on{color:#f0c14a}
+  .c-photo{position:relative;display:inline-block;margin-top:10px}
+  .c-photo img{max-width:100%;max-height:240px;border-radius:8px;display:block}
+  .c-photo button{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.7);color:#fff;border:0;border-radius:50%;width:28px;height:28px;cursor:pointer}
+  .post{margin-top:16px;padding:18px 20px}
+  .post-head{display:flex;gap:12px;align-items:center;margin-bottom:10px}
+  .post-who{flex:1;min-width:0}
+  .post-name{font-weight:700;overflow-wrap:anywhere}
+  .post-time{font-size:.86rem}
+  .pk{font-family:"Barlow Condensed";font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent2)}
+  .post-menu{display:flex;gap:2px}
+  .icon-btn{background:none;border:0;color:var(--muted);cursor:pointer;font-size:1.05rem;padding:6px 8px;border-radius:6px}
+  .icon-btn:hover{background:var(--bg2);color:var(--text)}
+  .post-body{white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:10px}
+  .post-body.quote{font-size:1.3rem;font-style:italic;border-left:4px solid var(--accent);padding:4px 0 4px 16px;color:#efe6d8}
+  .stars{color:#f0c14a;font-size:1.2rem;letter-spacing:2px;margin-bottom:6px}.stars span{color:#4a443d}
+  .post-photo{width:100%;max-height:560px;object-fit:cover;border-radius:8px;margin-bottom:10px;display:block;cursor:zoom-in;background:var(--bg)}
+  .post-actions{display:flex;gap:6px;border-top:1px solid var(--line);padding-top:8px}
+  .act{background:none;border:0;color:var(--muted);font:600 .95rem Barlow,sans-serif;cursor:pointer;padding:7px 12px;border-radius:6px;flex:1}
+  .act:hover{background:var(--bg2);color:var(--text)}
+  .act.on{color:#e5484d}
+  .comments{border-top:1px solid var(--line);margin-top:8px;padding-top:10px}
+  .cm{display:flex;gap:10px;margin-bottom:10px}
+  .cm-bubble{background:var(--bg2);border-radius:10px;padding:8px 12px;flex:1;min-width:0}
+  .cm-bubble .who{font-weight:700;font-size:.92rem}
+  .cm-bubble .txt{white-space:pre-wrap;overflow-wrap:anywhere}
+  .cm-meta{font-size:.8rem;color:var(--muted);margin-top:2px;display:flex;gap:10px}
+  .cm-meta button{background:none;border:0;color:var(--muted);cursor:pointer;font-size:.8rem;padding:0}
+  .cm-meta button:hover{color:var(--text)}
+  .cm-form{display:flex;gap:8px;align-items:flex-end}
+  .cm-form textarea{min-height:40px}
+  .nav .badge,.subnav .badge{display:inline-block;min-width:20px;padding:1px 6px;border-radius:999px;background:#e5484d;color:#fff;font:700 .75rem Barlow,sans-serif;text-align:center;margin-left:6px;vertical-align:2px}
+  .dm{display:grid;grid-template-columns:280px 1fr;gap:16px;min-height:480px}
+  .dm-list,.dm-thread{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column}
+  .dm-list .top{padding:12px;border-bottom:1px solid var(--line)}
+  .dm-convos{overflow-y:auto;flex:1}
+  .convo{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--line);cursor:pointer;width:100%;background:none;border-left:0;border-right:0;border-top:0;color:var(--text);text-align:left;font:inherit}
+  .convo:hover,.convo.active{background:var(--bg2)}
+  .convo .c-main{flex:1;min-width:0}
+  .convo .c-name{font-weight:700;display:flex;justify-content:space-between;gap:6px}
+  .convo .c-name small{color:var(--muted);font-weight:400;font-size:.78rem;white-space:nowrap}
+  .convo .c-last{color:var(--muted);font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .convo.unread .c-last{color:var(--text);font-weight:600}
+  .dm-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+  .dm-head .back{display:none}
+  .dm-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:6px;max-height:60vh}
+  .bub{max-width:78%;padding:8px 12px;border-radius:14px;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--bg2);align-self:flex-start;position:relative}
+  .bub.mine{background:#7a3a17;align-self:flex-end}
+  .bub small{display:block;font-size:.72rem;color:var(--muted);margin-top:2px}
+  .bub.mine small{color:#e6bfa5;text-align:right}
+  .bub .rep{display:none;position:absolute;top:2px;right:-26px;background:none;border:0;color:var(--muted);cursor:pointer}
+  .bub:hover .rep{display:block}
+  .dm-send{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line);align-items:flex-end}
+  @media(max-width:760px){
+    .dm{grid-template-columns:1fr}
+    .dm .dm-thread{display:none}
+    .dm.open .dm-list{display:none}
+    .dm.open .dm-thread{display:flex}
+    .dm-head .back{display:inline-block}
+  }
+  .picker{position:relative}
+  .picker input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font:inherit;padding:9px 12px}
+  .picker-res{position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--bg2);border:1px solid var(--line);border-radius:8px;z-index:5;max-height:260px;overflow:auto}
+  .picker-res button{display:flex;gap:10px;align-items:center;width:100%;padding:8px 10px;background:none;border:0;color:var(--text);font:inherit;cursor:pointer;text-align:left}
+  .picker-res button:hover{background:var(--panel)}
+  .notif{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);align-items:flex-start}
+  .notif:last-child{border-bottom:0}
+  .notif.new{background:rgba(224,102,43,.08)}
+  .notif .n-ico{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;background:var(--bg2);font-size:1.1rem}
+  .notif .n-main{flex:1;min-width:0}
+  .notif .n-title{font-weight:700}
+  .notif .n-body{white-space:pre-wrap;overflow-wrap:anywhere;color:#d6cfc4}
+  .notif .n-time{font-size:.8rem;color:var(--muted);margin-top:2px}
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:70;cursor:zoom-out;padding:20px}
+  .lightbox.open{display:flex}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:6px}
+
   footer{border-top:1px solid var(--line);background:var(--bg2);padding:36px 0 28px;font-size:.95rem}
   .foot{display:grid;grid-template-columns:2fr 1fr 1fr;gap:28px}
   .foot a{color:var(--muted);text-decoration:none;display:block;padding:3px 0}
@@ -239,7 +325,8 @@
       <a href="#legends" data-v="legends">Legends</a>
       <a href="#live-wipes" data-v="live">Live</a>
       <a href="#support" data-v="support">Support Us</a>
-      <a href="#team" data-v="team">Team</a>
+      <a href="#feed" data-v="feed">Community</a>
+      <a href="#inbox" data-v="inbox" id="nav-inbox" hidden>Inbox<span class="badge" id="inbox-badge" hidden></span></a>
       <a href="#account" data-v="account" id="nav-account">Sign in</a>
       <a class="btn sm discord-link" href="#">Join Discord</a>
     </nav>
@@ -459,6 +546,30 @@
   </section>
 </div>
 
+<!-- COMMUNITY FEED -->
+<div class="view" id="v-feed">
+  <section>
+    <div class="wrap feed-wrap">
+      <div class="kicker-sm">The AF wall</div>
+      <h2>Community</h2>
+      <p class="muted">Quotes, stories, reviews and screenshots from the Allied Forces community. Keep it respectful — see the <a href="#terms">community rules</a>.</p>
+      <div id="feed-composer" style="margin-top:18px"></div>
+      <div id="feed-list"></div>
+      <div style="text-align:center;margin-top:18px"><button class="btn ghost sm" id="feed-more" hidden>Load older posts</button></div>
+    </div>
+  </section>
+</div>
+
+<!-- INBOX -->
+<div class="view" id="v-inbox">
+  <section>
+    <div class="wrap">
+      <h2>Inbox</h2>
+      <div id="inbox-root"></div>
+    </div>
+  </section>
+</div>
+
 <!-- ACCOUNT -->
 <div class="view" id="v-account">
   <section>
@@ -479,6 +590,16 @@
       <p>You must own a legitimate copy of DayZ and follow the DayZ End User License Agreement. Purchases require you to be 18 or older, or to have permission from a parent or guardian.</p>
       <h3>3. Conduct</h3>
       <p>You must follow our <a href="#rules">server rules</a>. We may warn, kick, suspend or permanently ban anyone who breaks them, at our discretion.</p>
+      <h3>3a. Community rules (posts, comments and messages)</h3>
+      <p>When you post, comment or send messages on this site:</p>
+      <ul>
+        <li>No harassment, threats, hate speech or discrimination.</li>
+        <li>No doxxing — never share anyone's real name, address, photos or other personal info without their permission.</li>
+        <li>No sexual, graphic or shocking content, and no spam, scams or advertising other servers.</li>
+        <li>No cheats, exploits or ways to break the rules.</li>
+        <li>Only post photos you have the right to share.</li>
+      </ul>
+      <p>AF staff can remove any post or comment and can block anyone from posting or messaging. Use the ⚑ report button to flag anything that breaks these rules.</p>
       <h3>4. Donations and supporter packages</h3>
       <ul>
         <li>Donations are voluntary and do not entitle you to any goods, services or benefits.</li>
@@ -509,6 +630,7 @@
         <li><b>Game data:</b> your Steam ID, in-game name, connection logs and in-game activity, used to run the servers and enforce rules.</li>
         <li><b>Discord data:</b> your Discord username and ID, and messages or tickets you send us.</li>
         <li><b>Website accounts:</b> when you sign in with Discord, we receive your Discord ID, username, avatar and email from Discord. If you add them, we also store your Steam64 ID and in-game name. Accounts are stored with our database provider, Supabase.</li>
+        <li><b>Community content:</b> posts, photos, comments and likes you make are public. Direct messages can only be read by you and the person you're talking to — AF staff can't read them unless one of you reports a message, which sends a copy of that message to staff.</li>
         <li><b>Payment data:</b> payments are handled by our payment provider. We receive your name, email, Steam/Discord ID and what you bought — never your full card details.</li>
       </ul>
       <h3>How we use it</h3>
@@ -556,6 +678,8 @@
         <a href="#servers">Servers</a>
         <a href="#rules">Rules</a>
         <a href="#legends">AF Legends</a>
+        <a href="#feed">Community</a>
+        <a href="#team">Team</a>
         <a href="#live-killfeed">Killfeed</a>
         <a href="#support">Support Us</a>
       </div>
@@ -574,6 +698,8 @@
 </footer>
 
 <div class="modal" id="legend-modal"></div>
+<div class="modal" id="ui-modal"></div>
+<div class="lightbox" id="lightbox"></div>
 <div class="toast" id="toast">Copied!</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -794,9 +920,11 @@ async function syncProfile(){
 
 if (sb) {
   sb.auth.onAuthStateChange((event, session) => {
+    const prevId = user?.id;
     user = session?.user || null;
     setNav();
     renderLegends();
+    if (prevId !== user?.id) setTimeout(onUserChanged, 0);
     if (event === "SIGNED_IN" && user) {
       setTimeout(async () => {
         await syncProfile();
@@ -1253,7 +1381,569 @@ function startKillfeed(){
     });
 }
 
-const views = ["home","servers","rules","legends","support","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id)];
+/* ===================== COMMUNITY FEED + INBOX ===================== */
+let amAdmin = false, inboxChannel = null;
+const memberCache = new Map();
+async function loadMembers(ids){
+  const need = [...new Set(ids.filter(id => id && !memberCache.has(id)))];
+  if (!need.length || !sb) return;
+  const { data } = await sb.from("members").select("*").in("id", need);
+  (data || []).forEach(m => memberCache.set(m.id, m));
+  need.forEach(id => { if (!memberCache.has(id)) memberCache.set(id, { id, name: "Former member", avatar_url: null }); });
+}
+const mem = id => memberCache.get(id) || { id, name: "Member", avatar_url: null };
+const meCard = () => user ? (memberCache.get(user.id) || { id: user.id, name: dName(user), avatar_url: meta(user).avatar_url, is_admin: amAdmin }) : null;
+function avatar(m, size = 40){
+  const st = `width:${size}px;height:${size}px;font-size:${Math.round(size * .42)}px`;
+  return m?.avatar_url
+    ? `<img class="av" style="${st}" src="${esc(m.avatar_url)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+    : `<span class="av" style="${st}">${esc(initials(m?.name || "?"))}</span>`;
+}
+const nameTag = m => `${esc(m.name)}${m.is_admin ? `<span class="adm">AF Staff</span>` : ""}`;
+const linkify = t => t.replace(/(https:\/\/[^\s<]+[^\s<.,!?)])/g, '<a href="$1" target="_blank" rel="noopener nofollow">$1</a>');
+
+/* resize any image to a JPEG no bigger than max px on its long side */
+function resizeJpeg(file, max = 1280){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const r = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement("canvas");
+      c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => b ? res(b) : rej(new Error("Couldn't read that image")), "image/jpeg", 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("That file isn't an image we can use")); };
+    img.src = url;
+  });
+}
+
+/* small modal helper (uses the same modal styles as the Legend editor) */
+function openModal(html){
+  const m = $("#ui-modal");
+  m.innerHTML = `<div class="modal-card" role="dialog" aria-modal="true">${html}</div>`;
+  m.classList.add("open");
+  m.onclick = e => { if (e.target === m) closeModal(); };
+  return m;
+}
+const closeModal = () => $("#ui-modal").classList.remove("open");
+function confirmModal(title, text, okLabel = "Delete"){
+  return new Promise(res => {
+    openModal(`<h3>${esc(title)}</h3><p class="muted">${esc(text)}</p><div class="row"><button class="btn" id="m-ok">${esc(okLabel)}</button><button class="btn ghost" id="m-no">Cancel</button></div>`);
+    $("#m-ok").onclick = () => { closeModal(); res(true); };
+    $("#m-no").onclick = () => { closeModal(); res(false); };
+  });
+}
+function reportModal(type, id, content, authorId){
+  if (!user) return;
+  openModal(`<h3>Report this ${type}</h3><p class="muted">AF staff will review it. Reports are private.</p>
+    <div class="field"><label for="r-why">What's wrong?</label><textarea id="r-why" maxlength="500" rows="3" placeholder="Harassment, cheating, spam, doxxing…"></textarea></div>
+    <div class="row"><button class="btn" id="r-send">Send report</button><button class="btn ghost" id="r-no">Cancel</button></div><div id="r-msg"></div>`);
+  $("#r-no").onclick = closeModal;
+  $("#r-send").onclick = async () => {
+    const { error } = await sb.from("reports").insert({ target_type: type, target_id: id, target_author: authorId || null, content: (content || "").slice(0, 2000), reason: $("#r-why").value.trim() || null });
+    if (error) { $("#r-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+    closeModal(); toast("Report sent. Thanks.");
+  };
+}
+function lightbox(src){
+  const l = $("#lightbox"); l.innerHTML = `<img src="${esc(src)}" alt="">`; l.classList.add("open");
+  l.onclick = () => l.classList.remove("open");
+}
+
+/* ---------------- FEED ---------------- */
+const FEED_PAGE = 20;
+let feedPosts = [], feedOldest = null, feedLikes = new Map(), feedCcount = new Map(), feedBound = false;
+let cKind = "post", cRating = 5, cPhoto = null;
+
+function composerHTML(){
+  const me = meCard();
+  return `<div class="card composer">
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      ${avatar(me, 44)}
+      <div style="flex:1;min-width:0">
+        <div class="kf-filters" id="c-kinds">${[["post","Post"],["quote","Quote"],["review","Review"]].map(([k,l]) => `<button class="chip${k === cKind ? " active" : ""}" data-ck="${k}">${l}</button>`).join("")}</div>
+        <div class="star-pick" id="c-stars" ${cKind === "review" ? "" : "hidden"}>${[1,2,3,4,5].map(n => `<button type="button" data-star="${n}" class="${n <= cRating ? "on" : ""}" aria-label="${n} stars">★</button>`).join("")}</div>
+        <textarea id="c-body" maxlength="2000" rows="3" placeholder="${cKind === "quote" ? "Drop a quote…" : cKind === "review" ? "How's your experience on Allied Forces?" : "What's happening on the servers?"}"></textarea>
+        <div id="c-photo"></div>
+        <div class="row" style="justify-content:space-between;margin-top:10px">
+          <label class="btn ghost sm" style="cursor:pointer">📷 Photo<input type="file" id="c-file" accept="image/jpeg,image/png,image/webp" hidden></label>
+          <button class="btn sm" id="c-post">Post</button>
+        </div>
+        <div id="c-msg"></div>
+      </div>
+    </div>
+  </div>`;
+}
+function bindComposer(){
+  $$("[data-ck]").forEach(b => b.onclick = () => {
+    cKind = b.dataset.ck;
+    $$("[data-ck]").forEach(x => x.classList.toggle("active", x === b));
+    $("#c-stars").hidden = cKind !== "review";
+    $("#c-body").placeholder = cKind === "quote" ? "Drop a quote…" : cKind === "review" ? "How's your experience on Allied Forces?" : "What's happening on the servers?";
+  });
+  $$("[data-star]").forEach(b => b.onclick = () => { cRating = +b.dataset.star; $$("[data-star]").forEach(x => x.classList.toggle("on", +x.dataset.star <= cRating)); });
+  $("#c-file").onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      cPhoto = await resizeJpeg(f);
+      $("#c-photo").innerHTML = `<div class="c-photo"><img src="${URL.createObjectURL(cPhoto)}" alt=""><button type="button" id="c-rm" aria-label="Remove photo">✕</button></div>`;
+      $("#c-rm").onclick = () => { cPhoto = null; $("#c-photo").innerHTML = ""; $("#c-file").value = ""; };
+    } catch (err) { $("#c-msg").innerHTML = `<p class="msg err">${esc(err.message)}</p>`; }
+  };
+  $("#c-post").onclick = async () => {
+    const btn = $("#c-post"), body = $("#c-body").value.trim(), msg = $("#c-msg");
+    if (!body && !cPhoto) { msg.innerHTML = `<p class="msg err">Write something or add a photo.</p>`; return; }
+    btn.disabled = true; btn.textContent = "Posting…"; msg.innerHTML = "";
+    try {
+      let photo_url = null;
+      if (cPhoto) {
+        const path = `${user.id}/${Date.now()}.jpg`;
+        const up = await sb.storage.from("post-photos").upload(path, cPhoto, { contentType: "image/jpeg" });
+        if (up.error) throw up.error;
+        photo_url = sb.storage.from("post-photos").getPublicUrl(path).data.publicUrl;
+      }
+      const { data, error } = await sb.from("posts").insert({ kind: cKind, body, rating: cKind === "review" ? cRating : null, photo_url }).select().single();
+      if (error) throw error;
+      feedPosts.unshift(data); feedLikes.set(data.id, { count: 0, mine: false }); feedCcount.set(data.id, 0);
+      memberCache.set(user.id, meCard());
+      $("#c-body").value = ""; cPhoto = null; $("#c-photo").innerHTML = ""; $("#c-file").value = "";
+      renderFeedList(); toast("Posted!");
+    } catch (err) {
+      msg.innerHTML = `<p class="msg err">${esc(/banned|row-level/i.test(err.message) ? "You can't post right now. Contact AF staff in Discord." : err.message)}</p>`;
+    }
+    btn.disabled = false; btn.textContent = "Post";
+  };
+}
+function postHTML(p){
+  const a = mem(p.author_id), L = feedLikes.get(p.id) || { count: 0, mine: false }, c = feedCcount.get(p.id) || 0;
+  const mine = user && p.author_id === user.id;
+  return `<article class="card post" data-post="${p.id}">
+    <header class="post-head">
+      ${avatar(a, 44)}
+      <div class="post-who"><div class="post-name">${nameTag(a)}</div>
+        <div class="muted post-time"><span data-ts="${esc(p.created_at)}">${ago(p.created_at)}</span>${p.kind !== "post" ? ` · <span class="pk">${p.kind === "quote" ? "Quote" : "Review"}</span>` : ""}</div></div>
+      ${user ? `<div class="post-menu">
+        ${!mine ? `<button class="icon-btn" data-dm="${esc(p.author_id)}" title="Send a message">✉</button><button class="icon-btn" data-rp="${p.id}" title="Report">⚑</button>` : ""}
+        ${mine || amAdmin ? `<button class="icon-btn" data-delp="${p.id}" title="Delete post">🗑</button>` : ""}
+      </div>` : ""}
+    </header>
+    ${p.kind === "review" && p.rating ? `<div class="stars" aria-label="${p.rating} out of 5 stars">${"★".repeat(p.rating)}<span>${"★".repeat(5 - p.rating)}</span></div>` : ""}
+    ${p.body ? `<div class="post-body${p.kind === "quote" ? " quote" : ""}">${linkify(esc(p.body))}</div>` : ""}
+    ${p.photo_url ? `<img class="post-photo" src="${esc(p.photo_url)}" alt="" loading="lazy" data-zoom="${esc(p.photo_url)}">` : ""}
+    <div class="post-actions">
+      <button class="act${L.mine ? " on" : ""}" data-like="${p.id}">♥ ${L.count ? `<b>${L.count}</b> ` : ""}${L.mine ? "Liked" : "Like"}</button>
+      <button class="act" data-cm="${p.id}">💬 ${c ? `<b>${c}</b> ` : ""}Comment${c === 1 ? "" : "s"}</button>
+    </div>
+    <div class="comments" id="cm-${p.id}" hidden></div>
+  </article>`;
+}
+function renderFeedList(){
+  const list = $("#feed-list");
+  list.innerHTML = feedPosts.length ? feedPosts.map(postHTML).join("")
+    : `<div class="kf-empty" style="margin-top:16px">No posts yet. Be the first to say something.</div>`;
+}
+async function loadFeed(more = false){
+  const list = $("#feed-list");
+  if (!more) list.innerHTML = `<div class="kf-empty" style="margin-top:16px">Loading the feed…</div>`;
+  let q = sb.from("posts").select("*").order("created_at", { ascending: false }).limit(FEED_PAGE);
+  if (more && feedOldest) q = q.lt("created_at", feedOldest);
+  const { data, error } = await q;
+  if (error) { list.innerHTML = `<div class="kf-empty" style="margin-top:16px">Couldn't load the feed: ${esc(error.message)}</div>`; return; }
+  feedPosts = more ? feedPosts.concat(data) : data;
+  feedOldest = feedPosts.length ? feedPosts[feedPosts.length - 1].created_at : null;
+  $("#feed-more").hidden = data.length < FEED_PAGE;
+  const ids = data.map(p => p.id);
+  if (ids.length) {
+    const [lk, cm] = await Promise.all([
+      sb.from("post_likes").select("post_id,user_id").in("post_id", ids),
+      sb.from("comments").select("post_id").in("post_id", ids)
+    ]);
+    ids.forEach(id => { feedLikes.set(id, { count: 0, mine: false }); feedCcount.set(id, 0); });
+    (lk.data || []).forEach(r => { const L = feedLikes.get(r.post_id); L.count++; if (user && r.user_id === user.id) L.mine = true; });
+    (cm.data || []).forEach(r => feedCcount.set(r.post_id, (feedCcount.get(r.post_id) || 0) + 1));
+  }
+  await loadMembers(data.map(p => p.author_id));
+  renderFeedList();
+}
+async function toggleLike(id){
+  if (!user) { location.hash = "#account"; return; }
+  const L = feedLikes.get(id) || { count: 0, mine: false }; feedLikes.set(id, L);
+  const was = L.mine; L.mine = !was; L.count += was ? -1 : 1; rerenderPost(id);
+  const { error } = was
+    ? await sb.from("post_likes").delete().eq("post_id", id).eq("user_id", user.id)
+    : await sb.from("post_likes").insert({ post_id: id });
+  if (error) { L.mine = was; L.count += was ? 1 : -1; rerenderPost(id); toast("Couldn't update like"); }
+}
+function rerenderPost(id){
+  const el = document.querySelector(`[data-post="${id}"]`), p = feedPosts.find(x => x.id === id);
+  if (!el || !p) return;
+  const open = !$(`#cm-${id}`).hidden, cmHTML = $(`#cm-${id}`).innerHTML;
+  el.outerHTML = postHTML(p);
+  if (open) { const c = $(`#cm-${id}`); c.hidden = false; c.innerHTML = cmHTML; bindCommentForm(id); }
+}
+function commentHTML(c){
+  const a = mem(c.author_id), mine = user && c.author_id === user.id;
+  return `<div class="cm" data-cmid="${c.id}">${avatar(a, 32)}
+    <div style="flex:1;min-width:0"><div class="cm-bubble"><div class="who">${nameTag(a)}</div><div class="txt">${linkify(esc(c.body))}</div></div>
+    <div class="cm-meta"><span>${ago(c.created_at)}</span>
+      ${user && !mine ? `<button data-rc="${c.id}">Report</button>` : ""}
+      ${mine || amAdmin ? `<button data-delc="${c.id}">Delete</button>` : ""}</div></div></div>`;
+}
+const openComments = new Map();
+async function toggleComments(id){
+  const box = $(`#cm-${id}`);
+  if (!box.hidden) { box.hidden = true; return; }
+  box.hidden = false; box.innerHTML = `<p class="muted">Loading comments…</p>`;
+  const { data, error } = await sb.from("comments").select("*").eq("post_id", id).order("created_at").limit(200);
+  if (error) { box.innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+  openComments.set(id, data);
+  await loadMembers(data.map(c => c.author_id));
+  box.innerHTML = `<div class="cm-list">${data.map(commentHTML).join("")}</div>
+    ${user ? `<form class="cm-form" data-cf="${id}">${avatar(meCard(), 32)}<textarea maxlength="1000" rows="1" placeholder="Write a comment…"></textarea><button class="btn sm">Send</button></form>`
+           : `<p class="muted" style="margin:0"><a href="#account">Sign in</a> to comment.</p>`}`;
+  bindCommentForm(id);
+}
+function bindCommentForm(id){
+  const f = document.querySelector(`[data-cf="${id}"]`); if (!f) return;
+  const ta = f.querySelector("textarea");
+  ta.onkeydown = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); f.requestSubmit(); } };
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const body = ta.value.trim(); if (!body) return;
+    const btn = f.querySelector("button"); btn.disabled = true;
+    const { data, error } = await sb.from("comments").insert({ post_id: id, body }).select().single();
+    btn.disabled = false;
+    if (error) { toast(/row-level/i.test(error.message) ? "You can't comment right now" : error.message); return; }
+    ta.value = "";
+    memberCache.set(user.id, meCard());
+    (openComments.get(id) || []).push(data);
+    $(`#cm-${id} .cm-list`).insertAdjacentHTML("beforeend", commentHTML(data));
+    feedCcount.set(id, (feedCcount.get(id) || 0) + 1);
+    const btnC = document.querySelector(`[data-cm="${id}"]`);
+    if (btnC) { const c = feedCcount.get(id); btnC.innerHTML = `💬 <b>${c}</b> Comment${c === 1 ? "" : "s"}`; }
+  };
+}
+function bindFeedClicks(){
+  if (feedBound) return; feedBound = true;
+  $("#feed-list").addEventListener("click", async e => {
+    const t = e.target.closest("button,[data-zoom]"); if (!t) return;
+    const d = t.dataset;
+    if (d.like) return toggleLike(+d.like);
+    if (d.cm) return toggleComments(+d.cm);
+    if (d.zoom) return lightbox(d.zoom);
+    if (d.dm) return startDm(d.dm);
+    if (d.rp) { const p = feedPosts.find(x => x.id === +d.rp); return reportModal("post", +d.rp, p?.body, p?.author_id); }
+    if (d.delp) {
+      if (!(await confirmModal("Delete this post?", "This can't be undone."))) return;
+      const { error } = await sb.from("posts").delete().eq("id", +d.delp);
+      if (error) return toast(error.message);
+      feedPosts = feedPosts.filter(x => x.id !== +d.delp); renderFeedList(); toast("Post deleted");
+    }
+    if (d.rc) {
+      const postId = +t.closest(".comments").id.slice(3), c = (openComments.get(postId) || []).find(x => x.id === +d.rc);
+      return reportModal("comment", +d.rc, c?.body, c?.author_id);
+    }
+    if (d.delc) {
+      if (!(await confirmModal("Delete this comment?", "This can't be undone."))) return;
+      const { error } = await sb.from("comments").delete().eq("id", +d.delc);
+      if (error) return toast(error.message);
+      const postId = +t.closest(".comments").id.slice(3);
+      t.closest(".cm").remove();
+      feedCcount.set(postId, Math.max(0, (feedCcount.get(postId) || 1) - 1));
+      const btnC = document.querySelector(`[data-cm="${postId}"]`);
+      if (btnC) { const c = feedCcount.get(postId); btnC.innerHTML = `💬 ${c ? `<b>${c}</b> ` : ""}Comment${c === 1 ? "" : "s"}`; }
+    }
+  });
+  $("#feed-more").onclick = () => loadFeed(true);
+}
+async function renderFeed(){
+  const comp = $("#feed-composer");
+  if (!sb) { comp.innerHTML = ""; $("#feed-list").innerHTML = `<div class="kf-empty">The community feed is coming soon.</div>`; return; }
+  if (user) { await loadMembers([user.id]); comp.innerHTML = composerHTML(); bindComposer(); }
+  else {
+    comp.innerHTML = `<div class="card"><h3>Join the conversation</h3><p class="muted">Sign in with Discord to post, like, comment and message other survivors.</p><button class="btn discord-btn" id="feed-signin">${DISCORD_SVG} Sign in with Discord</button></div>`;
+    $("#feed-signin").onclick = signIn;
+  }
+  bindFeedClicks();
+  loadFeed();
+}
+
+/* ---------------- INBOX ---------------- */
+let inboxTab = "messages", dmWith = null, unreadMsgs = 0, unreadNotifs = 0, inboxSeenAt = null, dmCache = [];
+
+function setBadge(){
+  const n = unreadMsgs + unreadNotifs, b = $("#inbox-badge");
+  if (!b) return;
+  b.hidden = !n; b.textContent = n > 99 ? "99+" : n;
+  const t = $$("[data-ibtab]");
+  t.forEach(el => {
+    const c = el.dataset.ibtab === "messages" ? unreadMsgs : el.dataset.ibtab === "notifications" ? unreadNotifs : 0;
+    const s = el.querySelector(".badge"); if (s) { s.hidden = !c; s.textContent = c; }
+  });
+}
+async function refreshBadge(){
+  if (!sb || !user) { unreadMsgs = unreadNotifs = 0; setBadge(); return; }
+  const [m, prof] = await Promise.all([
+    sb.from("messages").select("id", { count: "exact", head: true }).eq("recipient_id", user.id).is("read_at", null),
+    sb.from("profiles").select("inbox_seen_at").eq("id", user.id).maybeSingle()
+  ]);
+  unreadMsgs = m.count || 0;
+  inboxSeenAt = prof.data?.inbox_seen_at || user.created_at;
+  const n = await sb.from("notifications").select("id", { count: "exact", head: true }).gt("created_at", inboxSeenAt);
+  unreadNotifs = n.count || 0;
+  setBadge();
+}
+async function onUserChanged(){
+  $("#nav-inbox").hidden = !user;
+  amAdmin = false;
+  if (inboxChannel) { sb.removeChannel(inboxChannel); inboxChannel = null; }
+  if (!sb || !user) { setBadge(); return; }
+  const { data } = await sb.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  amAdmin = !!data;
+  refreshBadge();
+  inboxChannel = sb.channel("inbox-" + user.id)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${user.id}` }, async ({ new: m }) => {
+      await loadMembers([m.sender_id]);
+      if (location.hash === "#inbox" && inboxTab === "messages" && dmWith === m.sender_id) {
+        appendBubble(m); markRead(m.sender_id);
+      } else { unreadMsgs++; setBadge(); toast(`New message from ${mem(m.sender_id).name}`); }
+      if (location.hash === "#inbox" && inboxTab === "messages") loadConvos();
+    })
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications" }, ({ new: n }) => {
+      if (n.user_id && n.user_id !== user.id) return;
+      if (n.actor_id === user.id) return;
+      unreadNotifs++; setBadge();
+      if (location.hash === "#inbox" && inboxTab === "notifications") renderNotifications();
+      else toast(n.kind === "admin" ? "New notice from AF staff" : "New notification");
+    })
+    .subscribe();
+  if (location.hash === "#feed") renderFeed();
+  if (location.hash === "#inbox") renderInbox();
+}
+function startDm(otherId){
+  if (!user) { location.hash = "#account"; return; }
+  dmWith = otherId; inboxTab = "messages";
+  if (location.hash === "#inbox") renderInbox(); else location.hash = "#inbox";
+}
+function renderInbox(){
+  const box = $("#inbox-root");
+  if (!sb) { box.innerHTML = `<div class="kf-empty">The inbox is coming soon.</div>`; return; }
+  if (!user) {
+    box.innerHTML = `<div class="card" style="max-width:560px"><h3>Sign in to see your inbox</h3><p class="muted">Messages from other players and notices from AF staff show up here.</p><button class="btn discord-btn" id="ib-signin">${DISCORD_SVG} Sign in with Discord</button></div>`;
+    $("#ib-signin").onclick = signIn; return;
+  }
+  const tabs = [["messages", "Messages"], ["notifications", "Notifications"], ...(amAdmin ? [["reports", "Reports"]] : [])];
+  box.innerHTML = `<nav class="subnav">${tabs.map(([k, l]) => `<a href="javascript:void 0" data-ibtab="${k}" class="${k === inboxTab ? "active" : ""}">${l}<span class="badge" hidden></span></a>`).join("")}</nav><div id="ib-body"></div>`;
+  $$("[data-ibtab]").forEach(a => a.onclick = e => { e.preventDefault(); inboxTab = a.dataset.ibtab; renderInbox(); });
+  setBadge();
+  if (inboxTab === "messages") renderMessages();
+  else if (inboxTab === "notifications") renderNotifications();
+  else renderReports();
+}
+
+/* member search box: calls onPick(member) */
+function memberPicker(el, onPick, placeholder = "Search players by Discord name…"){
+  el.innerHTML = `<div class="picker"><input type="search" placeholder="${esc(placeholder)}" autocomplete="off"><div class="picker-res" hidden></div></div>`;
+  const input = el.querySelector("input"), res = el.querySelector(".picker-res");
+  let t = null;
+  input.oninput = () => {
+    clearTimeout(t);
+    const q = input.value.trim().replace(/[%_,()]/g, "");
+    if (q.length < 2) { res.hidden = true; return; }
+    t = setTimeout(async () => {
+      const { data } = await sb.from("members").select("*").ilike("name", `%${q}%`).neq("id", user.id).limit(8);
+      (data || []).forEach(m => memberCache.set(m.id, m));
+      res.hidden = false;
+      res.innerHTML = (data || []).length ? data.map(m => `<button type="button" data-pick="${esc(m.id)}">${avatar(m, 28)}<span>${nameTag(m)}</span></button>`).join("")
+        : `<div class="muted" style="padding:10px">No members found. They need to sign in on the site once.</div>`;
+      res.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => { res.hidden = true; input.value = mem(b.dataset.pick).name; onPick(mem(b.dataset.pick)); });
+    }, 250);
+  };
+  input.focus();
+}
+
+async function renderMessages(){
+  $("#ib-body").innerHTML = `<div class="dm${dmWith ? " open" : ""}" id="dm">
+    <aside class="dm-list"><div class="top"><button class="btn sm" id="dm-new" style="width:100%">+ New message</button><div id="dm-pick" style="margin-top:10px" hidden></div></div><div class="dm-convos" id="dm-convos"><p class="muted" style="padding:12px">Loading…</p></div></aside>
+    <section class="dm-thread" id="dm-thread"><div class="kf-empty" style="margin:auto;border:0">Pick a conversation or start a new one.</div></section>
+  </div>`;
+  $("#dm-new").onclick = () => {
+    const p = $("#dm-pick"); p.hidden = !p.hidden;
+    if (!p.hidden) memberPicker(p, m => { p.hidden = true; openThread(m.id); });
+  };
+  await loadConvos();
+  if (dmWith) openThread(dmWith);
+}
+async function loadConvos(){
+  const { data, error } = await sb.from("messages").select("*")
+    .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+    .order("created_at", { ascending: false }).limit(500);
+  const el = $("#dm-convos"); if (!el) return;
+  if (error) { el.innerHTML = `<p class="msg err" style="padding:12px">${esc(error.message)}</p>`; return; }
+  dmCache = data;
+  const convos = new Map();
+  for (const m of data) {
+    const other = m.sender_id === user.id ? m.recipient_id : m.sender_id;
+    if (!convos.has(other)) convos.set(other, { other, last: m, unread: 0 });
+    if (m.recipient_id === user.id && !m.read_at) convos.get(other).unread++;
+  }
+  await loadMembers([...convos.keys()]);
+  el.innerHTML = convos.size ? [...convos.values()].map(c => {
+    const o = mem(c.other);
+    return `<button class="convo${c.unread ? " unread" : ""}${c.other === dmWith ? " active" : ""}" data-convo="${esc(c.other)}">${avatar(o, 40)}
+      <div class="c-main"><div class="c-name"><span>${nameTag(o)}</span><small>${ago(c.last.created_at)}</small></div>
+      <div class="c-last">${c.last.sender_id === user.id ? "You: " : ""}${esc(c.last.body)}</div></div>
+      ${c.unread ? `<span class="badge" style="background:#e5484d;color:#fff;border-radius:999px;padding:1px 7px;font-size:.75rem;font-weight:700">${c.unread}</span>` : ""}</button>`;
+  }).join("") : `<p class="muted" style="padding:12px">No messages yet. Start one, or hit ✉ on someone's post.</p>`;
+  el.querySelectorAll("[data-convo]").forEach(b => b.onclick = () => openThread(b.dataset.convo));
+}
+function bubble(m){
+  const mine = m.sender_id === user.id;
+  return `<div class="bub${mine ? " mine" : ""}" data-msg="${m.id}">${linkify(esc(m.body))}<small>${new Date(m.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</small>${mine ? "" : `<button class="rep" title="Report message" data-rm="${m.id}">⚑</button>`}</div>`;
+}
+function appendBubble(m){
+  const box = $("#dm-msgs"); if (!box) return;
+  dmCache.unshift(m);
+  box.insertAdjacentHTML("beforeend", bubble(m)); box.scrollTop = box.scrollHeight;
+}
+async function markRead(otherId){
+  await sb.from("messages").update({ read_at: new Date().toISOString() }).eq("recipient_id", user.id).eq("sender_id", otherId).is("read_at", null);
+  refreshBadge();
+}
+async function openThread(otherId){
+  dmWith = otherId;
+  $("#dm")?.classList.add("open");
+  $$(".convo").forEach(c => c.classList.toggle("active", c.dataset.convo === otherId));
+  await loadMembers([otherId]);
+  const o = mem(otherId), th = $("#dm-thread");
+  th.innerHTML = `<div class="dm-head"><button class="icon-btn back" id="dm-back" aria-label="Back">←</button>${avatar(o, 36)}<div style="font-weight:700">${nameTag(o)}</div></div>
+    <div class="dm-msgs" id="dm-msgs"><p class="muted">Loading…</p></div>
+    <form class="dm-send" id="dm-send"><textarea maxlength="2000" rows="1" placeholder="Message ${esc(o.name)}…"></textarea><button class="btn sm">Send</button></form>`;
+  $("#dm-back").onclick = () => { dmWith = null; $("#dm").classList.remove("open"); };
+  const { data, error } = await sb.from("messages").select("*")
+    .or(`and(sender_id.eq.${user.id},recipient_id.eq.${otherId}),and(sender_id.eq.${otherId},recipient_id.eq.${user.id})`)
+    .order("created_at", { ascending: true }).limit(300);
+  const box = $("#dm-msgs");
+  if (error) { box.innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+  box.innerHTML = data.length ? data.map(bubble).join("") : `<p class="muted" style="margin:auto">Say hi to ${esc(o.name)}.</p>`;
+  box.scrollTop = box.scrollHeight;
+  box.onclick = e => {
+    const b = e.target.closest("[data-rm]"); if (!b) return;
+    const m = data.find(x => x.id === +b.dataset.rm);
+    reportModal("message", +b.dataset.rm, m?.body, m?.sender_id);
+  };
+  if (data.some(m => m.recipient_id === user.id && !m.read_at)) { await markRead(otherId); loadConvos(); }
+  const f = $("#dm-send"), ta = f.querySelector("textarea");
+  ta.onkeydown = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); f.requestSubmit(); } };
+  ta.focus();
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const body = ta.value.trim(); if (!body) return;
+    const btn = f.querySelector("button"); btn.disabled = true;
+    const { data: m, error } = await sb.from("messages").insert({ recipient_id: otherId, body }).select().single();
+    btn.disabled = false;
+    if (error) { toast(/row-level/i.test(error.message) ? "You can't send messages right now" : error.message); return; }
+    ta.value = "";
+    if (box.querySelector("p.muted")) box.innerHTML = "";
+    appendBubble(m); loadConvos();
+  };
+}
+
+async function renderNotifications(){
+  const body = $("#ib-body");
+  body.innerHTML = `${amAdmin ? `<div class="card" style="margin-bottom:16px" id="admin-send">
+      <h3>Send a notice <span class="adm">Staff</span></h3>
+      <div class="field"><label>To</label><div class="kf-filters" style="margin-bottom:8px"><button class="chip active" data-to="all">Everyone</button><button class="chip" data-to="one">One player</button></div><div id="n-pick" hidden></div></div>
+      <div class="field"><label for="n-title">Title</label><input id="n-title" maxlength="120" placeholder="e.g. Nasdara wipe moved to Saturday"></div>
+      <div class="field"><label for="n-body">Message</label><textarea id="n-body" maxlength="2000" rows="3"></textarea></div>
+      <button class="btn" id="n-send">Send notice</button><div id="n-msg"></div></div>` : ""}
+    <div class="card" style="padding:0" id="n-list"><p class="muted" style="padding:16px">Loading…</p></div>`;
+  if (amAdmin) {
+    let target = null;
+    $$("[data-to]").forEach(b => b.onclick = () => {
+      $$("[data-to]").forEach(x => x.classList.toggle("active", x === b));
+      const one = b.dataset.to === "one"; $("#n-pick").hidden = !one; target = null;
+      if (one) memberPicker($("#n-pick"), m => { target = m.id; });
+    });
+    $("#n-send").onclick = async () => {
+      const title = $("#n-title").value.trim(), text = $("#n-body").value.trim(), msg = $("#n-msg");
+      if (!title && !text) { msg.innerHTML = `<p class="msg err">Add a title or message.</p>`; return; }
+      if (!$("#n-pick").hidden && !target) { msg.innerHTML = `<p class="msg err">Pick a player first.</p>`; return; }
+      const { error } = await sb.from("notifications").insert({ user_id: target, kind: "admin", actor_id: user.id, title: title || null, body: text || null });
+      if (error) { msg.innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+      $("#n-title").value = ""; $("#n-body").value = "";
+      msg.innerHTML = `<p class="msg ok">Sent to ${target ? esc(mem(target).name) : "everyone"}.</p>`;
+      loadNotifList();
+    };
+  }
+  loadNotifList();
+}
+async function loadNotifList(){
+  const { data, error } = await sb.from("notifications").select("*").order("created_at", { ascending: false }).limit(60);
+  const list = $("#n-list"); if (!list) return;
+  if (error) { list.innerHTML = `<p class="msg err" style="padding:16px">${esc(error.message)}</p>`; return; }
+  await loadMembers(data.map(n => n.actor_id));
+  const seen = inboxSeenAt ? new Date(inboxSeenAt) : new Date(0);
+  list.innerHTML = data.length ? data.map(n => {
+    const a = mem(n.actor_id), isNew = new Date(n.created_at) > seen && n.actor_id !== user.id;
+    const ico = n.kind === "like" ? "♥" : n.kind === "comment" ? "💬" : "📢";
+    const title = n.kind === "like" ? `${esc(a.name)} liked your post`
+                : n.kind === "comment" ? `${esc(a.name)} commented on your post`
+                : `${esc(n.title || "Notice from AF staff")}${n.user_id ? "" : ` <span class="muted" style="font-weight:400;font-size:.85rem">· to everyone</span>`}`;
+    const body = n.kind === "comment" ? `“${esc(n.body || "")}”` : n.kind === "admin" ? linkify(esc(n.body || "")) : "";
+    return `<div class="notif${isNew ? " new" : ""}">
+      ${n.kind === "admin" ? `<div class="n-ico">${ico}</div>` : `<div style="position:relative">${avatar(a, 40)}<span style="position:absolute;right:-4px;bottom:-4px;font-size:.9rem">${ico}</span></div>`}
+      <div class="n-main"><div class="n-title">${title}</div>${body ? `<div class="n-body">${body}</div>` : ""}
+        <div class="n-time">${n.kind === "admin" ? `From ${esc(a.name)} · ` : ""}${ago(n.created_at)}${n.post_id ? ` · <a href="#feed">View in Community</a>` : ""}</div></div>
+      ${amAdmin && n.kind === "admin" ? `<button class="icon-btn" data-deln="${n.id}" title="Delete notice">🗑</button>` : ""}
+    </div>`;
+  }).join("") : `<p class="muted" style="padding:16px;margin:0">No notifications yet.</p>`;
+  list.querySelectorAll("[data-deln]").forEach(b => b.onclick = async () => {
+    if (!(await confirmModal("Delete this notice?", "It will disappear from everyone's inbox."))) return;
+    const { error } = await sb.from("notifications").delete().eq("id", +b.dataset.deln);
+    if (error) return toast(error.message);
+    loadNotifList();
+  });
+  const now = new Date().toISOString();
+  await sb.from("profiles").update({ inbox_seen_at: now }).eq("id", user.id);
+  unreadNotifs = 0; setBadge();
+  setTimeout(() => { inboxSeenAt = now; }, 0);
+}
+
+async function renderReports(){
+  const body = $("#ib-body");
+  body.innerHTML = `<div class="card" style="padding:0" id="r-list"><p class="muted" style="padding:16px">Loading…</p></div>`;
+  const { data, error } = await sb.from("reports").select("*").order("created_at", { ascending: false }).limit(100);
+  const list = $("#r-list");
+  if (error) { list.innerHTML = `<p class="msg err" style="padding:16px">${esc(error.message)}</p>`; return; }
+  await loadMembers(data.flatMap(r => [r.reporter_id, r.target_author]));
+  list.innerHTML = data.length ? data.map(r => `<div class="notif">
+      <div class="n-ico">⚑</div>
+      <div class="n-main"><div class="n-title">${esc(r.target_type[0].toUpperCase() + r.target_type.slice(1))} by ${esc(mem(r.target_author).name)}</div>
+        <div class="n-body" style="background:var(--bg);border-radius:6px;padding:8px 10px;margin:6px 0">${esc(r.content || "(no text)")}</div>
+        ${r.reason ? `<div class="n-body"><b>Reason:</b> ${esc(r.reason)}</div>` : ""}
+        <div class="n-time">Reported by ${esc(mem(r.reporter_id).name)} · ${ago(r.created_at)}</div>
+        <div class="row" style="margin-top:8px">
+          ${r.target_type !== "message" ? `<button class="btn sm" data-rdel="${r.id}">Delete ${r.target_type}</button>` : ""}
+          ${r.target_author ? `<button class="btn sm ghost" data-rdm="${esc(r.target_author)}">Message author</button>` : ""}
+          <button class="btn sm ghost" data-rdis="${r.id}">Dismiss</button>
+        </div></div></div>`).join("")
+    : `<p class="muted" style="padding:16px;margin:0">No reports. Quiet day.</p>`;
+  list.onclick = async e => {
+    const b = e.target.closest("button"); if (!b) return;
+    const r = data.find(x => x.id === +(b.dataset.rdel || b.dataset.rdis));
+    if (b.dataset.rdm) return startDm(b.dataset.rdm);
+    if (b.dataset.rdel && r) {
+      if (!(await confirmModal(`Delete this ${r.target_type}?`, "This removes it for everyone."))) return;
+      const { error } = await sb.from(r.target_type === "post" ? "posts" : "comments").delete().eq("id", r.target_id);
+      if (error) return toast(error.message);
+    }
+    if (r) { await sb.from("reports").delete().eq("id", r.id); toast(b.dataset.rdel ? "Removed" : "Dismissed"); renderReports(); }
+  };
+}
+
+const views = ["home","servers","rules","legends","feed","inbox","support","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id)];
 function route(){
   const v = views.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
   const section = v.startsWith("live-") ? "live" : v;
@@ -1263,6 +1953,8 @@ function route(){
   $$(".subnav a").forEach(a => a.classList.toggle("active", a.dataset.sub === v));
   $(".nav").classList.remove("open");
   if (v === "account") renderAccount();
+  if (v === "feed") renderFeed();
+  if (v === "inbox") renderInbox();
   if (v === "live-killfeed") startKillfeed();
   if (v === "live-wipes") startWipes();
   if (v === "live-leaderboard") startLeaderboard();
