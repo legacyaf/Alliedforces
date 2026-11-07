@@ -112,6 +112,14 @@
   .legend .role{color:var(--muted);font-size:.92rem;margin-bottom:10px}
   .legend .quip{margin-top:auto;padding-top:12px;border-top:1px solid var(--line);font-style:italic;color:#d6cfc4}
   .legend .quip::before{content:"“";color:var(--accent);font-family:"Barlow Condensed";font-size:1.6rem;line-height:0;vertical-align:-.35em;margin-right:3px}
+  .legend .faction{font-family:"Barlow Condensed";font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--accent2);font-size:.95rem}
+  .legend.mine{border-color:var(--accent)}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:60;padding:16px}
+  .modal.open{display:flex}
+  .modal-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px;width:100%;max-width:460px;max-height:92vh;overflow:auto}
+  .edit-photo{display:flex;gap:16px;align-items:center;margin:14px 0 18px}
+  .legend-prev{width:120px;height:120px;flex:none;border-radius:8px;overflow:hidden;background:linear-gradient(160deg,#2c2621,#171513);display:flex;align-items:center;justify-content:center;font-family:"Barlow Condensed";font-weight:800;font-size:2.6rem;color:var(--accent)}
+  .legend-prev img{width:100%;height:100%;object-fit:cover}
   .legends-quip{text-align:center;margin-top:44px;font-family:"Barlow Condensed";font-weight:600;text-transform:uppercase;letter-spacing:.12em;font-size:1.3rem;color:var(--accent2)}
 
   /* account */
@@ -448,6 +456,7 @@
   </div>
 </footer>
 
+<div class="modal" id="legend-modal"></div>
 <div class="toast" id="toast">Copied!</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -497,10 +506,9 @@ const CONFIG = {
   ],
 
   /* ---- AF LEGENDS (Hall of Fame) ----
-     photo: upload the picture to your GitHub repo next to index.html,
-            then put its exact file name here, e.g. "mojo.jpg".
-            Leave it "" to show their initials instead.
-     quip:  the line at the bottom of their card. */
+     Legends now live in Supabase → Table Editor → legends.
+     The list below is only a backup shown if the database can't be reached
+     or the legends table is empty. */
   legendsIntro: "The players who made Allied Forces what it is. Earned, not bought.",
   legends: [
     { name: "Legacy",  joined: "2019", role: "Co-founder", photo: "", quip: "Built it from the ground up." },
@@ -546,19 +554,7 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;
 const initials = n => n.split(/\s+/).filter(Boolean).map(w => w[0]).join("").slice(0,2).toUpperCase();
 $("#legends-intro").textContent = CONFIG.legendsIntro;
 $("#legends-quip").textContent = CONFIG.legendsQuip;
-$("#legend-list").innerHTML = CONFIG.legends.map(l => `
-  <div class="legend">
-    <div class="photo">
-      <div class="initials">${esc(initials(l.name))}</div>
-      ${l.photo ? `<img src="${esc(l.photo)}" alt="${esc(l.name)}" onerror="this.remove()">` : ""}
-      <span class="year">Since ${esc(l.joined)}</span>
-    </div>
-    <div class="body">
-      <h3>${esc(l.name)}</h3>
-      ${l.role ? `<div class="role">${esc(l.role)}</div>` : ""}
-      ${l.quip ? `<p class="quip">${esc(l.quip)}</p>` : ""}
-    </div>
-  </div>`).join("");
+let legendsData = CONFIG.legends.map(l => ({ ...l, photo_url: l.photo }));
 
 /* ===== ACCOUNTS ===== */
 const DISCORD_SVG = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.6 0L8.6 3a19.6 19.6 0 0 0-4.9 1.4C.6 9 0 13.6.3 18.1a19.8 19.8 0 0 0 6 3l1.3-2a12.7 12.7 0 0 1-2-1l.5-.4a14 14 0 0 0 11.9 0l.5.4c-.6.4-1.3.7-2 1l1.3 2a19.7 19.7 0 0 0 6-3c.5-5.2-.8-9.8-3.5-13.7ZM8.5 15.3c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm7 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg>`;
@@ -635,7 +631,15 @@ async function renderAccount(){
         <div id="acct-msg"></div>
       </form>
     </div>
+    ${myLegend() ? `
+    <div class="card hl" style="margin-top:18px">
+      <span class="tag ok">AF Legend</span>
+      <h3>You're in the Hall of Fame</h3>
+      <p class="muted">Change your card's photo, faction and quip anytime.</p>
+      <div class="row"><button class="btn" id="edit-legend">Edit my Legend card</button><a class="btn ghost" href="#legends">View Legends</a></div>
+    </div>` : ""}
     <p class="muted" style="font-size:.9rem;margin-top:14px">Want your account deleted? Open a ticket in Discord.</p>`;
+  if ($("#edit-legend")) $("#edit-legend").onclick = openLegendEditor;
   $("#signout").onclick = async () => { await sb.auth.signOut(); };
   $("#pform").onsubmit = async e => {
     e.preventDefault();
@@ -659,6 +663,7 @@ if (sb) {
   sb.auth.onAuthStateChange((event, session) => {
     user = session?.user || null;
     setNav();
+    renderLegends();
     if (event === "SIGNED_IN" && user) {
       setTimeout(async () => {
         await syncProfile();
@@ -668,6 +673,118 @@ if (sb) {
     } else if (location.hash === "#account") setTimeout(renderAccount, 0);
   });
 }
+
+/* ===== LEGENDS (from Supabase, editable by the legend) ===== */
+function myDiscordId(){ return user ? (user.identities?.find(i => i.provider === "discord")?.id || meta(user).provider_id || null) : null; }
+function myLegend(){ const id = myDiscordId(); return id ? legendsData.find(l => l.discord_id && l.discord_id === id) : null; }
+
+function renderLegends(){
+  const mine = myDiscordId();
+  $("#legend-list").innerHTML = legendsData.map((l, i) => {
+    const isMine = mine && l.discord_id === mine;
+    return `
+    <div class="legend${isMine ? " mine" : ""}">
+      <div class="photo">
+        <div class="initials">${esc(initials(l.name || "?"))}</div>
+        ${l.photo_url ? `<img src="${esc(l.photo_url)}" alt="${esc(l.name)}" onerror="this.remove()">` : ""}
+        ${l.joined ? `<span class="year">Since ${esc(l.joined)}</span>` : ""}
+      </div>
+      <div class="body">
+        <h3>${esc(l.name)}</h3>
+        ${l.faction ? `<div class="faction">${esc(l.faction)}</div>` : ""}
+        ${l.role ? `<div class="role">${esc(l.role)}</div>` : ""}
+        ${l.quip ? `<p class="quip">${esc(l.quip)}</p>` : ""}
+        ${isMine ? `<button class="btn sm" style="margin-top:14px" data-edit-legend="${i}">Edit my card</button>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+  $$("[data-edit-legend]").forEach(b => b.onclick = () => openLegendEditor());
+}
+
+async function loadLegends(){
+  if (!sb) { renderLegends(); return; }
+  const { data, error } = await sb.from("legends").select("*").order("sort_order").order("id");
+  if (!error && data && data.length) legendsData = data;
+  renderLegends();
+}
+
+/* resize + square-crop an image file to a 512px JPEG */
+function squareJpeg(file, size = 512){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const s = Math.min(img.width, img.height), c = document.createElement("canvas");
+      c.width = c.height = size;
+      c.getContext("2d").drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => b ? res(b) : rej(new Error("Couldn't read that image")), "image/jpeg", 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("That file isn't an image we can use")); };
+    img.src = url;
+  });
+}
+
+function openLegendEditor(){
+  const l = myLegend(); if (!l || !sb) return;
+  let newPhoto = null, photoUrl = l.photo_url || "";
+  const m = $("#legend-modal");
+  m.innerHTML = `
+    <div class="modal-card" role="dialog" aria-modal="true" aria-label="Edit your Legend card">
+      <h3>Edit your Legend card</h3>
+      <p class="muted" style="font-size:.92rem">Your name, year and role are set by the AF admins.</p>
+      <div class="edit-photo">
+        <div class="legend-prev" id="lp">${photoUrl ? `<img src="${esc(photoUrl)}" alt="">` : `<span>${esc(initials(l.name))}</span>`}</div>
+        <div class="row" style="flex-direction:column;align-items:stretch">
+          <label class="btn ghost sm" style="text-align:center">Upload photo<input type="file" id="lfile" accept="image/jpeg,image/png,image/webp" hidden></label>
+          ${meta(user).avatar_url ? `<button class="btn ghost sm" type="button" id="lavatar">Use my Discord avatar</button>` : ""}
+          <button class="btn ghost sm" type="button" id="lclear">Remove photo</button>
+        </div>
+      </div>
+      <div class="field"><label for="lfac">Faction</label><input id="lfac" maxlength="40" value="${esc(l.faction)}" placeholder="Your faction's name"></div>
+      <div class="field"><label for="lquip">Quip</label><input id="lquip" maxlength="140" value="${esc(l.quip)}" placeholder="Your line at the bottom of the card"><small><span id="lcount">0</span>/140</small></div>
+      <div class="row"><button class="btn" id="lsave">Save card</button><button class="btn ghost" id="lcancel">Cancel</button></div>
+      <div id="lmsg"></div>
+    </div>`;
+  m.classList.add("open");
+  const prev = src => $("#lp").innerHTML = src ? `<img src="${esc(src)}" alt="">` : `<span>${esc(initials(l.name))}</span>`;
+  const count = () => $("#lcount").textContent = $("#lquip").value.length;
+  count(); $("#lquip").oninput = count;
+  $("#lcancel").onclick = () => m.classList.remove("open");
+  m.onclick = e => { if (e.target === m) m.classList.remove("open"); };
+  $("#lclear").onclick = () => { newPhoto = null; photoUrl = ""; prev(""); };
+  if ($("#lavatar")) $("#lavatar").onclick = () => { newPhoto = null; photoUrl = meta(user).avatar_url; prev(photoUrl); };
+  $("#lfile").onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { newPhoto = await squareJpeg(f); prev(URL.createObjectURL(newPhoto)); }
+    catch (err) { $("#lmsg").innerHTML = `<p class="msg err">${esc(err.message)}</p>`; }
+  };
+  $("#lsave").onclick = async () => {
+    const btn = $("#lsave"), msg = $("#lmsg");
+    btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      if (newPhoto) {
+        const path = `${user.id}/${Date.now()}.jpg`;
+        const up = await sb.storage.from("legend-photos").upload(path, newPhoto, { contentType: "image/jpeg" });
+        if (up.error) throw up.error;
+        photoUrl = sb.storage.from("legend-photos").getPublicUrl(path).data.publicUrl;
+      }
+      const changes = { faction: $("#lfac").value.trim() || null, quip: $("#lquip").value.trim() || null, photo_url: photoUrl || null };
+      const { error } = await sb.from("legends").update(changes).eq("id", l.id);
+      if (error) throw error;
+      Object.assign(l, changes);
+      renderLegends();
+      m.classList.remove("open");
+      toast("Legend card saved!");
+      if (location.hash === "#account") renderAccount();
+    } catch (err) {
+      msg.innerHTML = `<p class="msg err">${esc(err.message || "Couldn't save")}</p>`;
+      btn.disabled = false; btn.textContent = "Save card";
+    }
+  };
+}
+
+renderLegends();
+loadLegends();
 
 const views = ["home","servers","rules","legends","support","team","account","terms","privacy","refunds"];
 function route(){
