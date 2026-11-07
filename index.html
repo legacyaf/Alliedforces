@@ -191,6 +191,27 @@
   .next-step{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:.95rem}
   .next-step b{color:var(--text)}
 
+  /* leaderboard */
+  .lb-hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px}
+  .lb-hero .card{padding:16px 18px}
+  .lb-hero b{display:block;font-family:"Barlow Condensed";font-weight:800;font-size:2.1rem;line-height:1.05;color:var(--text);overflow-wrap:anywhere}
+  .lb-hero span{color:var(--muted);font-size:.85rem;text-transform:uppercase;letter-spacing:.08em}
+  .lb-hero small{display:block;color:var(--muted);margin-top:2px}
+  .lb-grid{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+  @media(max-width:860px){.lb-grid{grid-template-columns:1fr}}
+  table.lb{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  table.lb th{font-family:"Barlow Condensed";text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);font-size:.92rem}
+  table.lb td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:right}
+  table.lb th:nth-child(2),table.lb td:nth-child(2){text-align:left}
+  table.lb th:first-child,table.lb td:first-child{text-align:center;width:38px;color:var(--muted)}
+  table.lb tr.top1 td:first-child{color:#f0c14a;font-weight:800}
+  table.lb tr.top2 td:first-child{color:#c9c9c9;font-weight:800}
+  table.lb tr.top3 td:first-child{color:#c98a4a;font-weight:800}
+  table.lb tr.me td{background:rgba(224,102,43,.12)}
+  table.lb td.name{font-weight:600;overflow-wrap:anywhere}
+  .lb-you{font-size:.7rem;background:var(--accent);color:#1a0d05;border-radius:4px;padding:1px 6px;margin-left:6px;font-weight:700;vertical-align:2px}
+  .lb-note{color:var(--muted);font-size:.88rem;margin-top:14px}
+
   footer{border-top:1px solid var(--line);background:var(--bg2);padding:36px 0 28px;font-size:.95rem}
   .foot{display:grid;grid-template-columns:2fr 1fr 1fr;gap:28px}
   .foot a{color:var(--muted);text-decoration:none;display:block;padding:3px 0}
@@ -335,6 +356,15 @@
           </ul>
           <p class="muted" style="margin:6px 0 0;font-size:.92rem">Times are shown in your local time zone. Date changes are announced in Discord.</p>
         </div>
+      </div>
+
+      <!-- sub page: Leaderboard -->
+      <div class="subview" id="sv-live-leaderboard">
+        <div class="kf-bar">
+          <div class="kf-filters" id="lb-servers"></div>
+          <div class="kf-filters" id="lb-periods"></div>
+        </div>
+        <div id="lb-body"></div>
       </div>
 
       <!-- sub page: Killfeed -->
@@ -893,8 +923,146 @@ loadLegends();
    To add a sub page: add it here, and add <div class="subview" id="sv-live-NAME"> in the Live view. */
 const LIVE_TABS = [
   { id: "live-wipes", label: "Wipe Countdown" },
+  { id: "live-leaderboard", label: "Leaderboard" },
   { id: "live-killfeed", label: "Killfeed" }
 ];
+
+/* ===== LEADERBOARD (built from the killfeed) ===== */
+const NOT_PLAYERS = /^(?:zombie|infected|zmb|animal|wolf|bear|environment|unknown|ai|bot|the server|server)$/i;
+const plain = t => String(t || "")
+  .replace(/<a?:(\w+):\d+>/g, "").replace(/<t:\d+(?::\w)?>/g, "")
+  .replace(/[*_`~|>]/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+  .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, "").replace(/[ \t]+/g, " ").trim();
+const num = t => { const m = /([\d]+(?:[.,]\d+)?)\s*(?:m\b|meters?|metres?)/i.exec(t || ""); return m ? parseFloat(m[1].replace(",", ".")) : null; };
+const cleanName = n => (n || "").replace(/^(?:player|survivor)\s+/i, "").replace(/^["'\s]+|["'\s.:,!]+$/g, "").replace(/\s*\((?:id|DEAD)[^)]*\)/gi, "").trim().slice(0, 40) || null;
+
+// Reads one killfeed message → { killer, victim, weapon, distance } or null
+function parseKill(r){
+  const e = Array.isArray(r.embeds) ? r.embeds[0] : null;
+  // 1) embed fields like "Killer" / "Victim" / "Weapon" / "Distance"
+  if (e?.fields?.length) {
+    const f = re => plain(e.fields.find(x => re.test(plain(x.name)))?.value);
+    const killer = f(/killer|attacker|murderer|shooter/i), victim = f(/victim|killed|dead|target/i);
+    if (killer && victim) return { killer: cleanName(killer), victim: cleanName(victim), weapon: f(/weapon|gun|item/i) || null, distance: num(f(/distance|range/i) + " m") };
+  }
+  const text = [r.content, e?.title, e?.description].map(plain).filter(Boolean).join("\n");
+  for (const line of text.split("\n")) {
+    let m;
+    // ADM log style: Player "Victim" (DEAD) ... killed by Player "Killer" ... with M4A1 from 120.3 meters
+    if ((m = /Player\s+"(.+?)".*?killed by\s+Player\s+"(.+?)"/i.exec(line))) {
+      const w = /\bwith\s+(.+?)(?:\s+from\s+[\d.]+\s*met\w*)?\s*$/i.exec(line.slice(m.index + m[0].length));
+      return { victim: cleanName(m[1]), killer: cleanName(m[2]), weapon: w ? w[1].trim() : null, distance: num(line) };
+    }
+    // "Victim was killed by Killer with Weapon from 120m"
+    if ((m = /^(.+?)\s+(?:was|got)\s+(?:killed|shot|murdered|eliminated)\s+by\s+(.+?)(?:\s+(?:with|using)\s+(?:an?\s+|the\s+|their\s+)?(.+?))?(?:\s+(?:from|at)\s+[\d.,]+\s*m.*|\s*\(.*\))?$/i.exec(line)))
+      return { victim: cleanName(m[1]), killer: cleanName(m[2]), weapon: m[3] ? m[3].trim() : null, distance: num(line) };
+    // "Killer killed Victim with Weapon from 120m"
+    if ((m = /^(.+?)\s+(?:killed|shot|murdered|eliminated|executed|took out)\s+(.+?)(?:\s+(?:with|using)\s+(?:an?\s+|the\s+|their\s+)?(.+?))?(?:\s+(?:from|at)\s+[\d.,]+\s*m.*|\s*\(.*\))?$/i.exec(line)))
+      return { killer: cleanName(m[1]), victim: cleanName(m[2]), weapon: m[3] ? m[3].trim() : null, distance: num(line) };
+  }
+  return null;
+}
+
+let lbServer = Object.keys(CONFIG.killfeedServers)[0], lbPeriod = "wipe", lbStarted = false, myIgn = null;
+const LB_PERIODS = { wipe: "This wipe", d7: "Last 7 days", d30: "Last 30 days" };
+
+function lbStart(){
+  if (lbServer === "all" || lbPeriod === "d30") return Date.now() - 30 * 864e5;
+  if (lbPeriod === "d7") return Date.now() - 7 * 864e5;
+  const w = CONFIG.wipes.find(x => x.key === lbServer);
+  return w ? wipeState(w).last : Date.now() - 30 * 864e5;
+}
+function renderLbFilters(){
+  const servers = [...Object.keys(CONFIG.killfeedServers), "all"];
+  $("#lb-servers").innerHTML = servers.map(k => `<button class="chip${k === lbServer ? " active" : ""}" data-lbs="${esc(k)}">${k === "all" ? "All servers" : esc(kfServerName(k))}</button>`).join("");
+  $("#lb-periods").innerHTML = Object.entries(LB_PERIODS).filter(([k]) => !(lbServer === "all" && k === "wipe"))
+    .map(([k, v]) => `<button class="chip${k === lbPeriod ? " active" : ""}" data-lbp="${k}">${v}</button>`).join("");
+  $$("[data-lbs]").forEach(b => b.onclick = () => { lbServer = b.dataset.lbs; if (lbServer === "all" && lbPeriod === "wipe") lbPeriod = "d30"; renderLbFilters(); loadLeaderboard(); });
+  $$("[data-lbp]").forEach(b => b.onclick = () => { lbPeriod = b.dataset.lbp; renderLbFilters(); loadLeaderboard(); });
+}
+async function fetchKills(since){
+  const out = [];
+  for (let from = 0; from < 10000; from += 1000) {
+    let q = sb.from("killfeed").select("server,content,embeds,created_at").gte("created_at", new Date(since).toISOString()).order("created_at", { ascending: false }).range(from, from + 999);
+    if (lbServer !== "all") q = q.eq("server", lbServer);
+    const { data, error } = await q;
+    if (error) throw error;
+    out.push(...data);
+    if (data.length < 1000) break;
+  }
+  return out;
+}
+async function loadLeaderboard(){
+  const body = $("#lb-body");
+  if (!sb) { body.innerHTML = `<div class="kf-empty">Leaderboards are coming soon.</div>`; return; }
+  body.innerHTML = `<div class="kf-empty">Counting bodies…</div>`;
+  let rows;
+  try { rows = await fetchKills(lbStart()); }
+  catch (err) { body.innerHTML = `<div class="kf-empty">Couldn't load the leaderboard: ${esc(err.message)}</div>`; return; }
+
+  const players = new Map(), weapons = new Map(), shots = [];
+  const P = n => { const k = n.toLowerCase(); if (!players.has(k)) players.set(k, { name: n, kills: 0, deaths: 0, longest: 0 }); return players.get(k); };
+  let unread = 0, kills = 0;
+  for (const r of rows) {
+    const k = parseKill(r);
+    if (!k || !k.victim) { unread++; continue; }
+    const pvp = k.killer && !NOT_PLAYERS.test(k.killer) && k.killer.toLowerCase() !== k.victim.toLowerCase();
+    if (!NOT_PLAYERS.test(k.victim)) P(k.victim).deaths++;
+    if (!pvp) continue;
+    kills++;
+    const p = P(k.killer); p.kills++;
+    if (k.distance) { p.longest = Math.max(p.longest, k.distance); shots.push({ ...k, at: r.created_at }); }
+    if (k.weapon) weapons.set(k.weapon, (weapons.get(k.weapon) || 0) + 1);
+  }
+  const list = [...players.values()].filter(p => p.kills > 0)
+    .sort((a, b) => b.kills - a.kills || (b.kills / Math.max(1, b.deaths)) - (a.kills / Math.max(1, a.deaths)) || b.longest - a.longest);
+  shots.sort((a, b) => b.distance - a.distance);
+  const wl = [...weapons.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const me = n => myIgn && n.toLowerCase() === myIgn.toLowerCase();
+  const kd = p => (p.kills / Math.max(1, p.deaths)).toFixed(2);
+  const rowCls = (i, n) => [i < 3 ? "top" + (i + 1) : "", me(n) ? "me" : ""].join(" ").trim();
+
+  if (!kills) {
+    body.innerHTML = `<div class="kf-empty">No player kills ${lbPeriod === "wipe" ? "this wipe" : "in this period"} yet. Someone has to start it.</div>
+      ${unread ? `<p class="lb-note">${unread} killfeed message${unread > 1 ? "s" : ""} couldn't be read as a kill.</p>` : ""}`;
+    return;
+  }
+  const top = list[0], far = shots[0];
+  body.innerHTML = `
+    <div class="lb-hero">
+      <div class="card"><span>Player kills</span><b>${kills}</b><small>${esc(LB_PERIODS[lbPeriod])}</small></div>
+      <div class="card"><span>Top killer</span><b>${esc(top.name)}</b><small>${top.kills} kills · ${kd(top)} K/D</small></div>
+      ${far ? `<div class="card"><span>Longest shot</span><b>${Math.round(far.distance)}m</b><small>${esc(far.killer)}${far.weapon ? " · " + esc(far.weapon) : ""}</small></div>` : ""}
+      ${wl.length ? `<div class="card"><span>Deadliest weapon</span><b>${esc(wl[0][0])}</b><small>${wl[0][1]} kills</small></div>` : ""}
+    </div>
+    <div class="lb-grid">
+      <div class="card">
+        <h3>Top killers</h3>
+        <table class="lb"><thead><tr><th>#</th><th>Player</th><th>Kills</th><th>Deaths</th><th>K/D</th><th>Longest</th></tr></thead><tbody>
+        ${list.slice(0, 25).map((p, i) => `<tr class="${rowCls(i, p.name)}"><td>${i + 1}</td><td class="name">${esc(p.name)}${me(p.name) ? `<span class="lb-you">YOU</span>` : ""}</td><td><b>${p.kills}</b></td><td>${p.deaths}</td><td>${kd(p)}</td><td>${p.longest ? Math.round(p.longest) + "m" : "—"}</td></tr>`).join("")}
+        </tbody></table>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:18px">
+        ${shots.length ? `<div class="card"><h3>Longest shots</h3>
+          <table class="lb"><thead><tr><th>#</th><th>Shooter</th><th>Dist.</th></tr></thead><tbody>
+          ${shots.slice(0, 5).map((s, i) => `<tr class="${rowCls(i, s.killer)}"><td>${i + 1}</td><td class="name">${esc(s.killer)}<div class="muted" style="font-size:.82rem;font-weight:400">${s.weapon ? esc(s.weapon) + " · " : ""}on ${esc(s.victim)}</div></td><td><b>${Math.round(s.distance)}m</b></td></tr>`).join("")}
+          </tbody></table></div>` : ""}
+        ${wl.length ? `<div class="card"><h3>Top weapons</h3>
+          <table class="lb"><thead><tr><th>#</th><th>Weapon</th><th>Kills</th></tr></thead><tbody>
+          ${wl.map(([w, n], i) => `<tr><td>${i + 1}</td><td class="name">${esc(w)}</td><td>${n}</td></tr>`).join("")}
+          </tbody></table></div>` : ""}
+      </div>
+    </div>
+    <p class="lb-note">Built from the live killfeed. Only player-vs-player kills count; deaths to zombies and the environment count as deaths only.${unread ? ` ${unread} message${unread > 1 ? "s" : ""} couldn't be read as a kill.` : ""}${user && !myIgn ? ` <a href="#account">Add your in-game name</a> to get highlighted.` : ""}</p>`;
+}
+async function startLeaderboard(){
+  if (!lbStarted) { lbStarted = true; renderLbFilters(); }
+  if (sb && user) {
+    const { data } = await sb.from("profiles").select("ingame_name").eq("id", user.id).maybeSingle();
+    myIgn = data?.ingame_name || null;
+  }
+  loadLeaderboard();
+}
 
 /* ===== WIPE COUNTDOWN ===== */
 // UTC timestamp for a wall-clock time in a time zone (handles daylight saving)
@@ -1097,6 +1265,7 @@ function route(){
   if (v === "account") renderAccount();
   if (v === "live-killfeed") startKillfeed();
   if (v === "live-wipes") startWipes();
+  if (v === "live-leaderboard") startLeaderboard();
   window.scrollTo(0,0);
 }
 window.addEventListener("hashchange", route); route();
