@@ -298,6 +298,46 @@
   .lightbox.open{display:flex}
   .lightbox img{max-width:100%;max-height:100%;border-radius:6px}
 
+  /* server tabs + events */
+  .srv-layout{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:22px;align-items:start}
+  @media(max-width:900px){.srv-layout{grid-template-columns:1fr}}
+  .ev-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .ev-head h2{margin:0}
+  .ev{padding:0;overflow:hidden;margin-bottom:16px}
+  .ev.cancelled{opacity:.6}
+  .ev-img{width:100%;max-height:260px;object-fit:cover;display:block;background:var(--bg)}
+  .ev-body{padding:18px 20px}
+  .ev-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+  .ev-kind{font-family:"Barlow Condensed";font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--accent2);font-size:.9rem}
+  .ev-flag{font:700 .72rem Barlow,sans-serif;letter-spacing:.06em;padding:2px 8px;border-radius:4px;text-transform:uppercase}
+  .ev-flag.live{background:#e5484d;color:#fff;animation:pulse 1.6s infinite}
+  .ev-flag.cancel{background:#555;color:#fff}
+  .ev-flag.both{border:1px solid var(--line);color:var(--muted)}
+  .ev h3{font-size:1.6rem;margin-bottom:6px}
+  .ev-facts{display:flex;flex-direction:column;gap:3px;color:#d6cfc4;margin-bottom:10px}
+  .ev-desc{white-space:pre-wrap;overflow-wrap:anywhere;color:#d6cfc4;margin:6px 0 12px}
+  .ev-results{background:var(--bg);border-left:4px solid var(--ok);border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+  .ev-results b{display:block;font-family:"Barlow Condensed";text-transform:uppercase;letter-spacing:.08em;color:var(--ok)}
+  .ev-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line);padding-top:12px;margin-top:6px}
+  .rsvp{background:var(--bg2);border:1px solid var(--line);color:var(--text);font:600 .92rem Barlow,sans-serif;padding:7px 14px;border-radius:999px;cursor:pointer}
+  .rsvp:hover{border-color:var(--accent)}
+  .rsvp.on{background:var(--accent);border-color:var(--accent);color:#1a0d05}
+  .ev-who{display:flex;align-items:center;margin-left:4px}
+  .ev-who .av{margin-left:-8px;border:2px solid var(--panel)}
+  .ev-who .av:first-child{margin-left:0}
+  .ev-who small{color:var(--muted);margin-left:8px}
+  .ev-staff{margin-left:auto;display:flex;gap:4px}
+  .ev-next .cd{max-width:460px}
+  .ev-next-label{font-family:"Barlow Condensed";text-transform:uppercase;letter-spacing:.2em;color:var(--accent2);font-weight:600;font-size:.85rem}
+  .ev-past-title{margin:28px 0 12px;font-size:1.3rem}
+  .ev-mini{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:.95rem}
+  .home-ev{margin-top:28px;max-width:640px;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:rgba(33,30,27,.85);border:1px solid var(--accent)}
+  .home-ev .ev-next-label{display:block}
+  .home-ev b{font-family:"Barlow Condensed";font-size:1.5rem;text-transform:uppercase;letter-spacing:.03em}
+  .modal-card .field select,.modal-card .field input[type=datetime-local]{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font:inherit;padding:10px 12px;color-scheme:dark}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:520px){.two{grid-template-columns:1fr}}
+
   footer{border-top:1px solid var(--line);background:var(--bg2);padding:36px 0 28px;font-size:.95rem}
   .foot{display:grid;grid-template-columns:2fr 1fr 1fr;gap:28px}
   .foot a{color:var(--muted);text-decoration:none;display:block;padding:3px 0}
@@ -353,6 +393,7 @@
         <div><b>Monthly</b><span>Staggered wipes</span></div>
         <div><b>Ryzen 9</b><span>Dedicated hardware</span></div>
       </div>
+      <div id="home-event"></div>
     </div>
   </div>
 
@@ -387,7 +428,9 @@
     <div class="wrap">
       <h2>Our servers</h2>
       <p class="muted">Both servers are PC only and run on a dedicated GTX Gaming Ryzen 9 9950X machine. Server IPs can change after hardware moves — Discord always has the current one.</p>
-      <div class="grid g2" style="margin-top:24px" id="server-list"></div>
+      <nav class="subnav" id="srv-tabs"></nav>
+      <div class="subview" id="sv-servers"><div class="grid g2" id="server-list"></div></div>
+      <div class="subview" id="sv-server-detail"></div>
     </div>
   </section>
 </div>
@@ -723,6 +766,7 @@ const CONFIG = {
   updated: "November 6, 2026",
   servers: [
     {
+      key: "nasdara",
       name: "Nasdara | Scorched Earth",
       tags: ["PvE + PvP zones", "DayZ Expansion", "PC"],
       ip: "",                  // paste current IP:port
@@ -736,6 +780,7 @@ const CONFIG = {
       ]
     },
     {
+      key: "chernarus",
       name: "Chernarus Badlands",
       tags: ["PvE + PvP zones", "DayZ Expansion", "PC"],
       ip: "154.16.200.253:2869",
@@ -797,19 +842,7 @@ $("#store-status").innerHTML = CONFIG.bohemiaApproved
   : `<b>Supporter packages are coming soon.</b> We've applied for Bohemia Interactive's monetization approval. Until we're approved and listed, only no-strings donations are accepted.`;
 
 function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1600); }
-$("#server-list").innerHTML = CONFIG.servers.map((s,i)=>`
-  <div class="card">
-    <div class="server-head"><h3>${s.name}</h3></div>
-    <div>${s.tags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>
-    <div class="ip"><span>${s.ip || "IP posted in Discord #server-info"}</span>
-      ${s.ip ? `<button class="btn sm ghost" data-ip="${i}">Copy IP</button>` : `<a class="btn sm ghost" href="${CONFIG.discord}" target="_blank" rel="noopener">Get IP</a>`}</div>
-    <p class="muted" style="margin-bottom:6px"><b style="color:var(--text)">Wipes:</b> ${s.wipe}</p>
-    <ul class="clean">${s.features.map(f=>`<li>${f}</li>`).join("")}</ul>
-  </div>`).join("");
-$$("[data-ip]").forEach(b => b.addEventListener("click", async () => {
-  const ip = CONFIG.servers[b.dataset.ip].ip;
-  try { await navigator.clipboard.writeText(ip); toast("IP copied!"); } catch(e){ toast(ip); }
-}));
+
 
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const initials = n => n.split(/\s+/).filter(Boolean).map(w => w[0]).join("").slice(0,2).toUpperCase();
@@ -1700,7 +1733,7 @@ async function onUserChanged(){
   $("#nav-inbox").hidden = !user;
   amAdmin = false;
   if (inboxChannel) { sb.removeChannel(inboxChannel); inboxChannel = null; }
-  if (!sb || !user) { setBadge(); return; }
+  if (!sb || !user) { setBadge(); refreshEventViews(); return; }
   const { data } = await sb.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
   amAdmin = !!data;
   refreshBadge();
@@ -1722,6 +1755,7 @@ async function onUserChanged(){
     .subscribe();
   if (location.hash === "#feed") renderFeed();
   if (location.hash === "#inbox") renderInbox();
+  refreshEventViews();
 }
 function startDm(otherId){
   if (!user) { location.hash = "#account"; return; }
@@ -1945,15 +1979,310 @@ async function renderReports(){
   };
 }
 
-const views = ["home","servers","rules","legends","feed","inbox","support","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id)];
+/* ===================== SERVER TABS + EVENTS ===================== */
+const EV_KINDS = { territory_war: "Territory War", pvp: "PvP Event", pve: "PvE Event", raid: "Raid", convoy: "Convoy", community: "Community", giveaway: "Giveaway", other: "Event" };
+const srvName = k => k === "both" ? "Both servers" : (CONFIG.servers.find(s => s.key === k)?.name || k);
+const srvShort = k => k === "both" ? "Both servers" : (CONFIG.killfeedServers[k] || srvName(k));
+let evAll = [], evRsvps = new Map(), evLoaded = false, evTimer = null;
+
+$("#srv-tabs").innerHTML = [`<a href="#servers" data-sub="servers">All servers</a>`,
+  ...CONFIG.servers.map(s => `<a href="#server-${s.key}" data-sub="server-${s.key}">${esc(srvShort(s.key))}</a>`)].join("");
+
+function serverCard(s, i, compact = false){
+  return `<div class="card">
+    <div class="server-head"><h3>${s.name}</h3></div>
+    <div>${s.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
+    <div class="ip"><span>${s.ip || "IP posted in Discord #server-info"}</span>
+      ${s.ip ? `<button class="btn sm ghost" data-ip="${i}">Copy IP</button>` : `<a class="btn sm ghost" href="${CONFIG.discord}" target="_blank" rel="noopener">Get IP</a>`}</div>
+    <p class="muted" style="margin-bottom:6px"><b style="color:var(--text)">Wipes:</b> ${s.wipe}</p>
+    <ul class="clean">${s.features.map(f => `<li>${f}</li>`).join("")}</ul>
+    ${compact ? "" : `<div class="ev-mini" data-next-for="${esc(s.key)}"><span class="muted">Loading events…</span></div>`}
+  </div>`;
+}
+function bindIpButtons(root){
+  root.querySelectorAll("[data-ip]").forEach(b => b.onclick = async () => {
+    const ip = CONFIG.servers[b.dataset.ip].ip;
+    try { await navigator.clipboard.writeText(ip); toast("IP copied!"); } catch (e) { toast(ip); }
+  });
+}
+function renderServerOverview(){
+  $("#server-list").innerHTML = CONFIG.servers.map((s, i) => serverCard(s, i)).join("");
+  bindIpButtons($("#server-list"));
+  fillNextEventLines();
+}
+
+/* ---------- data ---------- */
+const evEnd = e => new Date(e.ends_at || new Date(e.starts_at).getTime() + 3 * 36e5);
+const evIsLive = e => !e.cancelled && new Date(e.starts_at) <= new Date() && evEnd(e) > new Date();
+const evIsUpcoming = e => evEnd(e) > new Date();
+const evFor = key => evAll.filter(e => e.server === key || e.server === "both");
+const nextEvent = key => (key ? evFor(key) : evAll).filter(e => !e.cancelled && evIsUpcoming(e)).sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at))[0];
+
+async function loadEvents(){
+  if (!sb) { evLoaded = true; return; }
+  const since = new Date(Date.now() - 120 * 864e5).toISOString();
+  const { data, error } = await sb.from("events").select("*").gte("starts_at", since).order("starts_at").limit(300);
+  if (error) { evAll = []; evLoaded = true; return; }
+  evAll = data;
+  evRsvps = new Map();
+  const ids = data.map(e => e.id);
+  if (ids.length) {
+    const r = await sb.from("event_rsvps").select("event_id,user_id,status").in("event_id", ids);
+    (r.data || []).forEach(x => { if (!evRsvps.has(x.event_id)) evRsvps.set(x.event_id, []); evRsvps.get(x.event_id).push(x); });
+    await loadMembers((r.data || []).map(x => x.user_id));
+  }
+  evLoaded = true;
+}
+
+/* ---------- formatting ---------- */
+const fmtEvDate = d => new Date(d).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const fmtEvTime = d => new Date(d).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+function evWhen(e){
+  const s = new Date(e.starts_at), en = e.ends_at ? new Date(e.ends_at) : null;
+  const sameDay = en && s.toDateString() === en.toDateString();
+  return `${fmtEvDate(s)}${en ? ` – ${sameDay ? fmtEvTime(en) : fmtEvDate(en)}` : ""}`;
+}
+function rsvpBlock(e){
+  const list = evRsvps.get(e.id) || [], mine = user ? list.find(r => r.user_id === user.id)?.status : null;
+  const going = list.filter(r => r.status === "going"), maybe = list.filter(r => r.status === "interested");
+  const past = !evIsUpcoming(e) || e.cancelled;
+  const faces = going.slice(0, 6).map(r => avatar(mem(r.user_id), 28)).join("");
+  return `${past ? "" : `<button class="rsvp${mine === "going" ? " on" : ""}" data-rsvp="${e.id}" data-st="going">${mine === "going" ? "✓ Going" : "Going"}</button>
+      <button class="rsvp${mine === "interested" ? " on" : ""}" data-rsvp="${e.id}" data-st="interested">${mine === "interested" ? "★ Interested" : "Interested"}</button>`}
+    ${going.length || maybe.length ? `<span class="ev-who">${faces}<small>${going.length} going${maybe.length ? ` · ${maybe.length} interested` : ""}</small></span>` : ""}
+    ${past ? "" : `<button class="icon-btn" data-cal="${e.id}" title="Add to calendar">📅 Add to calendar</button>`}`;
+}
+function eventCard(e, opts = {}){
+  const live = evIsLive(e);
+  return `<article class="card ev${e.cancelled ? " cancelled" : ""}${opts.next ? " ev-next" : ""}" data-ev="${e.id}">
+    ${e.image_url ? `<img class="ev-img" src="${esc(e.image_url)}" alt="" loading="lazy">` : ""}
+    <div class="ev-body">
+      ${opts.next ? `<div class="ev-next-label">${live ? "Happening now" : "Next event"}</div>` : ""}
+      <div class="ev-meta"><span class="ev-kind">${esc(EV_KINDS[e.kind] || "Event")}</span>
+        ${e.server === "both" ? `<span class="ev-flag both">Both servers</span>` : ""}
+        ${live ? `<span class="ev-flag live">Live now</span>` : ""}${e.cancelled ? `<span class="ev-flag cancel">Cancelled</span>` : ""}</div>
+      <h3>${esc(e.title)}</h3>
+      <div class="ev-facts"><span>📅 ${evWhen(e)} <span class="muted" style="font-size:.85rem">(your time)</span></span>
+        ${e.location ? `<span>📍 ${esc(e.location)}</span>` : ""}${e.prize ? `<span>🏆 ${esc(e.prize)}</span>` : ""}</div>
+      ${opts.next && !e.cancelled && !live ? `<div class="cd" data-evcd="${esc(e.starts_at)}"><div><b data-u="d">0</b><span>Days</span></div><div><b data-u="h">00</b><span>Hours</span></div><div><b data-u="m">00</b><span>Min</span></div><div><b data-u="s">00</b><span>Sec</span></div></div>` : ""}
+      ${e.description ? `<div class="ev-desc">${linkify(esc(e.description))}</div>` : ""}
+      ${e.results ? `<div class="ev-results"><b>Results</b>${linkify(esc(e.results))}</div>` : ""}
+      <div class="ev-actions">${rsvpBlock(e)}
+        ${amAdmin ? `<span class="ev-staff">
+          <button class="icon-btn" data-ev-edit="${e.id}" title="Edit">✏️</button>
+          <button class="icon-btn" data-ev-res="${e.id}" title="Post results">🏁</button>
+          <button class="icon-btn" data-ev-cancel="${e.id}" title="${e.cancelled ? "Restore" : "Cancel"}">${e.cancelled ? "↩️" : "🚫"}</button>
+          <button class="icon-btn" data-ev-del="${e.id}" title="Delete">🗑</button></span>` : ""}
+      </div>
+    </div>
+  </article>`;
+}
+
+/* ---------- per-server page ---------- */
+let currentServer = null;
+async function renderServerDetail(key){
+  currentServer = key;
+  const i = CONFIG.servers.findIndex(s => s.key === key), s = CONFIG.servers[i];
+  const box = $("#sv-server-detail");
+  if (!s) { box.innerHTML = `<div class="kf-empty">Server not found.</div>`; return; }
+  box.innerHTML = `<div class="srv-layout"><div>${serverCard(s, i, true)}</div><div id="ev-col"><div class="kf-empty">Loading events…</div></div></div>`;
+  bindIpButtons(box);
+  if (!evLoaded) await loadEvents();
+  drawServerEvents();
+}
+function drawServerEvents(){
+  const col = $("#ev-col"); if (!col || !currentServer) return;
+  const key = currentServer;
+  if (!sb) { col.innerHTML = `<div class="ev-head"><h2>Events</h2></div><div class="kf-empty">Events are coming soon. Watch Discord for announcements.</div>`; return; }
+  const list = evFor(key), upcoming = list.filter(evIsUpcoming).sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at));
+  const past = list.filter(e => !evIsUpcoming(e)).sort((a, b) => new Date(b.starts_at) - new Date(a.starts_at)).slice(0, 10);
+  const next = upcoming.find(e => !e.cancelled);
+  col.innerHTML = `<div class="ev-head"><h2>${esc(srvShort(key))} events</h2>${amAdmin ? `<button class="btn sm" id="ev-new">+ Post event</button>` : ""}</div>
+    ${next ? eventCard(next, { next: true }) : `<div class="kf-empty" style="margin-bottom:16px">No events scheduled on ${esc(srvShort(key))} yet.${amAdmin ? " Post one with the button above." : " Check back soon."}</div>`}
+    ${upcoming.filter(e => e !== next).map(e => eventCard(e)).join("")}
+    ${past.length ? `<h3 class="ev-past-title">Past events</h3>${past.map(e => eventCard(e)).join("")}` : ""}`;
+  if ($("#ev-new")) $("#ev-new").onclick = () => openEventEditor(null, key);
+  tickEvents();
+}
+function fillNextEventLines(){
+  $$("[data-next-for]").forEach(el => {
+    const k = el.dataset.nextFor, e = evLoaded ? nextEvent(k) : null;
+    el.innerHTML = !evLoaded ? `<span class="muted">Loading events…</span>`
+      : e ? `<span>📅 <b>${esc(e.title)}</b> · ${fmtEvDate(e.starts_at)}</span><a href="#server-${esc(k)}">Events →</a>`
+      : `<span class="muted">No events scheduled</span><a href="#server-${esc(k)}">Events →</a>`;
+  });
+}
+function renderHomeEvent(){
+  const box = $("#home-event"); if (!box) return;
+  const e = nextEvent(null);
+  if (!e) { box.innerHTML = ""; return; }
+  const key = e.server === "both" ? CONFIG.servers[0].key : e.server;
+  box.innerHTML = `<div class="card home-ev"><div><span class="ev-next-label">${evIsLive(e) ? "Happening now" : "Next event"} · ${esc(srvShort(e.server))}</span>
+    <b>${esc(e.title)}</b><div class="muted">${fmtEvDate(e.starts_at)}${e.prize ? " · 🏆 " + esc(e.prize) : ""}</div></div>
+    <a class="btn sm" href="#server-${esc(key)}">See event</a></div>`;
+}
+function tickEvents(){
+  $$("[data-evcd]").forEach(el => {
+    const left = Math.max(0, new Date(el.dataset.evcd) - Date.now());
+    if (!left) { if (!el.dataset.done) { el.dataset.done = 1; setTimeout(drawServerEvents, 500); } return; }
+    const v = { d: Math.floor(left / 864e5), h: Math.floor(left / 36e5) % 24, m: Math.floor(left / 6e4) % 60, s: Math.floor(left / 1e3) % 60 };
+    for (const k in v) { const b = el.querySelector(`[data-u="${k}"]`); if (b) b.textContent = k === "d" ? v[k] : String(v[k]).padStart(2, "0"); }
+  });
+  if (!evTimer) evTimer = setInterval(() => { if (/^#server-/.test(location.hash)) tickEvents(); }, 1000);
+}
+
+/* ---------- RSVP + calendar ---------- */
+async function toggleRsvp(id, status){
+  if (!user) { toast("Sign in with Discord to RSVP"); location.hash = "#account"; return; }
+  const list = evRsvps.get(id) || []; evRsvps.set(id, list);
+  const mine = list.find(r => r.user_id === user.id), before = mine ? mine.status : null;
+  let res;
+  if (before === status) { list.splice(list.indexOf(mine), 1); res = await sb.from("event_rsvps").delete().eq("event_id", id).eq("user_id", user.id); }
+  else {
+    if (mine) mine.status = status; else list.push({ event_id: id, user_id: user.id, status });
+    memberCache.set(user.id, meCard());
+    res = await sb.from("event_rsvps").upsert({ event_id: id, user_id: user.id, status }, { onConflict: "event_id,user_id" });
+  }
+  if (res.error) { toast(/row-level/i.test(res.error.message) ? "You can't RSVP right now" : res.error.message); await loadEvents(); }
+  drawServerEvents();
+  if (!res.error && before !== status) toast(status === "going" ? "See you there! 🫡" : "Marked as interested");
+}
+function calTimes(e){
+  const z = d => new Date(d).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  return [z(e.starts_at), z(evEnd(e))];
+}
+function openCalendar(id){
+  const e = evAll.find(x => x.id === id); if (!e) return;
+  const [s, en] = calTimes(e), details = `${EV_KINDS[e.kind] || "Event"} on ${srvName(e.server)}${e.prize ? "\nPrize: " + e.prize : ""}${e.description ? "\n\n" + e.description : ""}\n\n${location.origin + location.pathname}#server-${e.server === "both" ? CONFIG.servers[0].key : e.server}`;
+  const g = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("AF: " + e.title)}&dates=${s}/${en}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(e.location || srvName(e.server))}`;
+  const icsEsc = t => String(t || "").replace(/[\\;,]/g, m => "\\" + m).replace(/\n/g, "\\n");
+  const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Allied Forces//Events//EN", "BEGIN:VEVENT",
+    `UID:af-event-${e.id}@alliedforces`, `DTSTAMP:${calTimes({ starts_at: new Date() })[0]}`, `DTSTART:${s}`, `DTEND:${en}`,
+    `SUMMARY:${icsEsc("AF: " + e.title)}`, `DESCRIPTION:${icsEsc(details)}`, `LOCATION:${icsEsc(e.location || srvName(e.server))}`,
+    "BEGIN:VALARM", "TRIGGER:-PT30M", "ACTION:DISPLAY", `DESCRIPTION:${icsEsc(e.title)}`, "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+  openModal(`<h3>Add to your calendar</h3><p class="muted">${esc(e.title)} · ${fmtEvDate(e.starts_at)}</p>
+    <div class="row" style="flex-direction:column;align-items:stretch">
+      <a class="btn" href="${g}" target="_blank" rel="noopener" style="text-align:center">Google Calendar</a>
+      <a class="btn ghost" href="${url}" download="allied-forces-event-${e.id}.ics" style="text-align:center">Apple / Outlook (.ics file)</a>
+      <button class="btn ghost" id="cal-x">Close</button></div>
+    <p class="muted" style="font-size:.85rem;margin-top:10px">The calendar file includes a reminder 30 minutes before it starts.</p>`);
+  $("#cal-x").onclick = closeModal;
+}
+
+/* ---------- staff: post / edit / results ---------- */
+const toLocalInput = d => { if (!d) return ""; const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 16); };
+function openEventEditor(id, defaultServer){
+  if (!amAdmin) return;
+  const e = id ? evAll.find(x => x.id === id) : null;
+  let img = e?.image_url || "", newImg = null;
+  const srvOpts = [...CONFIG.servers.map(s => [s.key, srvName(s.key)]), ["both", "Both servers"]]
+    .map(([k, l]) => `<option value="${k}" ${(e ? e.server : defaultServer) === k ? "selected" : ""}>${esc(l)}</option>`).join("");
+  const kindOpts = Object.entries(EV_KINDS).map(([k, l]) => `<option value="${k}" ${(e?.kind || "community") === k ? "selected" : ""}>${l}</option>`).join("");
+  openModal(`<h3>${e ? "Edit event" : "Post an event"}</h3>
+    <div class="two"><div class="field"><label for="ef-srv">Server</label><select id="ef-srv">${srvOpts}</select></div>
+      <div class="field"><label for="ef-kind">Type</label><select id="ef-kind">${kindOpts}</select></div></div>
+    <div class="field"><label for="ef-title">Title</label><input id="ef-title" maxlength="100" value="${esc(e?.title || "")}" placeholder="e.g. Battle for Elektro"></div>
+    <div class="two"><div class="field"><label for="ef-start">Starts</label><input id="ef-start" type="datetime-local" value="${toLocalInput(e?.starts_at)}"></div>
+      <div class="field"><label for="ef-end">Ends (optional)</label><input id="ef-end" type="datetime-local" value="${toLocalInput(e?.ends_at)}"></div></div>
+    <p class="muted" style="font-size:.85rem;margin:-6px 0 12px">Enter times in your own time zone. Players see them converted to theirs.</p>
+    <div class="field"><label for="ef-loc">Location</label><input id="ef-loc" maxlength="100" value="${esc(e?.location || "")}" placeholder="e.g. Elektrozavodsk power plant"></div>
+    <div class="field"><label for="ef-prize">Prize (optional)</label><input id="ef-prize" maxlength="200" value="${esc(e?.prize || "")}" placeholder="e.g. Faction billboard for a month"></div>
+    <div class="field"><label for="ef-desc">Details</label><textarea id="ef-desc" maxlength="3000" rows="5" placeholder="Rules, teams, what to bring…">${esc(e?.description || "")}</textarea></div>
+    <div class="field"><label>Banner image (optional)</label><div id="ef-prev"></div>
+      <label class="btn ghost sm" style="cursor:pointer;margin-top:6px">🖼 Choose image<input type="file" id="ef-file" accept="image/jpeg,image/png,image/webp" hidden></label></div>
+    <div class="row"><button class="btn" id="ef-save">${e ? "Save changes" : "Post event"}</button><button class="btn ghost" id="ef-x">Cancel</button></div>
+    ${e ? "" : `<p class="muted" style="font-size:.85rem;margin-top:8px">Posting sends a notice to everyone's inbox.</p>`}
+    <div id="ef-msg"></div>`);
+  const prev = () => $("#ef-prev").innerHTML = (newImg || img) ? `<div class="c-photo"><img src="${newImg ? URL.createObjectURL(newImg) : esc(img)}" alt=""><button type="button" id="ef-rm" aria-label="Remove image">✕</button></div>` : "";
+  const bindRm = () => { if ($("#ef-rm")) $("#ef-rm").onclick = () => { newImg = null; img = ""; prev(); bindRm(); }; };
+  prev(); bindRm();
+  $("#ef-file").onchange = async ev => {
+    const f = ev.target.files[0]; if (!f) return;
+    try { newImg = await resizeJpeg(f, 1600); prev(); bindRm(); } catch (err) { $("#ef-msg").innerHTML = `<p class="msg err">${esc(err.message)}</p>`; }
+  };
+  $("#ef-x").onclick = closeModal;
+  $("#ef-save").onclick = async () => {
+    const msg = $("#ef-msg"), btn = $("#ef-save");
+    const title = $("#ef-title").value.trim(), st = $("#ef-start").value, en = $("#ef-end").value;
+    if (!title) { msg.innerHTML = `<p class="msg err">Give the event a title.</p>`; return; }
+    if (!st) { msg.innerHTML = `<p class="msg err">Pick a start date and time.</p>`; return; }
+    if (en && new Date(en) <= new Date(st)) { msg.innerHTML = `<p class="msg err">The end time has to be after the start.</p>`; return; }
+    btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      if (newImg) {
+        const path = `${user.id}/${Date.now()}.jpg`;
+        const up = await sb.storage.from("event-images").upload(path, newImg, { contentType: "image/jpeg" });
+        if (up.error) throw up.error;
+        img = sb.storage.from("event-images").getPublicUrl(path).data.publicUrl;
+      }
+      const row = { server: $("#ef-srv").value, kind: $("#ef-kind").value, title,
+        starts_at: new Date(st).toISOString(), ends_at: en ? new Date(en).toISOString() : null,
+        location: $("#ef-loc").value.trim() || null, prize: $("#ef-prize").value.trim() || null,
+        description: $("#ef-desc").value.trim() || null, image_url: img || null };
+      const { error } = e ? await sb.from("events").update(row).eq("id", e.id) : await sb.from("events").insert(row);
+      if (error) throw error;
+      closeModal(); toast(e ? "Event updated" : "Event posted!");
+      await loadEvents(); refreshEventViews();
+      if (!e && row.server !== "both" && row.server !== currentServer) location.hash = "#server-" + row.server;
+    } catch (err) {
+      msg.innerHTML = `<p class="msg err">${esc(/row-level|permission/i.test(err.message) ? "Only AF staff can post events. Make sure you're in the admins table." : err.message)}</p>`;
+      btn.disabled = false; btn.textContent = e ? "Save changes" : "Post event";
+    }
+  };
+}
+function openResults(id){
+  const e = evAll.find(x => x.id === id); if (!e || !amAdmin) return;
+  openModal(`<h3>Results: ${esc(e.title)}</h3>
+    <div class="field"><label for="er-txt">What happened?</label><textarea id="er-txt" maxlength="2000" rows="6" placeholder="Winner, MVP, final score, shout-outs…">${esc(e.results || "")}</textarea></div>
+    <div class="row"><button class="btn" id="er-save">Save results</button><button class="btn ghost" id="er-x">Cancel</button></div><div id="er-msg"></div>`);
+  $("#er-x").onclick = closeModal;
+  $("#er-save").onclick = async () => {
+    const { error } = await sb.from("events").update({ results: $("#er-txt").value.trim() || null }).eq("id", id);
+    if (error) { $("#er-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+    closeModal(); toast("Results saved"); await loadEvents(); refreshEventViews();
+  };
+}
+function refreshEventViews(){
+  drawServerEvents(); fillNextEventLines(); renderHomeEvent();
+}
+$("#v-servers").addEventListener("click", async ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  const d = b.dataset;
+  if (d.rsvp) return toggleRsvp(+d.rsvp, d.st);
+  if (d.cal) return openCalendar(+d.cal);
+  if (d.evEdit) return openEventEditor(+d.evEdit);
+  if (d.evRes) return openResults(+d.evRes);
+  if (d.evCancel) {
+    const e = evAll.find(x => x.id === +d.evCancel);
+    if (!e.cancelled && !(await confirmModal("Cancel this event?", "It stays on the page marked CANCELLED. You can restore it later.", "Cancel event"))) return;
+    const { error } = await sb.from("events").update({ cancelled: !e.cancelled }).eq("id", e.id);
+    if (error) return toast(error.message);
+    await loadEvents(); refreshEventViews();
+  }
+  if (d.evDel) {
+    if (!(await confirmModal("Delete this event?", "This removes it and its RSVPs for good."))) return;
+    const { error } = await sb.from("events").delete().eq("id", +d.evDel);
+    if (error) return toast(error.message);
+    await loadEvents(); refreshEventViews();
+  }
+});
+async function startEvents(){ await loadEvents(); refreshEventViews(); }
+
+renderServerOverview();
+startEvents();
+
+const views = ["home","servers","rules","legends","feed","inbox","support","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id), ...CONFIG.servers.map(s => "server-" + s.key)];
 function route(){
   const v = views.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
-  const section = v.startsWith("live-") ? "live" : v;
+  const section = v.startsWith("live-") ? "live" : v.startsWith("server-") ? "servers" : v;
   $$(".view").forEach(el => el.classList.toggle("active", el.id === "v-"+section));
   $$(".nav a[data-v]").forEach(a => a.classList.toggle("active", a.dataset.v === section));
   $$(".subview").forEach(el => el.classList.toggle("active", el.id === "sv-"+v));
   $$(".subnav a").forEach(a => a.classList.toggle("active", a.dataset.sub === v));
   $(".nav").classList.remove("open");
+  if (v.startsWith("server-")) { $("#sv-server-detail").classList.add("active"); renderServerDetail(v.slice(7)); }
+  if (v === "servers") fillNextEventLines();
   if (v === "account") renderAccount();
   if (v === "feed") renderFeed();
   if (v === "inbox") renderInbox();
