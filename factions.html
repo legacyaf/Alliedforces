@@ -87,6 +87,20 @@
   .zone .cont{position:absolute;top:10px;right:10px;font-size:10px;font-weight:800;letter-spacing:1px;color:var(--warn);border:1px solid var(--warn);padding:2px 6px;border-radius:4px;animation:pulse 1.6s infinite}
   @keyframes pulse{50%{opacity:.4}}
   .legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;font-size:13px;color:var(--muted)}
+  .zone .zedit{position:absolute;bottom:10px;right:10px;background:var(--panel2);border:1px solid var(--line);color:var(--text);font:600 12px Inter;padding:4px 10px;border-radius:6px;cursor:pointer}
+  .zone .zedit:hover{border-color:var(--accent)}
+  .zone .ztime{font-size:11px;color:var(--muted);margin-top:4px}
+  .adminbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--panel2);border:1px dashed var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px}
+  .adminbar b{color:var(--accent);letter-spacing:1px}
+  .tlog{margin-top:22px}
+  .tlog h3{font-size:15px;margin-bottom:8px}
+  .tlog li{list-style:none;border-bottom:1px solid var(--line);padding:9px 0;font-size:13px}
+  .tlog li small{color:var(--muted);display:block}
+  .tlog .arrow{color:var(--muted);margin:0 6px}
+  .chk{display:flex!important;align-items:center;gap:8px;text-transform:none!important;letter-spacing:0!important;font-size:14px!important;color:var(--text)!important;cursor:pointer}
+  .chk input{width:auto!important}
+  .s-won{background:var(--accent);color:#111}
+  .chal .rbtn{margin-left:8px}
   .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 
   /* War board */
@@ -268,8 +282,10 @@
   <section id="territory">
     <h2>Territory Control</h2>
     <p class="hint">Who holds what across Chernarus. Contested zones can change hands in the next event.</p>
+    <div id="terrAdmin"></div>
     <div class="legend" id="legend"></div>
     <div class="terr" id="terr"></div>
+    <div class="tlog" id="terrLog"></div>
   </section>
 
   <section id="war">
@@ -393,8 +409,9 @@ const CHALLENGES = [
     date:"Nov 14, 2026", stakes:"Bragging rights", status:"accepted" }
 ];
 
-/* Zones: owner = faction id, or null if unclaimed */
-const TERRITORY = [
+/* Zones now live in Supabase (table "territory") and staff edit them on the page.
+   This list is only a fallback if the database can't be reached. */
+let TERRITORY = [
   { zone:"Northwest Airfield", owner:"iron-wolves", contested:true },
   { zone:"Chernogorsk", owner:"black-tide", contested:false },
   { zone:"Elektrozavodsk", owner:"black-tide", contested:true },
@@ -447,6 +464,7 @@ let profileSynced = false;
 let db = { factions:null, profiles:null, challenges:null, invites:null };
 let factions = [], byId = {}, ranked = [];
 let inboxNote = null;
+let amAdmin = false, terrLog = [];
 
 const canSend   = () => !!me?.faction && ["Leader","Co-Leader","Officer"].includes(me.rank);
 const canManage = fid => !!me && me.faction === fid && ["Leader","Co-Leader"].includes(me.rank);
@@ -461,7 +479,9 @@ async function logout(){ await SB.auth.signOut(); me = null; profileSynced = fal
 async function loadMe(){
   if (!SB) return;
   const { data:{ session } } = await SB.auth.getSession();
-  if (!session) { me = null; return; }
+  if (!session) { me = null; amAdmin = false; return; }
+  const adm = await SB.from("admins").select("user_id").eq("user_id", session.user.id).maybeSingle();
+  amAdmin = !adm.error && !!adm.data;
   const md = session.user.user_metadata || {};
   const id = md.provider_id || md.sub;
   const name = md.custom_claims?.global_name || md.full_name || md.name || "Player";
@@ -474,12 +494,16 @@ async function loadMe(){
 
 async function loadDb(){
   if (!SB) return;
-  const [f, p, c, i] = await Promise.all([
+  const [f, p, c, i, t, tl] = await Promise.all([
     SB.from("factions").select("*").order("created_at"),
     SB.from("players").select("discord_id,name,avatar,faction_id,rank,role,active,joined_at").limit(2000),
     SB.from("challenges").select("*").order("created_at", { ascending:false }).limit(200),
-    me ? SB.from("faction_invites").select("*").order("created_at", { ascending:false }).limit(200) : { data:[] }
+    me ? SB.from("faction_invites").select("*").order("created_at", { ascending:false }).limit(200) : { data:[] },
+    SB.from("territory").select("*").order("sort_order").order("zone"),
+    SB.from("territory_log").select("*").order("created_at", { ascending:false }).limit(12)
   ]);
+  if (!t.error && t.data) TERRITORY = t.data.map(z => ({ id:z.id, zone:z.zone, owner:z.owner || null, contested:!!z.contested, sort:z.sort_order, updated:z.updated_at, inDb:true }));
+  terrLog = tl.error ? [] : (tl.data || []);
   db.factions   = f.error ? null : f.data;
   db.profiles   = p.error ? [] : p.data;
   db.challenges = c.error ? null : c.data;
@@ -522,7 +546,8 @@ function buildFactions(){
 function challengeList(){
   if (!db.challenges) return CHALLENGES;
   return db.challenges.map(c => ({ id:c.id, from:c.from_faction, to:c.to_faction, type:c.type, zone:c.zone,
-    date:fmtDate(c.proposed_at), stakes:c.stakes, status:c.status, created_at:c.created_at }));
+    date:fmtDate(c.proposed_at), stakes:c.stakes, status:c.status, created_at:c.created_at,
+    winner:c.winner || null, resolved_at:c.resolved_at || null }));
 }
 const myInvites   = () => (db.invites || []).filter(i => me && i.discord_id === me.discordId && i.status === "pending");
 const sentInvites = () => (db.invites || []).filter(i => me?.faction && i.faction_id === me.faction && i.status === "pending");
@@ -633,12 +658,97 @@ function renderTerritory(){
   const owners = [...new Set(TERRITORY.map(t => t.owner).filter(id => id && byId[id]))];
   $("#legend").innerHTML = owners.map(id => `<span><i style="background:${safeColor(F(id).color)}"></i>${esc(F(id).name)}</span>`).join("")
     + `<span><i style="background:#444"></i>Unclaimed</span>`;
-  $("#terr").innerHTML = TERRITORY.map(t => {
+  const canEdit = amAdmin && TERRITORY.every(t => t.inDb);
+  $("#terrAdmin").innerHTML = canEdit
+    ? `<div class="adminbar"><span><b>STAFF</b> · Tap Edit on a zone to change who holds it. Every change is logged below.</span><button class="sbtn" id="zAdd">+ Add zone</button></div>`
+    : (amAdmin ? `<div class="adminbar"><span><b>STAFF</b> · Run territory-setup.sql in Supabase to turn on zone editing.</span></div>` : "");
+  if ($("#zAdd")) $("#zAdd").onclick = () => openZoneEdit(null);
+  $("#terr").innerHTML = TERRITORY.map((t, i) => {
     const f = t.owner && byId[t.owner] ? F(t.owner) : null;
     return `<div class="zone" style="--c:${f ? safeColor(f.color) : "#444"}">
       ${t.contested ? '<span class="cont">CONTESTED</span>' : ""}
-      <h4>${esc(t.zone)}</h4><p>${f ? "Held by " + esc(f.name) : "Unclaimed"}</p></div>`;
-  }).join("");
+      <h4>${esc(t.zone)}</h4><p>${f ? "Held by " + esc(f.name) : "Unclaimed"}</p>
+      ${canEdit && t.updated ? `<div class="ztime">Updated ${new Date(t.updated).toLocaleDateString([], { month:"short", day:"numeric" })}</div>` : ""}
+      ${canEdit ? `<button class="zedit" data-zone="${i}">Edit</button>` : ""}</div>`;
+  }).join("") || '<p class="hint">No zones yet.</p>';
+  $$("[data-zone]").forEach(b => b.onclick = e => { e.stopPropagation(); openZoneEdit(+b.dataset.zone); });
+  const who = id => id ? (byId[id] ? esc(F(id).name) : "a disbanded faction") : "Unclaimed";
+  $("#terrLog").innerHTML = terrLog.length ? `<h3>Recent changes</h3><ul>${terrLog.map(l => {
+      const moved = l.old_owner !== l.new_owner;
+      return `<li><b>${esc(l.zone)}</b>: ${moved ? `${who(l.old_owner)}<span class="arrow">→</span><b>${who(l.new_owner)}</b>` : (l.contested ? "marked contested" : "no longer contested")}
+        ${l.contested && moved ? ' <span style="color:var(--warn)">· contested</span>' : ""}
+        <small>${new Date(l.created_at).toLocaleString([], { dateStyle:"medium", timeStyle:"short" })}${l.note ? " · " + esc(l.note) : ""}</small></li>`;
+    }).join("")}</ul>` : "";
+}
+
+/* ---------- Staff: edit a zone ---------- */
+function openZoneEdit(idx){
+  if (!amAdmin) return;
+  const z = idx === null ? null : TERRITORY[idx];
+  const opts = [...factions].sort((a, b) => a.name.localeCompare(b.name))
+    .map(f => `<option value="${esc(f.id)}" ${z && z.owner === f.id ? "selected" : ""}>${esc(f.name)}</option>`).join("");
+  const orphan = z && z.owner && !byId[z.owner] ? `<option value="${esc(z.owner)}" selected>${esc(z.owner)} (faction not found)</option>` : "";
+  openSheet(`<h3>${z ? "Edit zone" : "Add a zone"}</h3>
+    <div class="form">
+      <label for="zName">Zone name</label><input id="zName" maxlength="60" value="${esc(z?.zone || "")}" placeholder="e.g. Balota Airstrip">
+      <label for="zOwner">Held by</label><select id="zOwner"><option value="">Unclaimed</option>${orphan}${opts}</select>
+      <label class="chk"><input type="checkbox" id="zCont" ${z?.contested ? "checked" : ""}> Contested (can change hands at the next event)</label>
+      <label for="zSort">Position on the page (lower shows first)</label><input id="zSort" type="number" value="${z?.sort ?? (TERRITORY.length + 1)}">
+      <label for="zNote">Note for the history log (optional)</label><input id="zNote" maxlength="300" placeholder="e.g. Taken at the Nov 14 Territory War">
+      <button class="btn" id="zSave">Save zone</button>
+      ${z ? `<button class="sbtn" id="zDel" style="width:100%;margin-top:12px">Delete this zone</button>` : ""}
+      <div class="err" id="zErr"></div>
+    </div>`, () => {
+    $("#zSave").onclick = async () => {
+      const zone = $("#zName").value.trim();
+      if (!zone) return show("#zErr", "Give the zone a name.");
+      const row = { zone, owner: $("#zOwner").value || null, contested: $("#zCont").checked,
+        sort_order: parseInt($("#zSort").value, 10) || 100, last_note: $("#zNote").value.trim() || null };
+      $("#zSave").disabled = true; $("#zSave").textContent = "Saving…";
+      const { error } = z ? await SB.from("territory").update(row).eq("id", z.id) : await SB.from("territory").insert(row);
+      if (error) { $("#zSave").disabled = false; $("#zSave").textContent = "Save zone";
+        return show("#zErr", /duplicate|unique/i.test(error.message) ? "There's already a zone with that name." : errText(error)); }
+      closeSheet(); await refresh();
+    };
+    if (z) confirmTap($("#zDel"), "Tap again to delete", async () => {
+      const { error } = await SB.from("territory").delete().eq("id", z.id);
+      if (error) { $("#zDel").disabled = false; return show("#zErr", errText(error)); }
+      closeSheet(); await refresh();
+    });
+  });
+}
+
+/* ---------- Staff: record a challenge result ---------- */
+function openResult(cid){
+  const c = challengeList().find(x => String(x.id) === String(cid)); if (!c || !amAdmin) return;
+  const A = F(c.from), B = F(c.to);
+  const zoneMatch = TERRITORY.find(t => t.zone.toLowerCase() === String(c.zone || "").toLowerCase());
+  openSheet(`<h3>Record result</h3>
+    <p style="color:var(--muted);font-size:14px">⚔️ ${esc(c.type)} · 📍 ${esc(c.zone)} · 📅 ${esc(c.date)}${c.stakes ? " · 🏆 " + esc(c.stakes) : ""}</p>
+    <div class="form">
+      <label for="rWin">Winner</label>
+      <select id="rWin"><option value="${esc(A.id)}" ${c.winner === A.id ? "selected" : ""}>${esc(A.name)}</option><option value="${esc(B.id)}" ${c.winner === B.id ? "selected" : ""}>${esc(B.name)}</option></select>
+      ${zoneMatch ? `<label class="chk"><input type="checkbox" id="rTake" checked> Give ${esc(zoneMatch.zone)} to the winner and clear "contested"</label>`
+                  : `<p class="hint" style="margin-top:10px">"${esc(c.zone)}" isn't a zone on the Territory map, so no territory changes hands.</p>`}
+      <button class="btn" id="rSave">Save result</button>
+      ${c.winner ? `<button class="sbtn" id="rClear" style="width:100%;margin-top:12px">Clear result</button>` : ""}
+      <div class="err" id="rErr"></div><div class="ok" id="rOk"></div>
+    </div>`, () => {
+    $("#rSave").onclick = async () => {
+      $("#rSave").disabled = true; $("#rSave").textContent = "Saving…";
+      const winner = $("#rWin").value, take = !!$("#rTake")?.checked;
+      const { data, error } = await SB.rpc("resolve_challenge", { p_challenge_id: String(c.id), p_winner: winner, p_take_zone: take });
+      if (error) { $("#rSave").disabled = false; $("#rSave").textContent = "Save result"; return show("#rErr", errText(error)); }
+      await refresh();
+      $("#rSave").style.display = "none";
+      show("#rOk", `${F(winner).name} wins!${data ? ` ${data} now belongs to them.` : ""}`);
+    };
+    if (c.winner) confirmTap($("#rClear"), "Tap again to clear", async () => {
+      const { error } = await SB.rpc("resolve_challenge", { p_challenge_id: String(c.id), p_winner: null, p_take_zone: false });
+      if (error) { $("#rClear").disabled = false; return show("#rErr", errText(error)); }
+      closeSheet(); await refresh();
+    });
+  });
 }
 
 function renderWars(){
@@ -658,10 +768,14 @@ function renderChallenges(){
   const list = challengeList().filter(c => c.status !== "declined").slice(0, 15);
   $("#chals").innerHTML = list.map(c => {
     const A = F(c.from), B = F(c.to), acc = c.status === "accepted";
+    const badge = c.winner ? `<span class="status s-won" style="margin:0 0 0 auto">WON BY ${esc(F(c.winner).name).toUpperCase()}</span>`
+      : `<span class="status ${acc ? "s-acc" : "s-pend"}" style="margin:0 0 0 auto">${acc ? "ACCEPTED" : "AWAITING REPLY"}</span>`;
+    const staffBtn = amAdmin && acc && c.id != null ? `<button class="sbtn rbtn" data-result="${esc(c.id)}">${c.winner ? "Edit result" : "Record result"}</button>` : "";
     return `<div class="chal"><div class="row">${emb(A)}<b>${esc(A.name)}</b><span style="color:var(--muted)">challenged</span>${emb(B)}<b>${esc(B.name)}</b>
-      <span class="status ${acc ? "s-acc" : "s-pend"}" style="margin:0 0 0 auto">${acc ? "ACCEPTED" : "AWAITING REPLY"}</span></div>
+      ${badge}${staffBtn}</div>
       <small>⚔️ ${esc(c.type)} · 📍 ${esc(c.zone)} · 📅 ${esc(c.date)}${c.stakes ? " · 🏆 " + esc(c.stakes) : ""}</small></div>`;
   }).join("") || '<p class="hint">No open challenges. Be the first.</p>';
+  $$("[data-result]").forEach(b => b.onclick = e => { e.stopPropagation(); openResult(b.dataset.result); });
 }
 
 function renderFeed(){
