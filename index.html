@@ -141,6 +141,36 @@
   .msg.ok{color:var(--ok)} .msg.err{color:#e5735c}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 
+  /* live / sub pages */
+  .kicker-sm{color:var(--accent2);font-family:"Barlow Condensed";font-weight:600;letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px}
+  .subnav{display:flex;gap:6px;border-bottom:1px solid var(--line);margin:14px 0 22px;overflow-x:auto}
+  .subnav a{font-family:"Barlow Condensed";text-transform:uppercase;letter-spacing:.06em;font-weight:700;font-size:1.05rem;color:var(--muted);text-decoration:none;padding:10px 14px;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
+  .subnav a:hover{color:var(--text)}
+  .subnav a.active{color:var(--text);border-bottom-color:var(--accent)}
+  .subview{display:none}.subview.active{display:block}
+  .kf-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .kf-filters{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:5px 14px;font:600 .95rem Barlow,sans-serif;cursor:pointer}
+  .chip.active,.chip:hover{color:var(--text);border-color:var(--accent)}
+  .kf-live{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:.92rem}
+  .kf-live i{width:9px;height:9px;border-radius:50%;background:#6b645b}
+  .kf-live.on i{background:#e5484d;box-shadow:0 0 0 0 rgba(229,72,77,.6);animation:pulse 1.6s infinite}
+  @keyframes pulse{70%{box-shadow:0 0 0 8px rgba(229,72,77,0)}100%{box-shadow:0 0 0 0 rgba(229,72,77,0)}}
+  .kf-list{display:flex;flex-direction:column;gap:10px}
+  .kf{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:12px 16px;display:flex;gap:14px}
+  .kf.new{animation:flash 1.8s ease-out}
+  @keyframes flash{from{background:#3a2a1e}to{background:var(--panel)}}
+  .kf .kf-main{flex:1;min-width:0}
+  .kf .kf-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:.85rem;margin-bottom:4px}
+  .kf .kf-server{font-family:"Barlow Condensed";font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent2)}
+  .kf .kf-title{font-weight:600}
+  .kf .kf-text{white-space:pre-wrap;word-wrap:break-word;color:#d6cfc4}
+  .kf .kf-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px 16px;margin-top:6px;font-size:.93rem}
+  .kf .kf-fields b{display:block;font-size:.8rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  .kf .kf-thumb{width:56px;height:56px;border-radius:6px;object-fit:cover;flex:none}
+  .kf code{background:var(--bg);padding:1px 5px;border-radius:4px;font-size:.9em}
+  .kf-empty{text-align:center;color:var(--muted);padding:40px 10px;border:1px dashed var(--line);border-radius:var(--radius)}
+
   footer{border-top:1px solid var(--line);background:var(--bg2);padding:36px 0 28px;font-size:.95rem}
   .foot{display:grid;grid-template-columns:2fr 1fr 1fr;gap:28px}
   .foot a{color:var(--muted);text-decoration:none;display:block;padding:3px 0}
@@ -166,6 +196,7 @@
       <a href="#servers" data-v="servers">Servers</a>
       <a href="#rules" data-v="rules">Rules</a>
       <a href="#legends" data-v="legends">Legends</a>
+      <a href="#live-killfeed" data-v="live">Live</a>
       <a href="#support" data-v="support">Support Us</a>
       <a href="#team" data-v="team">Team</a>
       <a href="#account" data-v="account" id="nav-account">Sign in</a>
@@ -260,6 +291,27 @@
       <p class="muted" style="max-width:720px" id="legends-intro"></p>
       <div class="legends" id="legend-list"></div>
       <p class="legends-quip" id="legends-quip"></p>
+    </div>
+  </section>
+</div>
+
+<!-- LIVE (section with sub pages) -->
+<div class="view" id="v-live">
+  <section>
+    <div class="wrap">
+      <div class="kicker-sm">Live from the servers</div>
+      <h2>Live</h2>
+      <nav class="subnav" id="live-tabs"></nav>
+
+      <!-- sub page: Killfeed -->
+      <div class="subview" id="sv-live-killfeed">
+        <div class="kf-bar">
+          <div class="kf-filters" id="kf-filters"></div>
+          <span class="kf-live" id="kf-status"><i></i>Connecting…</span>
+        </div>
+        <div class="kf-list" id="kf-list"></div>
+        <div style="text-align:center;margin-top:18px"><button class="btn ghost sm" id="kf-more" hidden>Load older kills</button></div>
+      </div>
     </div>
   </section>
 </div>
@@ -440,6 +492,7 @@
         <a href="#servers">Servers</a>
         <a href="#rules">Rules</a>
         <a href="#legends">AF Legends</a>
+        <a href="#live-killfeed">Killfeed</a>
         <a href="#support">Support Us</a>
       </div>
       <div>
@@ -515,6 +568,10 @@ const CONFIG = {
     { name: "V2 Mojo", joined: "2019", role: "Co-founder", photo: "", quip: "Ten years deep and still running it back." },
     { name: "Player Name", joined: "2024", role: "Faction leader", photo: "", quip: "Your custom quip goes here." }
   ],
+  /* ---- LIVE → KILLFEED ----
+     Keys must match the ?server=... value in each server's killfeed webhook URL. */
+  killfeedServers: { nasdara: "Nasdara", chernarus: "Chernarus" },
+
   legendsQuip: "Legends never log off."     // the line at the bottom of the page
 };
 /* ======================== */
@@ -786,13 +843,105 @@ function openLegendEditor(){
 renderLegends();
 loadLegends();
 
-const views = ["home","servers","rules","legends","support","team","account","terms","privacy","refunds"];
+/* ===== LIVE SECTION (sub pages) =====
+   To add a sub page: add it here, and add <div class="subview" id="sv-live-NAME"> in the Live view. */
+const LIVE_TABS = [
+  { id: "live-killfeed", label: "Killfeed" }
+];
+$("#live-tabs").innerHTML = LIVE_TABS.map(t => `<a href="#${t.id}" data-sub="${t.id}">${t.label}</a>`).join("");
+
+/* ===== KILLFEED ===== */
+const KF_PAGE = 40;
+let kfRows = [], kfFilter = "all", kfStarted = false, kfOldest = null;
+const kfServerName = k => CONFIG.killfeedServers[k] || k || "";
+
+function discordMd(text){
+  let t = esc(text);
+  t = t.replace(/&lt;t:(\d+)(?::\w)?&gt;/g, (_, n) => new Date(n * 1000).toLocaleString());
+  t = t.replace(/&lt;a?:(\w+):\d+&gt;/g, ":$1:");
+  t = t.replace(/`([^`]+)`/g, "<code>$1</code>");
+  t = t.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+  t = t.replace(/__(.+?)__/g, "<u>$1</u>");
+  t = t.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<i>$2</i>");
+  t = t.replace(/\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  return t;
+}
+function ago(d){
+  const s = Math.max(0, (Date.now() - new Date(d)) / 1000);
+  if (s < 60) return "just now"; if (s < 3600) return Math.floor(s/60) + "m ago";
+  if (s < 86400) return Math.floor(s/3600) + "h ago"; return new Date(d).toLocaleDateString();
+}
+function kfItem(r, isNew){
+  const embeds = Array.isArray(r.embeds) && r.embeds.length ? r.embeds : [null];
+  return embeds.map((e, i) => {
+    const color = e && Number.isInteger(e.color) ? "#" + e.color.toString(16).padStart(6, "0") : "";
+    const thumb = e?.thumbnail?.url || e?.image?.url || "";
+    const text = [i === 0 ? r.content : "", e?.description].filter(Boolean).join("\n");
+    return `<div class="kf${isNew ? " new" : ""}"${color ? ` style="border-left-color:${esc(color)}"` : ""}>
+      <div class="kf-main">
+        <div class="kf-meta">${r.server ? `<span class="kf-server">${esc(kfServerName(r.server))}</span>` : ""}<span title="${esc(new Date(r.created_at).toLocaleString())}" data-ts="${esc(r.created_at)}">${ago(r.created_at)}</span>${e?.author?.name ? `<span>${esc(e.author.name)}</span>` : ""}</div>
+        ${e?.title ? `<div class="kf-title">${discordMd(e.title)}</div>` : ""}
+        ${text ? `<div class="kf-text">${discordMd(text)}</div>` : ""}
+        ${e?.fields?.length ? `<div class="kf-fields">${e.fields.map(f => `<div><b>${discordMd(f.name)}</b>${discordMd(f.value)}</div>`).join("")}</div>` : ""}
+        ${e?.footer?.text ? `<div class="kf-meta" style="margin:6px 0 0">${discordMd(e.footer.text)}</div>` : ""}
+      </div>
+      ${/^https:\/\//.test(thumb) ? `<img class="kf-thumb" src="${esc(thumb)}" alt="" loading="lazy" onerror="this.remove()">` : ""}
+    </div>`;
+  }).join("");
+}
+function renderKfFilters(){
+  const keys = ["all", ...Object.keys(CONFIG.killfeedServers)];
+  $("#kf-filters").innerHTML = keys.map(k => `<button class="chip${k === kfFilter ? " active" : ""}" data-kf="${esc(k)}">${k === "all" ? "All servers" : esc(kfServerName(k))}</button>`).join("");
+  $$("[data-kf]").forEach(b => b.onclick = () => { kfFilter = b.dataset.kf; kfRows = []; kfOldest = null; renderKfFilters(); loadKillfeed(); });
+}
+function renderKf(){
+  const list = $("#kf-list");
+  list.innerHTML = kfRows.length ? kfRows.map(r => kfItem(r, false)).join("")
+    : `<div class="kf-empty">No kills yet${kfFilter !== "all" ? " on " + esc(kfServerName(kfFilter)) : ""}. Get out there.</div>`;
+}
+async function loadKillfeed(older = false){
+  if (!sb) { $("#kf-list").innerHTML = `<div class="kf-empty">The live killfeed is coming soon. For now, check the killfeed channel in our Discord.</div>`; $("#kf-status").innerHTML = "<i></i>Offline"; return; }
+  let q = sb.from("killfeed").select("*").order("created_at", { ascending: false }).limit(KF_PAGE);
+  if (kfFilter !== "all") q = q.eq("server", kfFilter);
+  if (older && kfOldest) q = q.lt("created_at", kfOldest);
+  const { data, error } = await q;
+  if (error) { $("#kf-list").innerHTML = `<div class="kf-empty">Couldn't load the killfeed: ${esc(error.message)}</div>`; return; }
+  kfRows = older ? kfRows.concat(data) : data;
+  kfOldest = kfRows.length ? kfRows[kfRows.length - 1].created_at : null;
+  $("#kf-more").hidden = data.length < KF_PAGE;
+  renderKf();
+}
+function startKillfeed(){
+  if (kfStarted) return; kfStarted = true;
+  renderKfFilters(); loadKillfeed();
+  $("#kf-more").onclick = () => loadKillfeed(true);
+  setInterval(() => $$("[data-ts]").forEach(el => el.textContent = ago(el.dataset.ts)), 30000);
+  if (!sb) return;
+  sb.channel("killfeed-live")
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "killfeed" }, ({ new: r }) => {
+      if (kfFilter !== "all" && r.server !== kfFilter) return;
+      kfRows.unshift(r);
+      const list = $("#kf-list");
+      if (list.querySelector(".kf-empty")) list.innerHTML = "";
+      list.insertAdjacentHTML("afterbegin", kfItem(r, true));
+    })
+    .subscribe(status => {
+      const on = status === "SUBSCRIBED", el = $("#kf-status");
+      el.classList.toggle("on", on); el.innerHTML = `<i></i>${on ? "Live" : "Reconnecting…"}`;
+    });
+}
+
+const views = ["home","servers","rules","legends","support","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id)];
 function route(){
   const v = views.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
-  $$(".view").forEach(el => el.classList.toggle("active", el.id === "v-"+v));
-  $$(".nav a[data-v]").forEach(a => a.classList.toggle("active", a.dataset.v === v));
+  const section = v.startsWith("live-") ? "live" : v;
+  $$(".view").forEach(el => el.classList.toggle("active", el.id === "v-"+section));
+  $$(".nav a[data-v]").forEach(a => a.classList.toggle("active", a.dataset.v === section));
+  $$(".subview").forEach(el => el.classList.toggle("active", el.id === "sv-"+v));
+  $$(".subnav a").forEach(a => a.classList.toggle("active", a.dataset.sub === v));
   $(".nav").classList.remove("open");
   if (v === "account") renderAccount();
+  if (v === "live-killfeed") startKillfeed();
   window.scrollTo(0,0);
 }
 window.addEventListener("hashchange", route); route();
