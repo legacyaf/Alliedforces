@@ -475,7 +475,7 @@ async function loadDb(){
   if (!SB) return;
   const [f, p, c, i] = await Promise.all([
     SB.from("factions").select("*").order("created_at"),
-    SB.from("profiles").select("discord_id,name,avatar,faction_id,rank,role,active,joined_at").limit(2000),
+    SB.from("players").select("discord_id,name,avatar,faction_id,rank,role,active,joined_at").limit(2000),
     SB.from("challenges").select("*").order("created_at", { ascending:false }).limit(200),
     me ? SB.from("faction_invites").select("*").order("created_at", { ascending:false }).limit(200) : { data:[] }
   ]);
