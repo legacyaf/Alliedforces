@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factions | Allied Forces DayZ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e110d; --panel:#171c15; --panel2:#1f261c; --line:#2c3528;
+    --text:#e6e8df; --muted:#9aa38f; --accent:#b8c76a; --warn:#e0a43a; --red:#d9534f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;line-height:1.5}
+  a{color:var(--accent)}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+
+  /* Header */
+  header{padding:40px 0 24px;border-bottom:1px solid var(--line);
+    background:radial-gradient(ellipse at top,#232b1e 0%,var(--bg) 70%)}
+  .kicker{color:var(--accent);font-size:12px;letter-spacing:3px;font-weight:800}
+  h1{font-family:'Black Ops One',sans-serif;font-size:clamp(34px,8vw,60px);line-height:1.05;margin:6px 0 10px}
+  .sub{color:var(--muted);max-width:620px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:22px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .stat b{display:block;font-size:24px;font-family:'Black Ops One',sans-serif;color:var(--accent)}
+  .stat span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+
+  /* Tabs */
+  nav.tabs{position:sticky;top:0;z-index:5;background:rgba(14,17,13,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+  nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+  nav.tabs button{background:none;border:0;color:var(--muted);font:600 14px Inter;padding:14px 14px;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent}
+  nav.tabs button.active{color:var(--text);border-color:var(--accent)}
+  section{display:none;padding:28px 0 60px}
+  section.active{display:block}
+  h2{font-family:'Black Ops One',sans-serif;font-size:26px;margin-bottom:6px}
+  .hint{color:var(--muted);font-size:14px;margin-bottom:18px}
+
+  /* Spotlight */
+  .spot{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;background:linear-gradient(135deg,var(--panel2),var(--panel));
+    border:1px solid var(--accent);border-radius:14px;padding:18px;margin-bottom:28px;cursor:pointer}
+  .spot .tag{font-size:11px;letter-spacing:2px;color:var(--bg);background:var(--accent);padding:3px 8px;border-radius:4px;font-weight:800;display:inline-block;margin-bottom:6px}
+  .spot h3{font-family:'Black Ops One',sans-serif;font-size:24px}
+  .spot p{color:var(--muted);font-size:14px}
+
+  /* Emblem */
+  .emb{width:64px;height:64px;border-radius:12px;display:grid;place-items:center;font-family:'Black Ops One',sans-serif;font-size:22px;color:#fff;
+    border:2px solid rgba(255,255,255,.25);flex-shrink:0;text-shadow:0 2px 4px rgba(0,0,0,.5)}
+  .emb.lg{width:84px;height:84px;font-size:30px}
+
+  /* Controls */
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .controls input{flex:1;min-width:180px;background:var(--panel);border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:8px;font:14px Inter}
+  .chip{background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:8px 12px;border-radius:999px;font:600 13px Inter;cursor:pointer}
+  .chip.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+
+  /* Faction grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;cursor:pointer;transition:.15s}
+  .card:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .card .top{display:flex;gap:12px;align-items:center;margin-bottom:10px}
+  .card h3{font-size:17px}
+  .card .motto{color:var(--muted);font-size:13px;font-style:italic}
+  .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .pill{font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+  .pill.rec{color:var(--accent);border-color:var(--accent)}
+  .pill.closed{color:var(--red);border-color:var(--red)}
+
+  /* Rankings */
+  .rank{display:grid;grid-template-columns:40px 48px 1fr auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer}
+  .rank .n{font-family:'Black Ops One',sans-serif;font-size:22px;color:var(--muted);text-align:center}
+  .rank:nth-child(1) .n{color:#e8c45a}.rank:nth-child(2) .n{color:#c9ced6}.rank:nth-child(3) .n{color:#c98a52}
+  .rank .emb{width:44px;height:44px;font-size:15px;border-radius:8px}
+  .rank small{color:var(--muted)}
+  .mv{font-weight:800;font-size:13px}
+  .up{color:var(--accent)}.down{color:var(--red)}.same{color:var(--muted)}
+  .pts{font-family:'Black Ops One',sans-serif;font-size:18px;text-align:right}
+
+  /* Territory */
+  .terr{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+  .zone{border-radius:10px;padding:14px;border:1px solid var(--line);background:var(--panel);position:relative;overflow:hidden}
+  .zone::before{content:"";position:absolute;inset:0 auto 0 0;width:6px;background:var(--c,#444)}
+  .zone h4{font-size:15px}
+  .zone p{font-size:13px;color:var(--muted)}
+  .zone .cont{position:absolute;top:10px;right:10px;font-size:10px;font-weight:800;letter-spacing:1px;color:var(--warn);border:1px solid var(--warn);padding:2px 6px;border-radius:4px;animation:pulse 1.6s infinite}
+  @keyframes pulse{50%{opacity:.4}}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;font-size:13px;color:var(--muted)}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+  /* War board */
+  .war{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
+  .war .vs{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;text-align:center}
+  .war .side{display:flex;flex-direction:column;align-items:center;gap:6px;font-weight:600;font-size:14px}
+  .war .side .emb{width:52px;height:52px;font-size:18px}
+  .war .mid{font-family:'Black Ops One',sans-serif;font-size:20px}
+  .status{display:inline-block;font-size:11px;font-weight:800;letter-spacing:1px;padding:3px 8px;border-radius:4px;margin-top:6px}
+  .s-war{background:var(--red);color:#fff}.s-cease{background:var(--warn);color:#111}.s-ally{background:var(--accent);color:#111}
+  .war .note{color:var(--muted);font-size:13px;text-align:center;margin-top:10px}
+  .score{font-family:'Black Ops One',sans-serif;font-size:26px}
+
+  /* Dispatches */
+  .feed{border-left:2px solid var(--line);margin-left:8px}
+  .post{position:relative;padding:0 0 22px 22px}
+  .post::before{content:"";position:absolute;left:-7px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--accent)}
+  .post time{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+  .post h4{font-size:16px;margin:2px 0}
+  .post p{font-size:14px;color:var(--muted)}
+
+  /* Modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:flex-end;justify-content:center;z-index:20}
+  .modal.open{display:flex}
+  .sheet{background:var(--panel);border:1px solid var(--line);border-radius:16px 16px 0 0;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;padding:22px}
+  @media(min-width:700px){.modal{align-items:center}.sheet{border-radius:16px}}
+  .sheet .hd{display:flex;gap:16px;align-items:center;margin-bottom:14px}
+  .sheet h3{font-family:'Black Ops One',sans-serif;font-size:26px;line-height:1.1}
+  .x{float:right;background:none;border:0;color:var(--muted);font-size:28px;cursor:pointer;line-height:1}
+  .kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+  .kv div{background:var(--panel2);border-radius:8px;padding:10px;text-align:center}
+  .kv b{display:block;font-size:20px;font-family:'Black Ops One',sans-serif}
+  .kv span{font-size:11px;color:var(--muted);text-transform:uppercase}
+  .sheet h5{font-size:12px;letter-spacing:2px;color:var(--accent);margin:16px 0 6px}
+  .sheet ul{list-style:none}
+  .sheet li{padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .btn{display:block;text-align:center;background:var(--accent);color:var(--bg);font-weight:800;padding:14px;border-radius:10px;text-decoration:none;margin-top:18px}
+  .btn.off{background:var(--panel2);color:var(--muted);pointer-events:none}
+
+  /* Roster */
+  .roster li{display:flex;align-items:center;gap:10px}
+  .dot{width:9px;height:9px;border-radius:50%;background:#555;flex-shrink:0}
+  .dot.on{background:#5fd068;box-shadow:0 0 6px #5fd068}
+  .role{margin-left:auto;font-size:11px;font-weight:800;letter-spacing:.5px;padding:3px 8px;border-radius:4px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+  .role.r0{background:#e8c45a;color:#111;border-color:#e8c45a}
+  .role.r1{color:var(--accent);border-color:var(--accent)}
+  .pill.live{color:#5fd068;border-color:#5fd068}
+
+  /* Challenge */
+  .btn.ghost{background:none;border:2px solid var(--red);color:var(--red);cursor:pointer;width:100%;font:800 15px Inter}
+  .form label{display:block;font-size:12px;letter-spacing:1px;color:var(--muted);margin:12px 0 4px;text-transform:uppercase}
+  .form select,.form input,.form textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:10px;border-radius:8px;font:14px Inter}
+  .form textarea{min-height:70px;resize:vertical}
+  .ok{background:#1e3320;border:1px solid #5fd068;color:#bfe9c3;padding:12px;border-radius:8px;font-size:14px;margin-top:14px;display:none}
+  .chal{background:var(--panel);border:1px dashed var(--warn);border-radius:12px;padding:14px;margin-bottom:10px}
+  .chal .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .chal .emb{width:36px;height:36px;font-size:13px;border-radius:7px}
+  .chal small{color:var(--muted);display:block;margin-top:6px}
+  .s-pend{background:var(--panel2);color:var(--warn);border:1px solid var(--warn)}
+  .s-acc{background:var(--red);color:#fff}
+  h3.sec{font-family:'Black Ops One',sans-serif;font-size:20px;margin:26px 0 10px}
+
+
+  /* Account bar */
+  .acct{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:8px;min-height:36px;margin-bottom:14px;font-size:13px}
+  .acct .who{color:var(--muted);margin-right:auto}
+  .acct .who b{font-weight:800}
+  .avatar{width:30px;height:30px;border-radius:50%;border:1px solid var(--line)}
+  .sbtn{background:var(--panel);border:1px solid var(--line);color:var(--text);padding:8px 12px;border-radius:8px;font:600 13px Inter;cursor:pointer;position:relative}
+  .sbtn.discord{background:#5865F2;border-color:#5865F2;color:#fff}
+  .badge{position:absolute;top:-7px;right:-7px;background:var(--red);color:#fff;border-radius:999px;font-size:11px;font-weight:800;min-width:19px;height:19px;display:grid;place-items:center;padding:0 5px}
+  button.btn{width:100%;border:0;cursor:pointer;font:800 15px Inter}
+  button.btn:disabled{opacity:.6}
+  .btn.discordbtn{background:#5865F2;color:#fff}
+  .btn.ghost{border:2px solid var(--red)}
+  .btn.edit{background:var(--panel2);color:var(--text);border:1px solid var(--accent)}
+  .err{background:#3a1d1c;border:1px solid var(--red);color:#f3c0be;padding:12px;border-radius:8px;font-size:14px;margin-top:14px;display:none}
+
+  /* Inbox */
+  .inb{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px}
+  .inb.new{border-color:var(--warn)}
+  .inb .row{display:flex;align-items:center;gap:10px}
+  .inb .emb{width:38px;height:38px;font-size:14px;border-radius:8px}
+  .inb .det{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.7}
+  .inb .det b{color:var(--text);font-weight:600}
+  .acts{display:flex;gap:8px;margin-top:12px}
+  .acts button{flex:1;padding:11px;border-radius:8px;font:800 14px Inter;cursor:pointer}
+  .b-acc{background:var(--accent);color:#111;border:0}
+  .b-dec{background:none;border:1px solid var(--red);color:var(--red)}
+  .note{background:#1e3320;border:1px solid #5fd068;color:#bfe9c3;padding:12px;border-radius:8px;font-size:14px;margin-bottom:12px}
+  .note button{margin-top:8px}
+  .empty{color:var(--muted);font-size:14px;padding:6px 0}
+
+  /* Editor */
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+  .form input[type=color]{height:42px;padding:4px}
+  .chk{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:14px}
+  .chk input{width:auto}
+  .mrow{display:grid;grid-template-columns:1fr 104px 58px 34px;gap:6px;align-items:center;margin-bottom:6px}
+  .mrow input{padding:9px 8px!important;font-size:13px!important}
+  .mrow .act{display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;color:var(--muted);margin:0;text-transform:none;letter-spacing:0}
+  .mrow .act input{width:auto}
+  .rm{background:none;border:1px solid var(--line);color:var(--red);border-radius:8px;height:36px;cursor:pointer;font-size:14px}
+  .mhead{display:grid;grid-template-columns:1fr 104px 58px 34px;gap:6px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+
+  footer{border-top:1px solid var(--line);padding:24px 0;color:var(--muted);font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="acct" id="acct"></div>
+    <div class="kicker">ALLIED FORCES · CHERNARUS</div>
+    <h1>Factions of Chernarus</h1>
+    <p class="sub">Every group that holds ground, wages war and makes history on Allied Forces. Rankings, territory and the war board update every week.</p>
+    <div class="stats">
+      <div class="stat"><b id="sFactions">0</b><span>Active factions</span></div>
+      <div class="stat"><b id="sActive">0</b><span>Active players</span></div>
+      <div class="stat"><b id="sZones">0</b><span>Zones held</span></div>
+      <div class="stat"><b id="sWars">0</b><span>Active wars</span></div>
+      <div class="stat"><b id="sChal">0</b><span>Open challenges</span></div>
+      <div class="stat"><b id="sCountdown">--</b><span id="sEventName">Next event</span></div>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs"><div class="wrap">
+  <button data-tab="factions" class="active">Factions</button>
+  <button data-tab="rankings">Power Rankings</button>
+  <button data-tab="territory">Territory</button>
+  <button data-tab="war">War Board</button>
+  <button data-tab="dispatches">Dispatches</button>
+</div></nav>
+
+<main class="wrap">
+
+  <section id="factions" class="active">
+    <div id="spotlight"></div>
+    <h2>All Factions</h2>
+    <p class="hint">Tap a faction to see its roster, record and to send a challenge.</p>
+    <div class="controls">
+      <input id="search" placeholder="Search factions or leaders…">
+      <button class="chip on" data-filter="all">All</button>
+      <button class="chip" data-filter="open">Recruiting</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="rankings">
+    <h2>Power Rankings</h2>
+    <p class="hint" id="rankHint"></p>
+    <div id="rankList"></div>
+  </section>
+
+  <section id="territory">
+    <h2>Territory Control</h2>
+    <p class="hint">Who holds what across Chernarus. Contested zones can change hands in the next event.</p>
+    <div class="legend" id="legend"></div>
+    <div class="terr" id="terr"></div>
+  </section>
+
+  <section id="war">
+    <h2>War Board</h2>
+    <p class="hint">Active wars, ceasefires and alliances between factions.</p>
+    <div id="wars"></div>
+    <h3 class="sec">Challenges</h3>
+    <p class="hint">Open any faction's profile to send a challenge.</p>
+    <div id="chals"></div>
+  </section>
+
+  <section id="dispatches">
+    <h2>Frontline Dispatches</h2>
+    <p class="hint">The latest news from the field.</p>
+    <div class="feed" id="feed"></div>
+  </section>
+
+</main>
+
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+
+<footer>Allied Forces DayZ · Want your faction listed? Open a ticket in our Discord.</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* =========================================================
+   EDIT THIS SECTION TO UPDATE THE PAGE
+   ========================================================= */
+
+const SITE = {
+  discordInvite: "https://discord.gg/YOUR-INVITE",
+
+  // From Supabase > Project Settings > API (Project URL + publishable/anon key).
+  // Leave blank and the page still works: challenges just get copied for Discord.
+  supabaseUrl: "",
+  supabaseKey: "",
+
+  rankingsUpdated: "Week of Nov 7, 2026",
+  nextEvent: { name: "Territory War", date: "2026-11-14T20:00:00-05:00" },
+  factionOfTheWeek: "iron-wolves",
+  spotlightReason: "Took and held NWAF for three straight days against two rival factions."
+};
+
+/* Staff-controlled stats live here (points, rank, kills, honors, allies/rivals).
+   Once Supabase is connected, each faction's name, emblem, motto, base,
+   recruiting status and roster come from the database, where leaders edit them.
+   The example rosters below only show until then. */
+const FACTIONS = [
+  { id:"iron-wolves", name:"Iron Wolves", initials:"IW", color:"#5b6e3a",
+    motto:"The pack survives.", base:"Northwest Airfield", style:"Military / PvP",
+    founded:"Mar 2025", recruiting:true,
+    points:1840, lastRank:2, kills:212, eventsWon:4,
+    allies:["red-cross-collective"], rivals:["black-tide"],
+    achievements:["Held NWAF for 72 hours","Won October Territory War"],
+    roster:[
+      {name:"Example_Leader1", role:"Leader", active:true},
+      {name:"WolfSix", role:"Officer", active:true},
+      {name:"Grizz", role:"Medic", active:true},
+      {name:"Ash", role:"Sniper", active:false},
+      {name:"Tank", role:"Builder", active:true},
+      {name:"Nova", role:"Member", active:false} ] },
+
+  { id:"black-tide", name:"Black Tide", initials:"BT", color:"#2b3a55",
+    motto:"From the coast, we rise.", base:"Chernogorsk", style:"Raiders / PvP",
+    founded:"Jan 2025", recruiting:false,
+    points:1795, lastRank:1, kills:240, eventsWon:3,
+    allies:[], rivals:["iron-wolves"],
+    achievements:["Most kills — September","Raided 6 bases in one wipe"],
+    roster:[
+      {name:"Example_Leader2", role:"Leader", active:true},
+      {name:"Riptide", role:"Officer", active:false},
+      {name:"Kraken", role:"Raider", active:true},
+      {name:"Salt", role:"Member", active:true} ] },
+
+  { id:"red-cross-collective", name:"Red Cross Collective", initials:"RC", color:"#8a2f2f",
+    motto:"We heal. We protect.", base:"Stary Sobor", style:"Medics / RP",
+    founded:"Jun 2025", recruiting:true,
+    points:1210, lastRank:4, kills:38, eventsWon:1,
+    allies:["iron-wolves"], rivals:[],
+    achievements:["Ran the Stary Sobor field hospital","Community Choice — August"],
+    roster:[
+      {name:"Example_Leader3", role:"Leader", active:true},
+      {name:"Doc", role:"Head Medic", active:false},
+      {name:"Bandage", role:"Medic", active:true} ] },
+
+  { id:"north-traders", name:"Northern Traders Guild", initials:"NT", color:"#8a6a2a",
+    motto:"Everything has a price.", base:"Novodmitrovsk", style:"Traders / RP",
+    founded:"Aug 2025", recruiting:true,
+    points:1150, lastRank:3, kills:21, eventsWon:0,
+    allies:[], rivals:[],
+    achievements:["Largest trade post on the map"],
+    roster:[
+      {name:"Example_Leader4", role:"Leader", active:false},
+      {name:"Ledger", role:"Quartermaster", active:true} ] },
+
+  { id:"ghost-unit", name:"Ghost Unit", initials:"GU", color:"#4a4a4a",
+    motto:"You won't see us coming.", base:"Tisy", style:"Recon / PvP",
+    founded:"Sep 2025", recruiting:false,
+    points:980, lastRank:6, kills:97, eventsWon:1,
+    allies:[], rivals:["black-tide"],
+    achievements:["Longest confirmed sniper kill — 812m"],
+    roster:[
+      {name:"Example_Leader5", role:"Leader", active:true},
+      {name:"Wraith", role:"Sniper", active:true},
+      {name:"Shade", role:"Scout", active:false} ] }
+];
+
+/* Roster sort order: these roles show first, in this order */
+const ROLE_ORDER = ["Leader","Co-Leader","Officer","Head Medic","Quartermaster"];
+/* Suggested roles in the roster editor (leaders can also type their own) */
+const ROLE_SUGGESTIONS = ["Leader","Co-Leader","Officer","Medic","Head Medic","Sniper","Scout","Builder","Raider","Quartermaster","Recruit","Member"];
+
+const CHALLENGE_TYPES = ["Territory War","5v5 Skirmish","3v3 Skirmish","1v1 Leader Duel","Raid Defense","Convoy Escort"];
+
+/* Example challenges. Only shown until Supabase is connected. */
+const CHALLENGES = [
+  { from:"ghost-unit", to:"iron-wolves", type:"5v5 Skirmish", zone:"Tisy Military Base",
+    date:"Nov 16, 2026", stakes:"Loser gives up claim to Tisy", status:"pending" },
+  { from:"black-tide", to:"red-cross-collective", type:"Raid Defense", zone:"Stary Sobor",
+    date:"Nov 14, 2026", stakes:"Bragging rights", status:"accepted" }
+];
+
+/* Zones: owner = faction id, or null if unclaimed */
+const TERRITORY = [
+  { zone:"Northwest Airfield", owner:"iron-wolves", contested:true },
+  { zone:"Chernogorsk", owner:"black-tide", contested:false },
+  { zone:"Elektrozavodsk", owner:"black-tide", contested:true },
+  { zone:"Stary Sobor", owner:"red-cross-collective", contested:false },
+  { zone:"Novodmitrovsk", owner:"north-traders", contested:false },
+  { zone:"Tisy Military Base", owner:"ghost-unit", contested:false },
+  { zone:"Berezino", owner:null, contested:false },
+  { zone:"Severograd", owner:null, contested:false },
+  { zone:"Zelenogorsk", owner:"iron-wolves", contested:false }
+];
+
+/* status: "war" | "ceasefire" | "alliance" */
+const WARS = [
+  { a:"iron-wolves", b:"black-tide", status:"war", scoreA:3, scoreB:2,
+    note:"Started over control of Elektro. Decided at the next Territory War." },
+  { a:"ghost-unit", b:"black-tide", status:"ceasefire", scoreA:1, scoreB:1,
+    note:"Ceasefire holds until Nov 14." },
+  { a:"iron-wolves", b:"red-cross-collective", status:"alliance",
+    note:"Wolves protect the field hospital; medics treat Wolves first." }
+];
+
+const DISPATCHES = [
+  { date:"Nov 6, 2026", title:"Wolves hold the airfield",
+    body:"Iron Wolves pushed back a combined assault on NWAF. The zone is now contested ahead of next week's event." },
+  { date:"Nov 3, 2026", title:"Ceasefire declared",
+    body:"Ghost Unit and Black Tide agreed to a temporary ceasefire after a costly week of fighting near Tisy." },
+  { date:"Oct 30, 2026", title:"New faction: Northern Traders Guild",
+    body:"A new trading faction set up shop in Novodmitrovsk and is now recruiting." }
+];
+
+/* ================= END OF EDIT SECTION ================= */
+
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safeColor = c => /^#[0-9a-fA-F]{6}$/.test(c) ? c : "#444444";
+const emb = (f, cls="") => `<div class="emb ${cls}" style="background:${safeColor(f.color)}">${esc(f.initials)}</div>`;
+const roleRank = r => { const i = ROLE_ORDER.indexOf(r); return i < 0 ? 99 : i; };
+const fmtDate = iso => iso ? new Date(iso).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}) : "Date TBD";
+const UNKNOWN = id => ({ id, name:id, initials:"?", color:"#444444", roster:[] });
+
+/* ---------- Supabase ---------- */
+const SB = (SITE.supabaseUrl && SITE.supabaseKey && window.supabase)
+  ? window.supabase.createClient(SITE.supabaseUrl, SITE.supabaseKey) : null;
+let me = null;                                        // logged-in player
+let db = { factions:null, members:null, challenges:null };
+let factions = [], byId = {}, ranked = [];
+let inboxNote = null;
+
+const canSend   = () => !!me?.faction && ["Leader","Co-Leader","Officer"].includes(me.role);
+const canManage = fid => !!me && me.faction === fid && ["Leader","Co-Leader"].includes(me.role);
+const F = id => byId[id] || UNKNOWN(id);
+
+async function login(){
+  await SB.auth.signInWithOAuth({ provider:"discord", options:{ redirectTo: location.origin + location.pathname } });
+}
+async function logout(){ await SB.auth.signOut(); me = null; closeSheet(); refresh(); }
+
+async function loadMe(){
+  if (!SB) return;
+  const { data:{ session } } = await SB.auth.getSession();
+  if (!session) { me = null; return; }
+  const md = session.user.user_metadata || {};
+  me = { discordId: md.provider_id || md.sub, name: md.custom_claims?.global_name || md.full_name || md.name || "Player",
+         avatar: md.avatar_url, faction:null, role:null };
+  const { data } = await SB.from("faction_leaders").select("faction_id, role").eq("discord_id", me.discordId).maybeSingle();
+  if (data) { me.faction = data.faction_id; me.role = data.role; }
+}
+
+async function loadDb(){
+  if (!SB) return;
+  const [f, m, c] = await Promise.all([
+    SB.from("factions").select("*"),
+    SB.from("faction_members").select("*").order("id"),
+    SB.from("challenges").select("*").order("created_at", { ascending:false }).limit(200)
+  ]);
+  db.factions   = f.error ? null : f.data;
+  db.members    = m.error ? null : m.data;
+  db.challenges = c.error ? null : c.data;
+}
+
+/* Merge staff stats (this file) with leader-edited info (database) */
+function buildFactions(){
+  const list = FACTIONS.map(f => ({ ...f, roster:(f.roster||[]).map(m => ({...m})),
+    allies:f.allies||[], rivals:f.rivals||[], achievements:f.achievements||[] }));
+  const map = Object.fromEntries(list.map(f => [f.id, f]));
+  for (const r of db.factions || []) {
+    let f = map[r.id];
+    if (!f) { f = { id:r.id, founded:"—", points:0, lastRank:null, kills:0, eventsWon:0,
+                    allies:[], rivals:[], achievements:[] }; map[r.id] = f; list.push(f); }
+    Object.assign(f, { name:r.name, initials:r.initials, color:r.color, motto:r.motto || "",
+      base:r.base || "—", style:r.style || "—", recruiting:r.recruiting, inDb:true, roster:[] });
+  }
+  for (const m of db.members || []) {
+    const f = map[m.faction_id];
+    if (f?.inDb) f.roster.push({ id:m.id, name:m.name, role:m.role, active:m.active });
+  }
+  for (const f of list) {
+    f.roster.sort((a,b) => roleRank(a.role) - roleRank(b.role) || b.active - a.active);
+    f.members = f.roster.length;
+    f.activeCount = f.roster.filter(m => m.active).length;
+    f.leader = (f.roster.find(m => m.role === "Leader") || f.roster[0] || { name:"—" }).name;
+  }
+  factions = list; byId = map;
+  ranked = [...list].sort((a,b) => b.points - a.points);
+}
+
+function challengeList(){
+  if (!db.challenges) return CHALLENGES;
+  return db.challenges.map(c => ({ id:c.id, from:c.from_faction, to:c.to_faction, type:c.type, zone:c.zone,
+    date:fmtDate(c.proposed_at), stakes:c.stakes, status:c.status, created_at:c.created_at, responded_at:c.responded_at }));
+}
+
+/* ---------- Rendering ---------- */
+function renderStats(){
+  $("#sFactions").textContent = factions.length;
+  $("#sActive").textContent = factions.reduce((n,f) => n + f.activeCount, 0);
+  $("#sZones").textContent = TERRITORY.filter(t => t.owner).length + "/" + TERRITORY.length;
+  $("#sWars").textContent = WARS.filter(w => w.status === "war").length;
+  $("#sChal").textContent = challengeList().filter(c => c.status === "pending").length;
+  $("#sEventName").textContent = SITE.nextEvent.name;
+}
+function tick(){
+  const ms = new Date(SITE.nextEvent.date) - new Date();
+  if (ms <= 0) { $("#sCountdown").textContent = "LIVE"; return; }
+  const d = Math.floor(ms/864e5), h = Math.floor(ms%864e5/36e5), m = Math.floor(ms%36e5/6e4);
+  $("#sCountdown").textContent = d > 0 ? `${d}d ${h}h` : `${h}h ${m}m`;
+}
+
+function renderAccount(){
+  const el = $("#acct");
+  if (!SB) { el.innerHTML = ""; return; }
+  if (!me) {
+    el.innerHTML = `<button class="sbtn discord" id="loginBtn">Log in with Discord</button>`;
+    $("#loginBtn").onclick = login; return;
+  }
+  const f = me.faction ? F(me.faction) : null;
+  const pending = f ? challengeList().filter(c => c.to === f.id && c.status === "pending").length : 0;
+  el.innerHTML = `
+    <span class="who">${me.avatar ? `<img class="avatar" src="${esc(me.avatar)}" alt="" style="vertical-align:middle;margin-right:6px">` : ""}${esc(me.name)}${f ? ` · <b style="color:${safeColor(f.color)}">${esc(f.name)}</b> ${esc(me.role)}` : ""}</span>
+    ${f ? `<button class="sbtn" id="inboxBtn">📨 Inbox${pending ? `<span class="badge">${pending}</span>` : ""}</button>` : ""}
+    ${f && canManage(f.id) ? `<button class="sbtn" id="manageBtn">✏️ My faction</button>` : ""}
+    <button class="sbtn" id="logoutBtn">Log out</button>`;
+  $("#logoutBtn").onclick = logout;
+  if ($("#inboxBtn")) $("#inboxBtn").onclick = openInbox;
+  if ($("#manageBtn")) $("#manageBtn").onclick = () => openEdit(me.faction);
+}
+
+function renderSpotlight(){
+  const f = byId[SITE.factionOfTheWeek];
+  $("#spotlight").innerHTML = f ? `<div class="spot" data-id="${esc(f.id)}">${emb(f,"lg")}
+    <div><span class="tag">FACTION OF THE WEEK</span><h3>${esc(f.name)}</h3><p>${esc(SITE.spotlightReason)}</p></div></div>` : "";
+}
+
+let filter = "all";
+function renderGrid(){
+  const q = $("#search").value.toLowerCase();
+  const list = factions.filter(f =>
+    (filter === "all" || f.recruiting) &&
+    (f.name.toLowerCase().includes(q) || f.leader.toLowerCase().includes(q)));
+  $("#grid").innerHTML = list.map(f => `
+    <div class="card" data-id="${esc(f.id)}">
+      <div class="top">${emb(f)}<div><h3>${esc(f.name)}</h3>${f.motto ? `<div class="motto">“${esc(f.motto)}”</div>` : ""}</div></div>
+      <div class="meta">
+        <span class="pill">${esc(f.style)}</span>
+        <span class="pill live">● ${f.activeCount}/${f.members} active</span>
+        <span class="pill ${f.recruiting ? "rec" : "closed"}">${f.recruiting ? "Recruiting" : "Closed"}</span>
+      </div>
+    </div>`).join("") || `<p class="hint">No factions match.</p>`;
+}
+
+function renderRankings(){
+  $("#rankHint").textContent = `Based on events won, territory and combat. Updated ${SITE.rankingsUpdated}.`;
+  $("#rankList").innerHTML = ranked.map((f,i) => {
+    let mv;
+    if (f.lastRank == null) mv = `<span class="mv up">NEW</span>`;
+    else { const d = f.lastRank - (i+1);
+      mv = d > 0 ? `<span class="mv up">▲ ${d}</span>` : d < 0 ? `<span class="mv down">▼ ${-d}</span>` : `<span class="mv same">—</span>`; }
+    return `<div class="rank" data-id="${esc(f.id)}"><div class="n">${i+1}</div>${emb(f)}
+      <div><b>${esc(f.name)}</b><br><small>${mv} · ${f.eventsWon} events won</small></div>
+      <div class="pts">${f.points.toLocaleString()}</div></div>`;
+  }).join("");
+}
+
+function renderTerritory(){
+  const owners = [...new Set(TERRITORY.map(t => t.owner).filter(Boolean))];
+  $("#legend").innerHTML = owners.map(id => `<span><i style="background:${safeColor(F(id).color)}"></i>${esc(F(id).name)}</span>`).join("")
+    + `<span><i style="background:#444"></i>Unclaimed</span>`;
+  $("#terr").innerHTML = TERRITORY.map(t => {
+    const f = t.owner ? F(t.owner) : null;
+    return `<div class="zone" style="--c:${f ? safeColor(f.color) : "#444"}">
+      ${t.contested ? '<span class="cont">CONTESTED</span>' : ""}
+      <h4>${esc(t.zone)}</h4><p>${f ? "Held by " + esc(f.name) : "Unclaimed"}</p></div>`;
+  }).join("");
+}
+
+function renderWars(){
+  const label = { war:["ACTIVE WAR","s-war"], ceasefire:["CEASEFIRE","s-cease"], alliance:["ALLIANCE","s-ally"] };
+  $("#wars").innerHTML = WARS.map(w => {
+    const A = F(w.a), B = F(w.b), [txt, cls] = label[w.status];
+    const mid = w.status === "alliance" ? "🤝" : `<span class="score">${w.scoreA ?? 0} – ${w.scoreB ?? 0}</span>`;
+    return `<div class="war"><div class="vs">
+        <div class="side" data-id="${esc(A.id)}">${emb(A)}${esc(A.name)}</div>
+        <div><div class="mid">${mid}</div><span class="status ${cls}">${txt}</span></div>
+        <div class="side" data-id="${esc(B.id)}">${emb(B)}${esc(B.name)}</div>
+      </div><div class="note">${esc(w.note)}</div></div>`;
+  }).join("");
+}
+
+function renderChallenges(){
+  const list = challengeList().filter(c => c.status !== "declined").slice(0, 15);
+  $("#chals").innerHTML = list.map(c => {
+    const A = F(c.from), B = F(c.to), acc = c.status === "accepted";
+    return `<div class="chal"><div class="row">${emb(A)}<b>${esc(A.name)}</b><span style="color:var(--muted)">challenged</span>${emb(B)}<b>${esc(B.name)}</b>
+      <span class="status ${acc ? "s-acc" : "s-pend"}" style="margin:0 0 0 auto">${acc ? "ACCEPTED" : "AWAITING REPLY"}</span></div>
+      <small>⚔️ ${esc(c.type)} · 📍 ${esc(c.zone)} · 📅 ${esc(c.date)}${c.stakes ? " · 🏆 " + esc(c.stakes) : ""}</small></div>`;
+  }).join("") || '<p class="hint">No open challenges. Be the first.</p>';
+}
+
+function renderFeed(){
+  $("#feed").innerHTML = DISPATCHES.map(d =>
+    `<div class="post"><time>${esc(d.date)}</time><h4>${esc(d.title)}</h4><p>${esc(d.body)}</p></div>`).join("");
+}
+
+function renderAll(){
+  renderStats(); renderAccount(); renderSpotlight(); renderGrid(); renderRankings();
+  renderTerritory(); renderWars(); renderChallenges(); renderFeed();
+}
+
+async function refresh(){
+  await Promise.all([loadMe(), loadDb()]);
+  buildFactions(); renderAll();
+}
+
+/* ---------- Sheets (popups) ---------- */
+function openSheet(html, after){
+  $("#sheet").innerHTML = `<button class="x" aria-label="Close">×</button>` + html;
+  $("#modal").classList.add("open");
+  document.body.style.overflow = "hidden";
+  $("#sheet").scrollTop = 0;
+  if (after) after();
+}
+function closeSheet(){ $("#modal").classList.remove("open"); document.body.style.overflow = ""; }
+function show(id, text){ const el = $(id); el.textContent = text; el.style.display = "block"; }
+
+function openProfile(id){
+  const f = byId[id]; if (!f) return;
+  const rank = ranked.findIndex(x => x.id === id) + 1;
+  const zones = TERRITORY.filter(t => t.owner === id).map(t => t.zone);
+  const names = ids => ids.length ? ids.map(i => esc(F(i).name)).join(", ") : "None";
+  openSheet(`
+    <div class="hd">${emb(f,"lg")}<div><h3>${esc(f.name)}</h3>${f.motto ? `<div style="color:var(--muted);font-style:italic">“${esc(f.motto)}”</div>` : ""}</div></div>
+    <div class="kv">
+      <div><b>#${rank}</b><span>Rank</span></div>
+      <div><b>${f.activeCount}/${f.members}</b><span>Active</span></div>
+      <div><b>${zones.length}</b><span>Zones</span></div>
+      <div><b>${f.kills}</b><span>Kills</span></div>
+      <div><b>${f.eventsWon}</b><span>Events won</span></div>
+      <div><b>${f.points}</b><span>Points</span></div>
+    </div>
+    <h5>INTEL</h5>
+    <ul>
+      <li><b>Leader:</b> ${esc(f.leader)}</li>
+      <li><b>Home base:</b> ${esc(f.base)}</li>
+      <li><b>Playstyle:</b> ${esc(f.style)}</li>
+      <li><b>Founded:</b> ${esc(f.founded)}</li>
+      <li><b>Territory:</b> ${zones.length ? zones.map(esc).join(", ") : "None"}</li>
+      <li><b>Allies:</b> ${names(f.allies)}</li>
+      <li><b>Rivals:</b> ${names(f.rivals)}</li>
+    </ul>
+    <h5>ROSTER · ${f.activeCount} OF ${f.members} ACTIVE</h5>
+    <ul class="roster">${f.roster.map(m => {
+      const r = roleRank(m.role);
+      return `<li><span class="dot ${m.active ? "on" : ""}" title="${m.active ? "Active" : "Inactive"}"></span>${esc(m.name)}
+        <span class="role ${r === 0 ? "r0" : r < 99 ? "r1" : ""}">${esc(m.role)}</span></li>`;
+    }).join("") || '<li class="empty">No members listed yet.</li>'}</ul>
+    <h5>HONORS</h5>
+    <ul>${f.achievements.map(a => `<li>🎖️ ${esc(a)}</li>`).join("") || '<li class="empty">None yet</li>'}</ul>
+    ${canManage(f.id) ? `<button class="btn edit" id="editBtn">✏️ Edit faction & roster</button>` : ""}
+    <a class="btn ${f.recruiting ? "" : "off"}" href="${esc(SITE.discordInvite)}" target="_blank" rel="noopener">
+      ${f.recruiting ? "Request to join on Discord" : "Not recruiting right now"}</a>
+    ${me?.faction === f.id ? "" : `<button class="btn ghost" id="chalBtn" style="margin-top:10px;background:none;color:var(--red)">⚔️ Challenge ${esc(f.name)}</button>`}`,
+  () => {
+    if ($("#editBtn")) $("#editBtn").onclick = () => openEdit(f.id);
+    if ($("#chalBtn")) $("#chalBtn").onclick = () => openChallenge(f.id);
+  });
+}
+
+/* ---------- Challenges ---------- */
+function openChallenge(id){
+  const t = F(id);
+  const head = `<div class="hd">${emb(t,"lg")}<div><div class="kicker">ISSUE A CHALLENGE TO</div><h3>${esc(t.name)}</h3></div></div>`;
+  if (SB && !me) return openSheet(head + `<p class="hint">Log in with Discord to send a challenge. It goes straight to ${esc(t.name)}'s leader inbox.</p>
+      <button class="btn discordbtn" id="login2">Log in with Discord</button>`, () => $("#login2").onclick = login);
+  if (SB && !canSend()) return openSheet(head + `<p class="hint">Only faction Leaders, Co-Leaders and Officers can send challenges. If that's you, ask staff to link your Discord to your faction.</p>`);
+  if (SB && me.faction === id) return openSheet(head + `<p class="hint">You can't challenge your own faction.</p>`);
+
+  const fromField = SB
+    ? `<input value="${esc(F(me.faction).name)}" disabled>`
+    : `<select id="cFrom">${factions.filter(f => f.id !== id).map(f => `<option value="${esc(f.id)}">${esc(f.name)}</option>`).join("")}</select>`;
+  openSheet(head + `
+    <div class="form">
+      <label>Your faction</label>${fromField}
+      <label>Challenge type</label>
+      <select id="cType">${CHALLENGE_TYPES.map(x => `<option>${esc(x)}</option>`).join("")}</select>
+      <label>Location</label>
+      <select id="cZone">${TERRITORY.map(z => `<option>${esc(z.zone)}</option>`).join("")}<option>Neutral ground (staff picks)</option></select>
+      <label>Proposed date & time</label>
+      <input id="cDate" type="datetime-local">
+      <label>Stakes (optional)</label>
+      <textarea id="cStakes" maxlength="300" placeholder="e.g. Loser gives up their claim to Elektro"></textarea>
+      <button class="btn" id="cSend" style="margin-top:18px">Send challenge</button>
+      <div class="ok" id="cOk"></div><div class="err" id="cErr"></div>
+    </div>`, () => $("#cSend").onclick = () => sendChallenge(t));
+}
+
+async function sendChallenge(t){
+  const btn = $("#cSend"), type = $("#cType").value, zone = $("#cZone").value;
+  const when = $("#cDate").value, stakes = $("#cStakes").value.trim().slice(0, 300);
+  $("#cErr").style.display = "none";
+
+  if (SB) {
+    btn.disabled = true; btn.textContent = "Sending…";
+    const { error } = await SB.from("challenges").insert({
+      from_faction: me.faction, to_faction: t.id, type, zone,
+      proposed_at: when ? new Date(when).toISOString() : null,
+      stakes: stakes || null, created_by: me.discordId });
+    if (error) {
+      btn.disabled = false; btn.textContent = "Send challenge";
+      return show("#cErr", error.code === "23505"
+        ? `You already have an open challenge to ${t.name}. Wait for their leader to answer it first.`
+        : "Couldn't send the challenge. " + error.message);
+    }
+    btn.style.display = "none";
+    show("#cOk", `Challenge sent! It's now in ${t.name}'s leader inbox. You'll see their answer in your inbox and on the War Board.`);
+    refresh();
+    return;
+  }
+
+  // No database yet: copy a formatted message for Discord
+  const from = F($("#cFrom").value);
+  const msg = `⚔️ **FACTION CHALLENGE** ⚔️\n**${from.name}** challenges **${t.name}**\nType: ${type}\nLocation: ${zone}\nWhen: ${when ? fmtDate(when) : "Date TBD"}\nStakes: ${stakes || "Bragging rights"}`;
+  try { await navigator.clipboard.writeText(msg); } catch(e) {}
+  show("#cOk", `Challenge copied. Paste it in the Discord challenges channel so staff and ${t.name} can see it.`);
+  setTimeout(() => window.open(SITE.discordInvite, "_blank", "noopener"), 900);
+}
+
+/* ---------- Leader inbox ---------- */
+function openInbox(){
+  const fid = me.faction, all = challengeList();
+  const incoming = all.filter(c => c.to === fid && c.status === "pending");
+  const sent = all.filter(c => c.from === fid).slice(0, 10);
+  const past = all.filter(c => c.to === fid && c.status !== "pending").slice(0, 10);
+  const statusTag = s => s === "accepted" ? `<span class="status s-acc" style="margin:0 0 0 auto">ACCEPTED</span>`
+    : s === "declined" ? `<span class="status s-cease" style="margin:0 0 0 auto">DECLINED</span>`
+    : `<span class="status s-pend" style="margin:0 0 0 auto">AWAITING REPLY</span>`;
+  const details = c => `<div class="det">
+      ⚔️ <b>${esc(c.type)}</b><br>📍 ${esc(c.zone)}<br>📅 ${esc(c.date)}<br>🏆 ${esc(c.stakes || "Bragging rights")}
+      ${c.created_at ? `<br><span style="font-size:12px">Sent ${esc(fmtDate(c.created_at))}</span>` : ""}</div>`;
+
+  const inc = incoming.map(c => { const A = F(c.from); return `
+    <div class="inb new"><div class="row">${emb(A)}<div><b>${esc(A.name)}</b><br><small style="color:var(--muted)">challenged your faction</small></div></div>
+      ${details(c)}
+      ${canManage(fid)
+        ? `<div class="acts"><button class="b-dec" data-cid="${c.id}" data-ans="declined">Decline</button>
+             <button class="b-acc" data-cid="${c.id}" data-ans="accepted">Accept</button></div>`
+        : `<p class="hint" style="margin:10px 0 0">Waiting for your Leader or Co-Leader to answer.</p>`}
+    </div>`; }).join("") || '<p class="empty">No new challenges.</p>';
+
+  const row = (c, otherId, verb) => { const O = F(otherId); return `
+    <div class="inb"><div class="row">${emb(O)}<div><small style="color:var(--muted)">${verb}</small><br><b>${esc(O.name)}</b></div>${statusTag(c.status)}</div>${details(c)}</div>`; };
+
+  const note = inboxNote ? `<div class="note">${esc(inboxNote.text)}${inboxNote.copy ? `<button class="btn" id="copyAnn">Copy announcement for Discord</button>` : ""}</div>` : "";
+
+  openSheet(`
+    <div class="hd">${emb(F(fid),"lg")}<div><div class="kicker">LEADER INBOX</div><h3>${esc(F(fid).name)}</h3></div></div>
+    ${note}
+    <h5>INCOMING CHALLENGES (${incoming.length})</h5>${inc}
+    <h5>SENT BY YOUR FACTION</h5>${sent.map(c => row(c, c.to, "You challenged")).join("") || '<p class="empty">Nothing sent yet.</p>'}
+    <h5>ANSWERED</h5>${past.map(c => row(c, c.from, "Challenge from")).join("") || '<p class="empty">Nothing answered yet.</p>'}`,
+  () => {
+    $$("[data-ans]").forEach(b => b.onclick = () => answerChallenge(+b.dataset.cid, b.dataset.ans, b));
+    if ($("#copyAnn")) $("#copyAnn").onclick = async () => {
+      try { await navigator.clipboard.writeText(inboxNote.copy); $("#copyAnn").textContent = "Copied ✓"; } catch(e) {}
+    };
+  });
+  inboxNote = null;
+}
+
+async function answerChallenge(cid, status, btn){
+  btn.closest(".acts").querySelectorAll("button").forEach(b => b.disabled = true);
+  btn.textContent = status === "accepted" ? "Accepting…" : "Declining…";
+  const { data, error } = await SB.from("challenges")
+    .update({ status, responded_at: new Date().toISOString() })
+    .eq("id", cid).eq("status", "pending").select();
+  await refresh();
+  if (error || !data?.length) {
+    inboxNote = { text: "Couldn't save your answer. It may have already been answered, or you don't have permission." };
+  } else if (status === "accepted") {
+    const c = challengeList().find(x => x.id === cid);
+    inboxNote = { text: `Challenge accepted! It's now on the War Board for everyone to see.`,
+      copy: `⚔️ **CHALLENGE ACCEPTED** ⚔️\n**${F(c.to).name}** accepted **${F(c.from).name}**'s challenge!\nType: ${c.type}\nLocation: ${c.zone}\nWhen: ${c.date}\nStakes: ${c.stakes || "Bragging rights"}` };
+  } else {
+    inboxNote = { text: "Challenge declined." };
+  }
+  openInbox();
+}
+
+/* ---------- Faction editor (Leaders & Co-Leaders) ---------- */
+function openEdit(fid){
+  const f = F(fid);
+  if (!SB || !canManage(fid)) return;
+  if (!f.inDb) return openSheet(`<h3>${esc(f.name)}</h3><p class="hint" style="margin-top:10px">Staff need to add this faction to the database before it can be edited here.</p>`);
+  const rows = f.roster.map(m => ({ ...m }));
+
+  openSheet(`
+    <div class="hd">${emb(f,"lg")}<div><div class="kicker">EDIT FACTION</div><h3>${esc(f.name)}</h3></div></div>
+    <div class="form">
+      <label>Faction name</label><input id="eName" maxlength="40" value="${esc(f.name)}">
+      <div class="two">
+        <div><label>Emblem letters</label><input id="eInit" maxlength="3" value="${esc(f.initials)}"></div>
+        <div><label>Faction color</label><input id="eColor" type="color" value="${safeColor(f.color)}"></div>
+      </div>
+      <label>Motto</label><input id="eMotto" maxlength="80" value="${esc(f.motto)}">
+      <div class="two">
+        <div><label>Home base</label><input id="eBase" maxlength="40" list="zoneList" value="${esc(f.base === "—" ? "" : f.base)}"></div>
+        <div><label>Playstyle</label><input id="eStyle" maxlength="40" value="${esc(f.style === "—" ? "" : f.style)}" placeholder="e.g. Military / PvP"></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="eRec" ${f.recruiting ? "checked" : ""}> Recruiting new members</label>
+
+      <h5 style="margin-top:22px">ROSTER</h5>
+      <div class="mhead"><span>Player</span><span>Role</span><span>Active</span><span></span></div>
+      <div id="mrows"></div>
+      <button class="sbtn" id="addM" style="width:100%;margin-top:4px">+ Add member</button>
+
+      <datalist id="roleList">${ROLE_SUGGESTIONS.map(r => `<option value="${esc(r)}">`).join("")}</datalist>
+      <datalist id="zoneList">${TERRITORY.map(z => `<option value="${esc(z.zone)}">`).join("")}</datalist>
+
+      <button class="btn" id="saveF" style="margin-top:20px">Save changes</button>
+      <div class="ok" id="eOk"></div><div class="err" id="eErr"></div>
+    </div>`, () => {
+    const draw = () => {
+      $("#mrows").innerHTML = rows.map((m,i) => `
+        <div class="mrow">
+          <input data-i="${i}" data-k="name" maxlength="32" placeholder="Player name" value="${esc(m.name)}">
+          <input data-i="${i}" data-k="role" maxlength="24" list="roleList" value="${esc(m.role)}">
+          <label class="act"><input type="checkbox" data-i="${i}" data-k="active" ${m.active ? "checked" : ""}>On</label>
+          <button class="rm" data-rm="${i}" aria-label="Remove">✕</button>
+        </div>`).join("") || '<p class="empty">No members yet. Add your first one.</p>';
+      $$("#mrows [data-k]").forEach(el => el.oninput = el.onchange = () => {
+        rows[+el.dataset.i][el.dataset.k] = el.type === "checkbox" ? el.checked : el.value; });
+      $$("#mrows [data-rm]").forEach(b => b.onclick = () => { rows.splice(+b.dataset.rm, 1); draw(); });
+    };
+    draw();
+    $("#addM").onclick = () => { rows.push({ name:"", role:"Member", active:true }); draw();
+      const inputs = $$("#mrows [data-k=name]"); inputs[inputs.length-1]?.focus(); };
+    $("#saveF").onclick = () => saveFaction(f, rows);
+  });
+}
+
+async function saveFaction(f, rows){
+  const btn = $("#saveF");
+  $("#eErr").style.display = "none"; $("#eOk").style.display = "none";
+  const prof = {
+    name: $("#eName").value.trim(), initials: $("#eInit").value.trim().toUpperCase(),
+    color: $("#eColor").value, motto: $("#eMotto").value.trim() || null,
+    base: $("#eBase").value.trim() || null, style: $("#eStyle").value.trim() || null,
+    recruiting: $("#eRec").checked, updated_at: new Date().toISOString() };
+  if (prof.name.length < 2) return show("#eErr", "Faction name needs at least 2 characters.");
+  if (!prof.initials) return show("#eErr", "Add 1–3 emblem letters.");
+
+  const clean = rows.map(r => ({ ...r, name: r.name.trim(), role: (r.role || "").trim() || "Member" })).filter(r => r.name);
+  const keep = new Set(clean.filter(r => r.id).map(r => r.id));
+  const removed = f.roster.filter(m => m.id && !keep.has(m.id)).map(m => m.id);
+  const changed = clean.filter(r => { if (!r.id) return false;
+    const o = f.roster.find(m => m.id === r.id); return o && (o.name !== r.name || o.role !== r.role || o.active !== r.active); });
+  const added = clean.filter(r => !r.id).map(r => ({ faction_id: f.id, name: r.name, role: r.role, active: !!r.active }));
+
+  btn.disabled = true; btn.textContent = "Saving…";
+  const results = await Promise.all([
+    SB.from("factions").update(prof).eq("id", f.id),
+    removed.length ? SB.from("faction_members").delete().in("id", removed) : { error:null },
+    added.length ? SB.from("faction_members").insert(added) : { error:null },
+    ...changed.map(r => SB.from("faction_members").update({ name:r.name, role:r.role, active:!!r.active }).eq("id", r.id))
+  ]);
+  const err = results.find(r => r.error)?.error;
+  await refresh();
+  if (err) { btn.disabled = false; btn.textContent = "Save changes"; return show("#eErr", "Some changes didn't save. " + err.message); }
+  btn.textContent = "Saved ✓";
+  show("#eOk", "Faction updated. Everyone visiting the site now sees your changes.");
+  setTimeout(() => openProfile(f.id), 1200);
+}
+
+/* ---------- Events ---------- */
+$$("nav.tabs button").forEach(b => b.onclick = () => {
+  $$("nav.tabs button").forEach(x => x.classList.toggle("active", x === b));
+  $$("section").forEach(s => s.classList.toggle("active", s.id === b.dataset.tab));
+  window.scrollTo({ top: $("nav.tabs").offsetTop, behavior: "smooth" });
+});
+$("#search").oninput = renderGrid;
+$$(".chip").forEach(c => c.onclick = () => {
+  filter = c.dataset.filter;
+  $$(".chip").forEach(x => x.classList.toggle("on", x === c));
+  renderGrid();
+});
+document.addEventListener("click", e => {
+  if (e.target.closest(".x") || e.target.id === "modal") return closeSheet();
+  const el = e.target.closest("[data-id]");
+  if (el && !e.target.closest(".sheet")) openProfile(el.dataset.id);
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
+
+/* ---------- Start ---------- */
+buildFactions(); renderAll(); tick(); setInterval(tick, 30000);
+if (SB) {
+  refresh();
+  SB.auth.onAuthStateChange(evt => { if (evt === "SIGNED_IN" || evt === "SIGNED_OUT") setTimeout(refresh, 0); });
+  setInterval(() => { if (!$("#modal").classList.contains("open")) refresh(); }, 60000);
+}
+</script>
+</body>
+</html>
