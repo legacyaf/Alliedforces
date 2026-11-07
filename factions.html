@@ -192,6 +192,28 @@
   .rm{background:none;border:1px solid var(--line);color:var(--red);border-radius:8px;height:36px;cursor:pointer;font-size:14px}
   .mhead{display:grid;grid-template-columns:1fr 104px 58px 34px;gap:6px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
 
+
+  /* Join box (War Board) */
+  .joinbox{background:linear-gradient(135deg,var(--panel2),var(--panel));border:1px solid var(--accent);border-radius:14px;padding:18px;margin-bottom:24px}
+  .joinbox h3{font-family:'Black Ops One',sans-serif;font-size:20px;margin-bottom:4px}
+  .joinbox p{color:var(--muted);font-size:14px}
+  .joinbox .btn{margin-top:14px}
+
+  /* Member manager */
+  .mcard{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
+  .mcard .mtop{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:600;font-size:14px}
+  .mcard .mtop img,.prow img{width:24px;height:24px;border-radius:50%}
+  .mcard .mtop .rm{margin-left:auto;height:30px;padding:0 10px;font-size:12px}
+  .mcard .mgrid{display:grid;grid-template-columns:1fr 1fr 64px;gap:6px;align-items:center}
+  .mcard .mgrid input,.mcard .mgrid select{padding:8px!important;font-size:13px!important}
+  .mcard .act{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);margin:0!important;text-transform:none!important;letter-spacing:0!important}
+  .mcard .act input{width:auto}
+  .prow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .prow .sbtn{margin-left:auto;padding:6px 12px}
+  .danger{border:1px solid var(--red);border-radius:10px;padding:12px;margin-top:22px}
+  .danger h5{color:var(--red)!important;margin-top:0!important}
+  .b-red{background:none;border:1px solid var(--red);color:var(--red)}
+
   footer{border-top:1px solid var(--line);padding:24px 0;color:var(--muted);font-size:13px;text-align:center}
 </style>
 </head>
@@ -250,6 +272,7 @@
   </section>
 
   <section id="war">
+    <div id="joinBox"></div>
     <h2>War Board</h2>
     <p class="hint">Active wars, ceasefires and alliances between factions.</p>
     <div id="wars"></div>
@@ -268,7 +291,7 @@
 
 <div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
 
-<footer>Allied Forces DayZ · Want your faction listed? Open a ticket in our Discord.</footer>
+<footer>Allied Forces DayZ · Start your own faction from the War Board.</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -290,10 +313,10 @@ const SITE = {
   spotlightReason: "Took and held NWAF for three straight days against two rival factions."
 };
 
-/* Staff-controlled stats live here (points, rank, kills, honors, allies/rivals).
-   Once Supabase is connected, each faction's name, emblem, motto, base,
-   recruiting status and roster come from the database, where leaders edit them.
-   The example rosters below only show until then. */
+/* Staff-controlled stats, matched to factions by id (points, rank, kills,
+   honors, allies/rivals). Players create factions on the site; to give one
+   stats, add an entry here with the same id (shown in the faction's profile).
+   While Supabase isn't connected, these examples show as the faction list. */
 const FACTIONS = [
   { id:"iron-wolves", name:"Iron Wolves", initials:"IW", color:"#5b6e3a",
     motto:"The pack survives.", base:"Northwest Airfield", style:"Military / PvP",
@@ -361,7 +384,7 @@ const ROLE_SUGGESTIONS = ["Leader","Co-Leader","Officer","Medic","Head Medic","S
 
 const CHALLENGE_TYPES = ["Territory War","5v5 Skirmish","3v3 Skirmish","1v1 Leader Duel","Raid Defense","Convoy Escort"];
 
-/* Example challenges. Only shown until Supabase is connected. */
+/* Example challenges. Only shown while Supabase isn't connected. */
 const CHALLENGES = [
   { from:"ghost-unit", to:"iron-wolves", type:"5v5 Skirmish", zone:"Tisy Military Base",
     date:"Nov 16, 2026", stakes:"Loser gives up claim to Tisy", status:"pending" },
@@ -408,88 +431,108 @@ const $$ = s => document.querySelectorAll(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeColor = c => /^#[0-9a-fA-F]{6}$/.test(c) ? c : "#444444";
 const emb = (f, cls="") => `<div class="emb ${cls}" style="background:${safeColor(f.color)}">${esc(f.initials)}</div>`;
-const roleRank = r => { const i = ROLE_ORDER.indexOf(r); return i < 0 ? 99 : i; };
+const RANKS = ["Leader","Co-Leader","Officer","Member"];
+const rankOf = m => m.rank || (RANKS.includes(m.role) ? m.role : "Member");
+const rankIdx = m => RANKS.indexOf(rankOf(m));
 const fmtDate = iso => iso ? new Date(iso).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}) : "Date TBD";
 const UNKNOWN = id => ({ id, name:id, initials:"?", color:"#444444", roster:[] });
+const avatarImg = url => url ? `<img src="${esc(url)}" alt="">` : "";
 
 /* ---------- Supabase ---------- */
 const SB = (SITE.supabaseUrl && SITE.supabaseKey && window.supabase)
   ? window.supabase.createClient(SITE.supabaseUrl, SITE.supabaseKey) : null;
-let me = null;                                        // logged-in player
-let db = { factions:null, members:null, challenges:null };
+let me = null;                 // { discordId, name, avatar, faction, rank, role }
+let profileSynced = false;
+let db = { factions:null, profiles:null, challenges:null, invites:null };
 let factions = [], byId = {}, ranked = [];
 let inboxNote = null;
 
-const canSend   = () => !!me?.faction && ["Leader","Co-Leader","Officer"].includes(me.role);
-const canManage = fid => !!me && me.faction === fid && ["Leader","Co-Leader"].includes(me.role);
+const canSend   = () => !!me?.faction && ["Leader","Co-Leader","Officer"].includes(me.rank);
+const canManage = fid => !!me && me.faction === fid && ["Leader","Co-Leader"].includes(me.rank);
 const F = id => byId[id] || UNKNOWN(id);
+const errText = e => (e?.message || "Something went wrong.").replace(/^.*?ERROR:\s*/, "");
 
 async function login(){
   await SB.auth.signInWithOAuth({ provider:"discord", options:{ redirectTo: location.origin + location.pathname } });
 }
-async function logout(){ await SB.auth.signOut(); me = null; closeSheet(); refresh(); }
+async function logout(){ await SB.auth.signOut(); me = null; profileSynced = false; closeSheet(); refresh(); }
 
 async function loadMe(){
   if (!SB) return;
   const { data:{ session } } = await SB.auth.getSession();
   if (!session) { me = null; return; }
   const md = session.user.user_metadata || {};
-  me = { discordId: md.provider_id || md.sub, name: md.custom_claims?.global_name || md.full_name || md.name || "Player",
-         avatar: md.avatar_url, faction:null, role:null };
-  const { data } = await SB.from("faction_leaders").select("faction_id, role").eq("discord_id", me.discordId).maybeSingle();
-  if (data) { me.faction = data.faction_id; me.role = data.role; }
+  const id = md.provider_id || md.sub;
+  const name = md.custom_claims?.global_name || md.full_name || md.name || "Player";
+  if (!profileSynced) {
+    const { error } = await SB.rpc("upsert_me", { p_name: name, p_avatar: md.avatar_url || null });
+    if (!error) profileSynced = true;
+  }
+  me = { discordId:id, name, avatar:md.avatar_url, faction:null, rank:null, role:null };
 }
 
 async function loadDb(){
   if (!SB) return;
-  const [f, m, c] = await Promise.all([
-    SB.from("factions").select("*"),
-    SB.from("faction_members").select("*").order("id"),
-    SB.from("challenges").select("*").order("created_at", { ascending:false }).limit(200)
+  const [f, p, c, i] = await Promise.all([
+    SB.from("factions").select("*").order("created_at"),
+    SB.from("profiles").select("discord_id,name,avatar,faction_id,rank,role,active,joined_at").limit(2000),
+    SB.from("challenges").select("*").order("created_at", { ascending:false }).limit(200),
+    me ? SB.from("faction_invites").select("*").order("created_at", { ascending:false }).limit(200) : { data:[] }
   ]);
   db.factions   = f.error ? null : f.data;
-  db.members    = m.error ? null : m.data;
+  db.profiles   = p.error ? [] : p.data;
   db.challenges = c.error ? null : c.data;
+  db.invites    = i.error ? [] : (i.data || []);
+  if (me) {
+    const mine = db.profiles.find(x => x.discord_id === me.discordId);
+    if (mine) Object.assign(me, { faction: mine.faction_id, rank: mine.rank, role: mine.role, name: mine.name });
+  }
 }
 
-/* Merge staff stats (this file) with leader-edited info (database) */
+/* Database factions + staff stats from this file (matched by id) */
 function buildFactions(){
-  const list = FACTIONS.map(f => ({ ...f, roster:(f.roster||[]).map(m => ({...m})),
-    allies:f.allies||[], rivals:f.rivals||[], achievements:f.achievements||[] }));
-  const map = Object.fromEntries(list.map(f => [f.id, f]));
-  for (const r of db.factions || []) {
-    let f = map[r.id];
-    if (!f) { f = { id:r.id, founded:"—", points:0, lastRank:null, kills:0, eventsWon:0,
-                    allies:[], rivals:[], achievements:[] }; map[r.id] = f; list.push(f); }
-    Object.assign(f, { name:r.name, initials:r.initials, color:r.color, motto:r.motto || "",
-      base:r.base || "—", style:r.style || "—", recruiting:r.recruiting, inDb:true, roster:[] });
-  }
-  for (const m of db.members || []) {
-    const f = map[m.faction_id];
-    if (f?.inDb) f.roster.push({ id:m.id, name:m.name, role:m.role, active:m.active });
+  const stats = Object.fromEntries(FACTIONS.map(f => [f.id, f]));
+  let list;
+  if (db.factions) {
+    list = db.factions.map(r => {
+      const s = stats[r.id] || {};
+      return { founded: r.created_at ? new Date(r.created_at).toLocaleDateString([], {month:"short", year:"numeric"}) : "—",
+        points: s.points ?? 0, lastRank: s.lastRank ?? null, kills: s.kills ?? 0, eventsWon: s.eventsWon ?? 0,
+        allies: s.allies || [], rivals: s.rivals || [], achievements: s.achievements || [],
+        id:r.id, name:r.name, initials:r.initials, color:r.color, motto:r.motto || "",
+        base:r.base || "—", style:r.style || "—", recruiting:r.recruiting, inDb:true,
+        roster: (db.profiles || []).filter(p => p.faction_id === r.id).map(p => ({
+          discordId:p.discord_id, name:p.name, avatar:p.avatar, rank:p.rank, role:p.role, active:p.active })) };
+    });
+  } else {
+    list = FACTIONS.map(f => ({ ...f, roster:(f.roster||[]).map(m => ({...m})),
+      allies:f.allies||[], rivals:f.rivals||[], achievements:f.achievements||[] }));
   }
   for (const f of list) {
-    f.roster.sort((a,b) => roleRank(a.role) - roleRank(b.role) || b.active - a.active);
+    f.roster.sort((a,b) => rankIdx(a) - rankIdx(b) || b.active - a.active || a.name.localeCompare(b.name));
     f.members = f.roster.length;
     f.activeCount = f.roster.filter(m => m.active).length;
-    f.leader = (f.roster.find(m => m.role === "Leader") || f.roster[0] || { name:"—" }).name;
+    f.leader = (f.roster.find(m => rankOf(m) === "Leader") || f.roster[0] || { name:"—" }).name;
   }
-  factions = list; byId = map;
-  ranked = [...list].sort((a,b) => b.points - a.points);
+  factions = list; byId = Object.fromEntries(list.map(f => [f.id, f]));
+  ranked = [...list].sort((a,b) => b.points - a.points || b.activeCount - a.activeCount);
 }
 
 function challengeList(){
   if (!db.challenges) return CHALLENGES;
   return db.challenges.map(c => ({ id:c.id, from:c.from_faction, to:c.to_faction, type:c.type, zone:c.zone,
-    date:fmtDate(c.proposed_at), stakes:c.stakes, status:c.status, created_at:c.created_at, responded_at:c.responded_at }));
+    date:fmtDate(c.proposed_at), stakes:c.stakes, status:c.status, created_at:c.created_at }));
 }
+const myInvites   = () => (db.invites || []).filter(i => me && i.discord_id === me.discordId && i.status === "pending");
+const sentInvites = () => (db.invites || []).filter(i => me?.faction && i.faction_id === me.faction && i.status === "pending");
+const profileName = id => (db.profiles || []).find(p => p.discord_id === id)?.name || "A player";
 
 /* ---------- Rendering ---------- */
 function renderStats(){
   $("#sFactions").textContent = factions.length;
   $("#sActive").textContent = factions.reduce((n,f) => n + f.activeCount, 0);
-  $("#sZones").textContent = TERRITORY.filter(t => t.owner).length + "/" + TERRITORY.length;
-  $("#sWars").textContent = WARS.filter(w => w.status === "war").length;
+  $("#sZones").textContent = TERRITORY.filter(t => t.owner && byId[t.owner]).length + "/" + TERRITORY.length;
+  $("#sWars").textContent = WARS.filter(w => w.status === "war" && byId[w.a] && byId[w.b]).length;
   $("#sChal").textContent = challengeList().filter(c => c.status === "pending").length;
   $("#sEventName").textContent = SITE.nextEvent.name;
 }
@@ -500,6 +543,13 @@ function tick(){
   $("#sCountdown").textContent = d > 0 ? `${d}d ${h}h` : `${h}h ${m}m`;
 }
 
+function inboxCount(){
+  if (!me) return 0;
+  const ch = me.faction && canManage(me.faction)
+    ? challengeList().filter(c => c.to === me.faction && c.status === "pending").length : 0;
+  return myInvites().length + ch;
+}
+
 function renderAccount(){
   const el = $("#acct");
   if (!SB) { el.innerHTML = ""; return; }
@@ -507,16 +557,39 @@ function renderAccount(){
     el.innerHTML = `<button class="sbtn discord" id="loginBtn">Log in with Discord</button>`;
     $("#loginBtn").onclick = login; return;
   }
-  const f = me.faction ? F(me.faction) : null;
-  const pending = f ? challengeList().filter(c => c.to === f.id && c.status === "pending").length : 0;
+  const f = me.faction ? F(me.faction) : null, n = inboxCount();
   el.innerHTML = `
-    <span class="who">${me.avatar ? `<img class="avatar" src="${esc(me.avatar)}" alt="" style="vertical-align:middle;margin-right:6px">` : ""}${esc(me.name)}${f ? ` · <b style="color:${safeColor(f.color)}">${esc(f.name)}</b> ${esc(me.role)}` : ""}</span>
-    ${f ? `<button class="sbtn" id="inboxBtn">📨 Inbox${pending ? `<span class="badge">${pending}</span>` : ""}</button>` : ""}
-    ${f && canManage(f.id) ? `<button class="sbtn" id="manageBtn">✏️ My faction</button>` : ""}
+    <span class="who">${me.avatar ? `<img class="avatar" src="${esc(me.avatar)}" alt="" style="vertical-align:middle;margin-right:6px">` : ""}${esc(me.name)}${f ? ` · <b style="color:${safeColor(f.color)}">${esc(f.name)}</b> ${esc(me.rank)}` : ""}</span>
+    <button class="sbtn" id="inboxBtn">📨 Inbox${n ? `<span class="badge">${n}</span>` : ""}</button>
+    ${f ? `<button class="sbtn" id="myBtn">${canManage(f.id) ? "✏️" : "🛡️"} My faction</button>` : ""}
     <button class="sbtn" id="logoutBtn">Log out</button>`;
   $("#logoutBtn").onclick = logout;
-  if ($("#inboxBtn")) $("#inboxBtn").onclick = openInbox;
-  if ($("#manageBtn")) $("#manageBtn").onclick = () => openEdit(me.faction);
+  $("#inboxBtn").onclick = openInbox;
+  if ($("#myBtn")) $("#myBtn").onclick = () => canManage(f.id) ? openEdit(f.id) : openProfile(f.id);
+}
+
+function renderJoinBox(){
+  const el = $("#joinBox");
+  if (!SB) { el.innerHTML = ""; return; }
+  if (!me) {
+    el.innerHTML = `<div class="joinbox"><h3>Join the fight</h3>
+      <p>Log in with Discord to start your own faction, or get invited to one. Invites land in your Inbox.</p>
+      <button class="btn discordbtn" id="jbLogin">Log in with Discord</button></div>`;
+    $("#jbLogin").onclick = login; return;
+  }
+  if (!me.faction) {
+    const n = myInvites().length;
+    el.innerHTML = `<div class="joinbox"><h3>You're not in a faction yet</h3>
+      <p>Start your own and invite your squad, or ask a faction Leader to invite you. ${n ? `You have <b style="color:var(--accent)">${n} invite${n > 1 ? "s" : ""}</b> waiting in your Inbox.` : "Invites show up in your Inbox."}</p>
+      <button class="btn" id="jbCreate">⚑ Start a faction</button>
+      ${n ? `<button class="btn edit" id="jbInbox" style="margin-top:8px">📨 View my invites</button>` : ""}</div>`;
+    $("#jbCreate").onclick = openCreate;
+    if ($("#jbInbox")) $("#jbInbox").onclick = openInbox;
+    return;
+  }
+  const f = F(me.faction);
+  el.innerHTML = `<div class="joinbox"><div class="spot" style="border:0;padding:0;margin:0;background:none" data-id="${esc(f.id)}">${emb(f)}
+    <div><span class="tag">YOUR FACTION</span><h3>${esc(f.name)}</h3><p>${esc(me.rank)} · ${f.activeCount}/${f.members} active</p></div></div></div>`;
 }
 
 function renderSpotlight(){
@@ -539,7 +612,7 @@ function renderGrid(){
         <span class="pill live">● ${f.activeCount}/${f.members} active</span>
         <span class="pill ${f.recruiting ? "rec" : "closed"}">${f.recruiting ? "Recruiting" : "Closed"}</span>
       </div>
-    </div>`).join("") || `<p class="hint">No factions match.</p>`;
+    </div>`).join("") || `<p class="hint">${factions.length ? "No factions match." : "No factions yet. Start the first one from the War Board."}</p>`;
 }
 
 function renderRankings(){
@@ -552,15 +625,15 @@ function renderRankings(){
     return `<div class="rank" data-id="${esc(f.id)}"><div class="n">${i+1}</div>${emb(f)}
       <div><b>${esc(f.name)}</b><br><small>${mv} · ${f.eventsWon} events won</small></div>
       <div class="pts">${f.points.toLocaleString()}</div></div>`;
-  }).join("");
+  }).join("") || '<p class="hint">No factions ranked yet.</p>';
 }
 
 function renderTerritory(){
-  const owners = [...new Set(TERRITORY.map(t => t.owner).filter(Boolean))];
+  const owners = [...new Set(TERRITORY.map(t => t.owner).filter(id => id && byId[id]))];
   $("#legend").innerHTML = owners.map(id => `<span><i style="background:${safeColor(F(id).color)}"></i>${esc(F(id).name)}</span>`).join("")
     + `<span><i style="background:#444"></i>Unclaimed</span>`;
   $("#terr").innerHTML = TERRITORY.map(t => {
-    const f = t.owner ? F(t.owner) : null;
+    const f = t.owner && byId[t.owner] ? F(t.owner) : null;
     return `<div class="zone" style="--c:${f ? safeColor(f.color) : "#444"}">
       ${t.contested ? '<span class="cont">CONTESTED</span>' : ""}
       <h4>${esc(t.zone)}</h4><p>${f ? "Held by " + esc(f.name) : "Unclaimed"}</p></div>`;
@@ -569,7 +642,7 @@ function renderTerritory(){
 
 function renderWars(){
   const label = { war:["ACTIVE WAR","s-war"], ceasefire:["CEASEFIRE","s-cease"], alliance:["ALLIANCE","s-ally"] };
-  $("#wars").innerHTML = WARS.map(w => {
+  $("#wars").innerHTML = WARS.filter(w => byId[w.a] && byId[w.b]).map(w => {
     const A = F(w.a), B = F(w.b), [txt, cls] = label[w.status];
     const mid = w.status === "alliance" ? "🤝" : `<span class="score">${w.scoreA ?? 0} – ${w.scoreB ?? 0}</span>`;
     return `<div class="war"><div class="vs">
@@ -577,7 +650,7 @@ function renderWars(){
         <div><div class="mid">${mid}</div><span class="status ${cls}">${txt}</span></div>
         <div class="side" data-id="${esc(B.id)}">${emb(B)}${esc(B.name)}</div>
       </div><div class="note">${esc(w.note)}</div></div>`;
-  }).join("");
+  }).join("") || '<p class="hint">No wars or alliances right now.</p>';
 }
 
 function renderChallenges(){
@@ -596,12 +669,12 @@ function renderFeed(){
 }
 
 function renderAll(){
-  renderStats(); renderAccount(); renderSpotlight(); renderGrid(); renderRankings();
+  renderStats(); renderAccount(); renderJoinBox(); renderSpotlight(); renderGrid(); renderRankings();
   renderTerritory(); renderWars(); renderChallenges(); renderFeed();
 }
 
 async function refresh(){
-  await Promise.all([loadMe(), loadDb()]);
+  await loadMe(); await loadDb();
   buildFactions(); renderAll();
 }
 
@@ -614,13 +687,22 @@ function openSheet(html, after){
   if (after) after();
 }
 function closeSheet(){ $("#modal").classList.remove("open"); document.body.style.overflow = ""; }
-function show(id, text){ const el = $(id); el.textContent = text; el.style.display = "block"; }
+function show(id, text){ const el = $(id); if (!el) return; el.textContent = text; el.style.display = "block"; }
+/* Two-tap confirm for risky buttons */
+function confirmTap(btn, label, action){
+  btn.onclick = async () => {
+    if (!btn.dataset.armed) { btn.dataset.armed = "1"; btn.dataset.orig = btn.textContent; btn.textContent = label;
+      setTimeout(() => { if (btn.isConnected && btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = btn.dataset.orig; } }, 4000); return; }
+    btn.disabled = true; await action();
+  };
+}
 
 function openProfile(id){
   const f = byId[id]; if (!f) return;
   const rank = ranked.findIndex(x => x.id === id) + 1;
   const zones = TERRITORY.filter(t => t.owner === id).map(t => t.zone);
-  const names = ids => ids.length ? ids.map(i => esc(F(i).name)).join(", ") : "None";
+  const names = ids => ids.filter(i => byId[i]).map(i => esc(F(i).name)).join(", ") || "None";
+  const mine = me?.faction === f.id;
   openSheet(`
     <div class="hd">${emb(f,"lg")}<div><h3>${esc(f.name)}</h3>${f.motto ? `<div style="color:var(--muted);font-style:italic">“${esc(f.motto)}”</div>` : ""}</div></div>
     <div class="kv">
@@ -643,19 +725,74 @@ function openProfile(id){
     </ul>
     <h5>ROSTER · ${f.activeCount} OF ${f.members} ACTIVE</h5>
     <ul class="roster">${f.roster.map(m => {
-      const r = roleRank(m.role);
+      const r = rankIdx(m);
       return `<li><span class="dot ${m.active ? "on" : ""}" title="${m.active ? "Active" : "Inactive"}"></span>${esc(m.name)}
-        <span class="role ${r === 0 ? "r0" : r < 99 ? "r1" : ""}">${esc(m.role)}</span></li>`;
+        <span class="role ${r === 0 ? "r0" : r < 3 ? "r1" : ""}">${esc(m.role)}</span></li>`;
     }).join("") || '<li class="empty">No members listed yet.</li>'}</ul>
     <h5>HONORS</h5>
     <ul>${f.achievements.map(a => `<li>🎖️ ${esc(a)}</li>`).join("") || '<li class="empty">None yet</li>'}</ul>
-    ${canManage(f.id) ? `<button class="btn edit" id="editBtn">✏️ Edit faction & roster</button>` : ""}
-    <a class="btn ${f.recruiting ? "" : "off"}" href="${esc(SITE.discordInvite)}" target="_blank" rel="noopener">
-      ${f.recruiting ? "Request to join on Discord" : "Not recruiting right now"}</a>
-    ${me?.faction === f.id ? "" : `<button class="btn ghost" id="chalBtn" style="margin-top:10px;background:none;color:var(--red)">⚔️ Challenge ${esc(f.name)}</button>`}`,
+    ${canManage(f.id) ? `<button class="btn edit" id="editBtn">✏️ Manage faction & members</button>` : ""}
+    ${!mine && f.recruiting ? `<p class="hint" style="margin:18px 0 0">Recruiting: ask ${esc(f.leader)} on Discord for an invite. Invites show up in your Inbox.</p>
+      <a class="btn" href="${esc(SITE.discordInvite)}" target="_blank" rel="noopener" style="margin-top:10px">Ask to join on Discord</a>` : ""}
+    ${!mine && !f.recruiting ? `<a class="btn off">Not recruiting right now</a>` : ""}
+    ${mine ? "" : `<button class="btn ghost" id="chalBtn" style="margin-top:10px;background:none;color:var(--red)">⚔️ Challenge ${esc(f.name)}</button>`}
+    ${mine && me.rank !== "Leader" ? `<button class="btn b-red" id="leaveBtn" style="margin-top:10px">Leave faction</button>` : ""}
+    ${SB && f.inDb ? `<p class="hint" style="margin-top:14px;font-size:12px">Faction ID: ${esc(f.id)}</p>` : ""}
+    <div class="err" id="pErr"></div>`,
   () => {
     if ($("#editBtn")) $("#editBtn").onclick = () => openEdit(f.id);
     if ($("#chalBtn")) $("#chalBtn").onclick = () => openChallenge(f.id);
+    if ($("#leaveBtn")) confirmTap($("#leaveBtn"), "Tap again to leave", async () => {
+      const { error } = await SB.rpc("remove_member", { p_discord_id: me.discordId });
+      if (error) { $("#leaveBtn").disabled = false; return show("#pErr", errText(error)); }
+      await refresh(); closeSheet();
+    });
+  });
+}
+
+/* ---------- Start a faction ---------- */
+function factionFields(f = {}){
+  return `
+      <label>Faction name</label><input id="eName" maxlength="40" value="${esc(f.name || "")}" placeholder="e.g. Iron Wolves">
+      <div class="two">
+        <div><label>Emblem letters</label><input id="eInit" maxlength="3" value="${esc(f.initials || "")}" placeholder="IW"></div>
+        <div><label>Faction color</label><input id="eColor" type="color" value="${safeColor(f.color || "#5b6e3a")}"></div>
+      </div>
+      <label>Motto</label><input id="eMotto" maxlength="80" value="${esc(f.motto || "")}" placeholder="The pack survives.">
+      <div class="two">
+        <div><label>Home base</label><input id="eBase" maxlength="40" list="zoneList" value="${esc(f.base && f.base !== "—" ? f.base : "")}"></div>
+        <div><label>Playstyle</label><input id="eStyle" maxlength="40" value="${esc(f.style && f.style !== "—" ? f.style : "")}" placeholder="e.g. Military / PvP"></div>
+      </div>
+      <datalist id="zoneList">${TERRITORY.map(z => `<option value="${esc(z.zone)}">`).join("")}</datalist>`;
+}
+function readFields(){
+  return { name: $("#eName").value.trim(), initials: $("#eInit").value.trim().toUpperCase(), color: $("#eColor").value,
+    motto: $("#eMotto").value.trim(), base: $("#eBase").value.trim(), style: $("#eStyle").value.trim() };
+}
+
+function openCreate(){
+  if (!me) return login();
+  openSheet(`
+    <div class="kicker">START A FACTION</div><h3 style="margin-bottom:6px">Raise your banner</h3>
+    <p class="hint">You'll be the Leader. After creating it, invite players from your faction page.</p>
+    <div class="form">${factionFields()}
+      <button class="btn" id="cfGo" style="margin-top:20px">Create faction</button>
+      <div class="err" id="cfErr"></div></div>`, () => {
+    // live emblem letters from name
+    $("#eName").oninput = () => { if (!$("#eInit").dataset.touched)
+      $("#eInit").value = $("#eName").value.split(/\s+/).filter(Boolean).map(w => w[0]).join("").slice(0,3).toUpperCase(); };
+    $("#eInit").oninput = () => $("#eInit").dataset.touched = "1";
+    $("#cfGo").onclick = async () => {
+      const v = readFields(), btn = $("#cfGo");
+      if (v.name.length < 2) return show("#cfErr", "Faction name needs at least 2 characters.");
+      if (!v.initials) return show("#cfErr", "Add 1–3 emblem letters.");
+      btn.disabled = true; btn.textContent = "Creating…";
+      const { data, error } = await SB.rpc("create_faction", { p_name:v.name, p_initials:v.initials, p_color:v.color,
+        p_motto:v.motto, p_base:v.base, p_style:v.style });
+      if (error) { btn.disabled = false; btn.textContent = "Create faction"; return show("#cfErr", errText(error)); }
+      await refresh();
+      openEdit(data, "Faction created! Now invite your squad below.");
+    };
   });
 }
 
@@ -665,7 +802,7 @@ function openChallenge(id){
   const head = `<div class="hd">${emb(t,"lg")}<div><div class="kicker">ISSUE A CHALLENGE TO</div><h3>${esc(t.name)}</h3></div></div>`;
   if (SB && !me) return openSheet(head + `<p class="hint">Log in with Discord to send a challenge. It goes straight to ${esc(t.name)}'s leader inbox.</p>
       <button class="btn discordbtn" id="login2">Log in with Discord</button>`, () => $("#login2").onclick = login);
-  if (SB && !canSend()) return openSheet(head + `<p class="hint">Only faction Leaders, Co-Leaders and Officers can send challenges. If that's you, ask staff to link your Discord to your faction.</p>`);
+  if (SB && !canSend()) return openSheet(head + `<p class="hint">Only a faction's Leader, Co-Leaders and Officers can send challenges.${me.faction ? "" : " Start or join a faction first."}</p>`);
   if (SB && me.faction === id) return openSheet(head + `<p class="hint">You can't challenge your own faction.</p>`);
 
   const fromField = SB
@@ -702,15 +839,14 @@ async function sendChallenge(t){
       btn.disabled = false; btn.textContent = "Send challenge";
       return show("#cErr", error.code === "23505"
         ? `You already have an open challenge to ${t.name}. Wait for their leader to answer it first.`
-        : "Couldn't send the challenge. " + error.message);
+        : "Couldn't send the challenge. " + errText(error));
     }
     btn.style.display = "none";
-    show("#cOk", `Challenge sent! It's now in ${t.name}'s leader inbox. You'll see their answer in your inbox and on the War Board.`);
+    show("#cOk", `Challenge sent! It's now in ${t.name}'s leader inbox. You'll see their answer in your Inbox and on the War Board.`);
     refresh();
     return;
   }
 
-  // No database yet: copy a formatted message for Discord
   const from = F($("#cFrom").value);
   const msg = `⚔️ **FACTION CHALLENGE** ⚔️\n**${from.name}** challenges **${t.name}**\nType: ${type}\nLocation: ${zone}\nWhen: ${when ? fmtDate(when) : "Date TBD"}\nStakes: ${stakes || "Bragging rights"}`;
   try { await navigator.clipboard.writeText(msg); } catch(e) {}
@@ -718,12 +854,9 @@ async function sendChallenge(t){
   setTimeout(() => window.open(SITE.discordInvite, "_blank", "noopener"), 900);
 }
 
-/* ---------- Leader inbox ---------- */
+/* ---------- Inbox (invites + challenges) ---------- */
 function openInbox(){
   const fid = me.faction, all = challengeList();
-  const incoming = all.filter(c => c.to === fid && c.status === "pending");
-  const sent = all.filter(c => c.from === fid).slice(0, 10);
-  const past = all.filter(c => c.to === fid && c.status !== "pending").slice(0, 10);
   const statusTag = s => s === "accepted" ? `<span class="status s-acc" style="margin:0 0 0 auto">ACCEPTED</span>`
     : s === "declined" ? `<span class="status s-cease" style="margin:0 0 0 auto">DECLINED</span>`
     : `<span class="status s-pend" style="margin:0 0 0 auto">AWAITING REPLY</span>`;
@@ -731,33 +864,64 @@ function openInbox(){
       ⚔️ <b>${esc(c.type)}</b><br>📍 ${esc(c.zone)}<br>📅 ${esc(c.date)}<br>🏆 ${esc(c.stakes || "Bragging rights")}
       ${c.created_at ? `<br><span style="font-size:12px">Sent ${esc(fmtDate(c.created_at))}</span>` : ""}</div>`;
 
-  const inc = incoming.map(c => { const A = F(c.from); return `
-    <div class="inb new"><div class="row">${emb(A)}<div><b>${esc(A.name)}</b><br><small style="color:var(--muted)">challenged your faction</small></div></div>
-      ${details(c)}
-      ${canManage(fid)
-        ? `<div class="acts"><button class="b-dec" data-cid="${c.id}" data-ans="declined">Decline</button>
-             <button class="b-acc" data-cid="${c.id}" data-ans="accepted">Accept</button></div>`
-        : `<p class="hint" style="margin:10px 0 0">Waiting for your Leader or Co-Leader to answer.</p>`}
-    </div>`; }).join("") || '<p class="empty">No new challenges.</p>';
+  // Faction invites to me
+  const inv = myInvites();
+  const invHtml = inv.map(i => { const f = F(i.faction_id); return `
+    <div class="inb new"><div class="row">${emb(f)}<div><b>${esc(f.name)}</b><br><small style="color:var(--muted)">${esc(profileName(i.invited_by))} invited you to join</small></div></div>
+      <div class="det">${f.motto ? `“${esc(f.motto)}”<br>` : ""}👥 ${f.activeCount}/${f.members} active${f.style && f.style !== "—" ? " · " + esc(f.style) : ""}<br><span style="font-size:12px">Sent ${esc(fmtDate(i.created_at))}</span></div>
+      ${fid ? `<p class="hint" style="margin:10px 0 0">Leave your current faction to accept this.</p>
+              <div class="acts"><button class="b-dec" data-inv="${i.id}" data-ok="0">Decline</button></div>`
+            : `<div class="acts"><button class="b-dec" data-inv="${i.id}" data-ok="0">Decline</button>
+               <button class="b-acc" data-inv="${i.id}" data-ok="1">Join faction</button></div>`}
+    </div>`; }).join("");
 
-  const row = (c, otherId, verb) => { const O = F(otherId); return `
-    <div class="inb"><div class="row">${emb(O)}<div><small style="color:var(--muted)">${verb}</small><br><b>${esc(O.name)}</b></div>${statusTag(c.status)}</div>${details(c)}</div>`; };
+  let chHtml = "";
+  if (fid) {
+    const incoming = all.filter(c => c.to === fid && c.status === "pending");
+    const sent = all.filter(c => c.from === fid).slice(0, 10);
+    const past = all.filter(c => c.to === fid && c.status !== "pending").slice(0, 10);
+    const inc = incoming.map(c => { const A = F(c.from); return `
+      <div class="inb new"><div class="row">${emb(A)}<div><b>${esc(A.name)}</b><br><small style="color:var(--muted)">challenged your faction</small></div></div>
+        ${details(c)}
+        ${canManage(fid)
+          ? `<div class="acts"><button class="b-dec" data-cid="${c.id}" data-ans="declined">Decline</button>
+               <button class="b-acc" data-cid="${c.id}" data-ans="accepted">Accept</button></div>`
+          : `<p class="hint" style="margin:10px 0 0">Waiting for your Leader or Co-Leader to answer.</p>`}
+      </div>`; }).join("") || '<p class="empty">No new challenges.</p>';
+    const row = (c, otherId, verb) => { const O = F(otherId); return `
+      <div class="inb"><div class="row">${emb(O)}<div><small style="color:var(--muted)">${verb}</small><br><b>${esc(O.name)}</b></div>${statusTag(c.status)}</div>${details(c)}</div>`; };
+    chHtml = `
+      <h5>INCOMING CHALLENGES (${incoming.length})</h5>${inc}
+      <h5>SENT BY YOUR FACTION</h5>${sent.map(c => row(c, c.to, "You challenged")).join("") || '<p class="empty">Nothing sent yet.</p>'}
+      <h5>ANSWERED</h5>${past.map(c => row(c, c.from, "Challenge from")).join("") || '<p class="empty">Nothing answered yet.</p>'}`;
+  }
 
   const note = inboxNote ? `<div class="note">${esc(inboxNote.text)}${inboxNote.copy ? `<button class="btn" id="copyAnn">Copy announcement for Discord</button>` : ""}</div>` : "";
-
   openSheet(`
-    <div class="hd">${emb(F(fid),"lg")}<div><div class="kicker">LEADER INBOX</div><h3>${esc(F(fid).name)}</h3></div></div>
+    <div class="kicker">INBOX</div><h3 style="margin-bottom:10px">${esc(me.name)}</h3>
     ${note}
-    <h5>INCOMING CHALLENGES (${incoming.length})</h5>${inc}
-    <h5>SENT BY YOUR FACTION</h5>${sent.map(c => row(c, c.to, "You challenged")).join("") || '<p class="empty">Nothing sent yet.</p>'}
-    <h5>ANSWERED</h5>${past.map(c => row(c, c.from, "Challenge from")).join("") || '<p class="empty">Nothing answered yet.</p>'}`,
+    ${inv.length || !fid ? `<h5>FACTION INVITES (${inv.length})</h5>${invHtml || '<p class="empty">No invites right now. Ask a faction Leader to invite you, or start your own from the War Board.</p>'}` : ""}
+    ${chHtml}
+    <div class="err" id="ibErr"></div>`,
   () => {
     $$("[data-ans]").forEach(b => b.onclick = () => answerChallenge(+b.dataset.cid, b.dataset.ans, b));
+    $$("[data-inv]").forEach(b => b.onclick = () => answerInvite(+b.dataset.inv, b.dataset.ok === "1", b));
     if ($("#copyAnn")) $("#copyAnn").onclick = async () => {
       try { await navigator.clipboard.writeText(inboxNote.copy); $("#copyAnn").textContent = "Copied ✓"; } catch(e) {}
     };
   });
   inboxNote = null;
+}
+
+async function answerInvite(id, accept, btn){
+  btn.closest(".acts").querySelectorAll("button").forEach(b => b.disabled = true);
+  btn.textContent = accept ? "Joining…" : "Declining…";
+  const inv = myInvites().find(i => i.id === id);
+  const { error } = await SB.rpc("respond_invite", { p_invite_id: id, p_accept: accept });
+  await refresh();
+  if (error) { inboxNote = { text: errText(error) }; return openInbox(); }
+  if (accept) { closeSheet(); openProfile(inv.faction_id); }
+  else { inboxNote = { text: "Invite declined." }; openInbox(); }
 }
 
 async function answerChallenge(cid, status, btn){
@@ -779,86 +943,127 @@ async function answerChallenge(cid, status, btn){
   openInbox();
 }
 
-/* ---------- Faction editor (Leaders & Co-Leaders) ---------- */
-function openEdit(fid){
+/* ---------- Manage faction (Leaders & Co-Leaders) ---------- */
+function openEdit(fid, flash){
   const f = F(fid);
   if (!SB || !canManage(fid)) return;
-  if (!f.inDb) return openSheet(`<h3>${esc(f.name)}</h3><p class="hint" style="margin-top:10px">Staff need to add this faction to the database before it can be edited here.</p>`);
-  const rows = f.roster.map(m => ({ ...m }));
+  const isLeader = me.rank === "Leader";
+  const rows = f.roster.map(m => ({ ...m, orig:{ role:m.role, rank:m.rank, active:m.active } }));
+  const pend = sentInvites();
 
   openSheet(`
-    <div class="hd">${emb(f,"lg")}<div><div class="kicker">EDIT FACTION</div><h3>${esc(f.name)}</h3></div></div>
+    <div class="hd">${emb(f,"lg")}<div><div class="kicker">MANAGE FACTION</div><h3>${esc(f.name)}</h3></div></div>
+    ${flash ? `<div class="note">${esc(flash)}</div>` : ""}
     <div class="form">
-      <label>Faction name</label><input id="eName" maxlength="40" value="${esc(f.name)}">
-      <div class="two">
-        <div><label>Emblem letters</label><input id="eInit" maxlength="3" value="${esc(f.initials)}"></div>
-        <div><label>Faction color</label><input id="eColor" type="color" value="${safeColor(f.color)}"></div>
-      </div>
-      <label>Motto</label><input id="eMotto" maxlength="80" value="${esc(f.motto)}">
-      <div class="two">
-        <div><label>Home base</label><input id="eBase" maxlength="40" list="zoneList" value="${esc(f.base === "—" ? "" : f.base)}"></div>
-        <div><label>Playstyle</label><input id="eStyle" maxlength="40" value="${esc(f.style === "—" ? "" : f.style)}" placeholder="e.g. Military / PvP"></div>
-      </div>
+      <h5>INVITE PLAYERS</h5>
+      <p class="hint" style="margin-bottom:6px">Search players who have logged in to the site. They'll get the invite in their Inbox.</p>
+      <input id="invQ" placeholder="Search by Discord name…" autocomplete="off">
+      <div id="invRes"></div>
+      ${pend.length ? `<h5>PENDING INVITES</h5>${pend.map(i => `<div class="prow">${esc(profileName(i.discord_id))}<small style="color:var(--muted)">· sent ${esc(fmtDate(i.created_at))}</small><button class="sbtn" data-cancel="${i.id}">Cancel</button></div>`).join("")}` : ""}
+
+      <h5 style="margin-top:22px">MEMBERS (${rows.length})</h5>
+      <div id="mlist"></div>
+
+      <h5 style="margin-top:22px">FACTION PROFILE</h5>
+      ${factionFields(f)}
       <label class="chk"><input type="checkbox" id="eRec" ${f.recruiting ? "checked" : ""}> Recruiting new members</label>
-
-      <h5 style="margin-top:22px">ROSTER</h5>
-      <div class="mhead"><span>Player</span><span>Role</span><span>Active</span><span></span></div>
-      <div id="mrows"></div>
-      <button class="sbtn" id="addM" style="width:100%;margin-top:4px">+ Add member</button>
-
-      <datalist id="roleList">${ROLE_SUGGESTIONS.map(r => `<option value="${esc(r)}">`).join("")}</datalist>
-      <datalist id="zoneList">${TERRITORY.map(z => `<option value="${esc(z.zone)}">`).join("")}</datalist>
 
       <button class="btn" id="saveF" style="margin-top:20px">Save changes</button>
       <div class="ok" id="eOk"></div><div class="err" id="eErr"></div>
+
+      ${isLeader ? `<div class="danger"><h5>LEADER ONLY</h5>
+        ${rows.length > 1 ? `<label>Pass leadership to</label>
+          <select id="tlWho">${rows.filter(m => m.discordId !== me.discordId).map(m => `<option value="${esc(m.discordId)}">${esc(m.name)}</option>`).join("")}</select>
+          <button class="sbtn" id="tlGo" style="width:100%;margin-top:8px">Pass leadership</button>` : ""}
+        <button class="sbtn b-red" id="disband" style="width:100%;margin-top:10px">Disband faction</button></div>` : ""}
     </div>`, () => {
-    const draw = () => {
-      $("#mrows").innerHTML = rows.map((m,i) => `
-        <div class="mrow">
-          <input data-i="${i}" data-k="name" maxlength="32" placeholder="Player name" value="${esc(m.name)}">
-          <input data-i="${i}" data-k="role" maxlength="24" list="roleList" value="${esc(m.role)}">
-          <label class="act"><input type="checkbox" data-i="${i}" data-k="active" ${m.active ? "checked" : ""}>On</label>
-          <button class="rm" data-rm="${i}" aria-label="Remove">✕</button>
-        </div>`).join("") || '<p class="empty">No members yet. Add your first one.</p>';
-      $$("#mrows [data-k]").forEach(el => el.oninput = el.onchange = () => {
-        rows[+el.dataset.i][el.dataset.k] = el.type === "checkbox" ? el.checked : el.value; });
-      $$("#mrows [data-rm]").forEach(b => b.onclick = () => { rows.splice(+b.dataset.rm, 1); draw(); });
+
+    // Members
+    const canEditRank = m => {
+      if (rankOf(m) === "Leader") return false;
+      if (!isLeader && (m.orig.rank === "Co-Leader") && m.discordId !== me.discordId) return false;
+      return true;
     };
-    draw();
-    $("#addM").onclick = () => { rows.push({ name:"", role:"Member", active:true }); draw();
-      const inputs = $$("#mrows [data-k=name]"); inputs[inputs.length-1]?.focus(); };
+    const rankOpts = m => (isLeader ? ["Co-Leader","Officer","Member"] : (m.orig.rank === "Co-Leader" ? ["Co-Leader","Officer","Member"] : ["Officer","Member"]));
+    const canKick = m => rankOf(m) !== "Leader" && m.discordId !== me.discordId && (isLeader || m.orig.rank !== "Co-Leader");
+    $("#mlist").innerHTML = rows.map((m,i) => `
+      <div class="mcard">
+        <div class="mtop">${avatarImg(m.avatar)}${esc(m.name)}${m.discordId === me.discordId ? ' <small style="color:var(--muted)">(you)</small>' : ""}
+          ${canKick(m) ? `<button class="sbtn b-red rm" data-kick="${i}">Remove</button>` : ""}</div>
+        <div class="mgrid">
+          <input data-i="${i}" data-k="role" maxlength="24" list="roleList" value="${esc(m.role)}" placeholder="Role">
+          ${canEditRank(m)
+            ? `<select data-i="${i}" data-k="rank">${rankOpts(m).map(r => `<option ${r === m.rank ? "selected" : ""}>${r}</option>`).join("")}</select>`
+            : `<input value="${esc(m.rank)}" disabled>`}
+          <label class="act"><input type="checkbox" data-i="${i}" data-k="active" ${m.active ? "checked" : ""}>Active</label>
+        </div>
+      </div>`).join("") + `<datalist id="roleList">${ROLE_SUGGESTIONS.map(r => `<option value="${esc(r)}">`).join("")}</datalist>`;
+    $$("#mlist [data-k]").forEach(el => el.oninput = el.onchange = () => {
+      rows[+el.dataset.i][el.dataset.k] = el.type === "checkbox" ? el.checked : el.value; });
+    $$("#mlist [data-kick]").forEach(b => confirmTap(b, "Tap to confirm", async () => {
+      const m = rows[+b.dataset.kick];
+      const { error } = await SB.rpc("remove_member", { p_discord_id: m.discordId });
+      if (error) { b.disabled = false; return show("#eErr", errText(error)); }
+      await refresh(); openEdit(fid, `${m.name} was removed from the faction.`);
+    }));
+
+    // Invite search
+    const drawResults = () => {
+      const q = $("#invQ").value.trim().toLowerCase();
+      if (q.length < 2) { $("#invRes").innerHTML = ""; return; }
+      const invited = new Set(pend.map(i => i.discord_id));
+      const hits = (db.profiles || []).filter(p => !p.faction_id && p.name.toLowerCase().includes(q)).slice(0, 8);
+      $("#invRes").innerHTML = hits.map(p => `<div class="prow">${avatarImg(p.avatar)}${esc(p.name)}
+          ${invited.has(p.discord_id) ? `<button class="sbtn" disabled>Invited ✓</button>` : `<button class="sbtn" data-invite="${esc(p.discord_id)}">Invite</button>`}</div>`).join("")
+        || '<p class="empty">No free agents match. Players must log in to the site once, and can\'t already be in a faction.</p>';
+      $$("[data-invite]").forEach(b => b.onclick = async () => {
+        b.disabled = true; b.textContent = "Sending…";
+        const { error } = await SB.rpc("invite_player", { p_discord_id: b.dataset.invite });
+        if (error) { b.disabled = false; b.textContent = "Invite"; return show("#eErr", errText(error)); }
+        b.textContent = "Invited ✓"; refresh();
+      });
+    };
+    $("#invQ").oninput = drawResults;
+    $$("[data-cancel]").forEach(b => b.onclick = async () => {
+      b.disabled = true;
+      const { error } = await SB.rpc("cancel_invite", { p_invite_id: +b.dataset.cancel });
+      if (error) return show("#eErr", errText(error));
+      await refresh(); openEdit(fid, "Invite cancelled.");
+    });
+
     $("#saveF").onclick = () => saveFaction(f, rows);
+
+    if ($("#tlGo")) confirmTap($("#tlGo"), "Tap again to confirm", async () => {
+      const { error } = await SB.rpc("transfer_leadership", { p_discord_id: $("#tlWho").value });
+      if (error) { $("#tlGo").disabled = false; return show("#eErr", errText(error)); }
+      await refresh(); openProfile(fid);
+    });
+    if ($("#disband")) confirmTap($("#disband"), "Tap again: this deletes the faction", async () => {
+      const { error } = await SB.rpc("disband_faction");
+      if (error) { $("#disband").disabled = false; return show("#eErr", errText(error)); }
+      await refresh(); closeSheet();
+    });
   });
 }
 
 async function saveFaction(f, rows){
   const btn = $("#saveF");
   $("#eErr").style.display = "none"; $("#eOk").style.display = "none";
-  const prof = {
-    name: $("#eName").value.trim(), initials: $("#eInit").value.trim().toUpperCase(),
-    color: $("#eColor").value, motto: $("#eMotto").value.trim() || null,
-    base: $("#eBase").value.trim() || null, style: $("#eStyle").value.trim() || null,
-    recruiting: $("#eRec").checked, updated_at: new Date().toISOString() };
-  if (prof.name.length < 2) return show("#eErr", "Faction name needs at least 2 characters.");
-  if (!prof.initials) return show("#eErr", "Add 1–3 emblem letters.");
-
-  const clean = rows.map(r => ({ ...r, name: r.name.trim(), role: (r.role || "").trim() || "Member" })).filter(r => r.name);
-  const keep = new Set(clean.filter(r => r.id).map(r => r.id));
-  const removed = f.roster.filter(m => m.id && !keep.has(m.id)).map(m => m.id);
-  const changed = clean.filter(r => { if (!r.id) return false;
-    const o = f.roster.find(m => m.id === r.id); return o && (o.name !== r.name || o.role !== r.role || o.active !== r.active); });
-  const added = clean.filter(r => !r.id).map(r => ({ faction_id: f.id, name: r.name, role: r.role, active: !!r.active }));
+  const v = readFields();
+  if (v.name.length < 2) return show("#eErr", "Faction name needs at least 2 characters.");
+  if (!v.initials) return show("#eErr", "Add 1–3 emblem letters.");
+  const prof = { name:v.name, initials:v.initials, color:v.color, motto:v.motto || null, base:v.base || null,
+    style:v.style || null, recruiting: $("#eRec").checked, updated_at: new Date().toISOString() };
+  const changed = rows.filter(m => m.role.trim() !== m.orig.role || m.rank !== m.orig.rank || m.active !== m.orig.active);
 
   btn.disabled = true; btn.textContent = "Saving…";
-  const results = await Promise.all([
-    SB.from("factions").update(prof).eq("id", f.id),
-    removed.length ? SB.from("faction_members").delete().in("id", removed) : { error:null },
-    added.length ? SB.from("faction_members").insert(added) : { error:null },
-    ...changed.map(r => SB.from("faction_members").update({ name:r.name, role:r.role, active:!!r.active }).eq("id", r.id))
-  ]);
+  const results = [await SB.from("factions").update(prof).eq("id", f.id)];
+  for (const m of changed)
+    results.push(await SB.rpc("update_member", { p_discord_id:m.discordId, p_role:m.role.trim() || "Member", p_rank:m.rank, p_active:!!m.active }));
   const err = results.find(r => r.error)?.error;
   await refresh();
-  if (err) { btn.disabled = false; btn.textContent = "Save changes"; return show("#eErr", "Some changes didn't save. " + err.message); }
+  if (err) { btn.disabled = false; btn.textContent = "Save changes";
+    return show("#eErr", err.code === "23505" ? "Another faction already uses that name." : "Some changes didn't save. " + errText(err)); }
   btn.textContent = "Saved ✓";
   show("#eOk", "Faction updated. Everyone visiting the site now sees your changes.");
   setTimeout(() => openProfile(f.id), 1200);
@@ -884,6 +1089,7 @@ document.addEventListener("click", e => {
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
 
 /* ---------- Start ---------- */
+if (SB) db.factions = [];   // don't flash the example factions while loading
 buildFactions(); renderAll(); tick(); setInterval(tick, 30000);
 if (SB) {
   refresh();
