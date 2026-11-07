@@ -114,6 +114,25 @@
   .legend .quip::before{content:"“";color:var(--accent);font-family:"Barlow Condensed";font-size:1.6rem;line-height:0;vertical-align:-.35em;margin-right:3px}
   .legends-quip{text-align:center;margin-top:44px;font-family:"Barlow Condensed";font-weight:600;text-transform:uppercase;letter-spacing:.12em;font-size:1.3rem;color:var(--accent2)}
 
+  /* account */
+  .nav-av{width:24px;height:24px;border-radius:50%;vertical-align:-6px;margin-right:7px;object-fit:cover}
+  .acct{max-width:640px}
+  .acct-head{display:flex;align-items:center;gap:18px;margin-bottom:22px}
+  .acct-head img,.acct-head .ph{width:76px;height:76px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);background:var(--bg2)}
+  .acct-head .ph{display:flex;align-items:center;justify-content:center;font-family:"Barlow Condensed";font-weight:800;font-size:2rem;color:var(--accent)}
+  .acct-head h3{margin:0;font-size:1.6rem}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-family:"Barlow Condensed";text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:5px}
+  .field input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font:inherit;padding:11px 12px}
+  .field input:focus{outline:none;border-color:var(--accent)}
+  .field small{color:var(--muted);display:block;margin-top:5px;font-size:.88rem}
+  .discord-btn{display:inline-flex;align-items:center;gap:10px;background:#5865F2;color:#fff}
+  .discord-btn:hover{background:#4752c4}
+  .discord-btn svg{width:22px;height:22px}
+  .msg{margin-top:12px;font-weight:600}
+  .msg.ok{color:var(--ok)} .msg.err{color:#e5735c}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
   footer{border-top:1px solid var(--line);background:var(--bg2);padding:36px 0 28px;font-size:.95rem}
   .foot{display:grid;grid-template-columns:2fr 1fr 1fr;gap:28px}
   .foot a{color:var(--muted);text-decoration:none;display:block;padding:3px 0}
@@ -141,6 +160,7 @@
       <a href="#legends" data-v="legends">Legends</a>
       <a href="#support" data-v="support">Support Us</a>
       <a href="#team" data-v="team">Team</a>
+      <a href="#account" data-v="account" id="nav-account">Sign in</a>
       <a class="btn sm discord-link" href="#">Join Discord</a>
     </nav>
   </div>
@@ -315,6 +335,13 @@
   </section>
 </div>
 
+<!-- ACCOUNT -->
+<div class="view" id="v-account">
+  <section>
+    <div class="wrap acct" id="acct"></div>
+  </section>
+</div>
+
 <!-- TERMS -->
 <div class="view" id="v-terms">
   <section>
@@ -357,6 +384,7 @@
       <ul>
         <li><b>Game data:</b> your Steam ID, in-game name, connection logs and in-game activity, used to run the servers and enforce rules.</li>
         <li><b>Discord data:</b> your Discord username and ID, and messages or tickets you send us.</li>
+        <li><b>Website accounts:</b> when you sign in with Discord, we receive your Discord ID, username, avatar and email from Discord. If you add them, we also store your Steam64 ID and in-game name. Accounts are stored with our database provider, Supabase.</li>
         <li><b>Payment data:</b> payments are handled by our payment provider. We receive your name, email, Steam/Discord ID and what you bought — never your full card details.</li>
       </ul>
       <h3>How we use it</h3>
@@ -422,9 +450,16 @@
 
 <div class="toast" id="toast">Copied!</div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ====== EDIT THESE ====== */
 const CONFIG = {
+  /* ---- ACCOUNTS (Sign in with Discord) ----
+     Paste these from Supabase → Project Settings → API.
+     Leave blank and the Account page says "coming soon". */
+  supabaseUrl: "https://kbifstvpqputwqtalyxz.supabase.co",
+  supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiaWZzdHZwcXB1dHdxdGFseXh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQwNjU3MTMsImV4cCI6MjEwOTY0MTcxM30.N_4HKBInF7x9srawAkJkW8uEMPZddsCSJ1lQqKxcfBg", // anon public key (safe to be public)
+
   discord: "https://discord.gg/W87ypFyNrp",
   donateUrl: "",               // e.g. your PayPal / Ko-fi / Tebex donation link
   contactEmail: "alliedforces@example.com", // replace with a real contact email
@@ -525,12 +560,122 @@ $("#legend-list").innerHTML = CONFIG.legends.map(l => `
     </div>
   </div>`).join("");
 
-const views = ["home","servers","rules","legends","support","team","terms","privacy","refunds"];
+/* ===== ACCOUNTS ===== */
+const DISCORD_SVG = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.6 0L8.6 3a19.6 19.6 0 0 0-4.9 1.4C.6 9 0 13.6.3 18.1a19.8 19.8 0 0 0 6 3l1.3-2a12.7 12.7 0 0 1-2-1l.5-.4a14 14 0 0 0 11.9 0l.5.4c-.6.4-1.3.7-2 1l1.3 2a19.7 19.7 0 0 0 6-3c.5-5.2-.8-9.8-3.5-13.7ZM8.5 15.3c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm7 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg>`;
+let sb = null, user = null;
+try {
+  if (CONFIG.supabaseUrl && CONFIG.supabaseAnonKey && window.supabase)
+    sb = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, { auth: { flowType: "pkce", detectSessionInUrl: true, persistSession: true } });
+} catch (e) { console.error(e); }
+
+const meta = u => u?.user_metadata || {};
+const dName = u => { const m = meta(u); return m.custom_claims?.global_name || m.full_name || m.name || "Survivor"; };
+
+function setNav(){
+  const a = $("#nav-account");
+  if (!user) { a.textContent = "Sign in"; return; }
+  const av = meta(user).avatar_url;
+  a.innerHTML = `${av ? `<img class="nav-av" src="${esc(av)}" alt="">` : ""}${esc(dName(user))}`;
+}
+
+async function signIn(){
+  const { error } = await sb.auth.signInWithOAuth({ provider: "discord", options: { redirectTo: location.origin + location.pathname } });
+  if (error) $("#acct-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`;
+}
+
+async function renderAccount(){
+  const box = $("#acct");
+  if (!sb) {
+    box.innerHTML = `<h2>Your AF account</h2><div class="card"><h3>Accounts are coming soon</h3><p class="muted" style="margin:0">Soon you'll be able to sign in with Discord and link your Steam ID to your AF account.</p></div>`;
+    return;
+  }
+  if (!user) {
+    box.innerHTML = `
+      <h2>Your AF account</h2>
+      <p class="muted">Sign in with Discord to create your Allied Forces account. No password needed — your Discord is your login.</p>
+      <div class="card">
+        <ul class="clean" style="margin-bottom:18px">
+          <li>Link your Steam ID and in-game name to your Discord</li>
+          <li>Faster tickets — staff already know who you are</li>
+          <li>Needed for supporter perks once the store opens</li>
+        </ul>
+        <button class="btn discord-btn" id="signin">${DISCORD_SVG} Sign in with Discord</button>
+        <div id="acct-msg"></div>
+        <p class="muted" style="font-size:.88rem;margin:14px 0 0">By signing in you agree to our <a href="#terms">Terms</a> and <a href="#privacy">Privacy Policy</a>.</p>
+      </div>`;
+    $("#signin").onclick = signIn;
+    return;
+  }
+  box.innerHTML = `<h2>Your AF account</h2><div class="card"><p class="muted" style="margin:0">Loading your profile…</p></div>`;
+  const { data: p, error } = await sb.from("profiles").select("*").eq("id", user.id).maybeSingle();
+  const m = meta(user);
+  const since = new Date(p?.created_at || user.created_at).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  box.innerHTML = `
+    <h2>Your AF account</h2>
+    <div class="card">
+      <div class="acct-head">
+        ${m.avatar_url ? `<img src="${esc(m.avatar_url)}" alt="">` : `<div class="ph">${esc(initials(dName(user)))}</div>`}
+        <div><h3>${esc(dName(user))}</h3><div class="muted">Discord connected · Member since ${esc(since)}</div></div>
+      </div>
+      ${error ? `<p class="msg err">Couldn't load your profile: ${esc(error.message)}</p>` : ""}
+      <form id="pform">
+        <div class="field">
+          <label for="steam">Steam64 ID</label>
+          <input id="steam" inputmode="numeric" maxlength="17" placeholder="7656119xxxxxxxxxx" value="${esc(p?.steam_id)}">
+          <small>17 digits starting with 7656119. Find it on your Steam profile page or at steamid.io.</small>
+        </div>
+        <div class="field">
+          <label for="ign">In-game name</label>
+          <input id="ign" maxlength="32" placeholder="Your DayZ name" value="${esc(p?.ingame_name)}">
+        </div>
+        <div class="row">
+          <button class="btn" type="submit">Save profile</button>
+          <button class="btn ghost" type="button" id="signout">Sign out</button>
+        </div>
+        <div id="acct-msg"></div>
+      </form>
+    </div>
+    <p class="muted" style="font-size:.9rem;margin-top:14px">Want your account deleted? Open a ticket in Discord.</p>`;
+  $("#signout").onclick = async () => { await sb.auth.signOut(); };
+  $("#pform").onsubmit = async e => {
+    e.preventDefault();
+    const steam = $("#steam").value.trim(), ign = $("#ign").value.trim();
+    const msg = $("#acct-msg");
+    if (steam && !/^7656119\d{10}$/.test(steam)) { msg.innerHTML = `<p class="msg err">That doesn't look like a Steam64 ID (17 digits starting with 7656119).</p>`; return; }
+    const { error } = await sb.from("profiles").update({ steam_id: steam || null, ingame_name: ign || null, updated_at: new Date().toISOString() }).eq("id", user.id);
+    msg.innerHTML = error ? `<p class="msg err">${esc(error.message)}</p>` : `<p class="msg ok">Saved!</p>`;
+  };
+}
+
+async function syncProfile(){
+  const m = meta(user);
+  await sb.from("profiles").upsert({
+    id: user.id, discord_id: m.provider_id || null, discord_username: dName(user),
+    avatar_url: m.avatar_url || null, updated_at: new Date().toISOString()
+  });
+}
+
+if (sb) {
+  sb.auth.onAuthStateChange((event, session) => {
+    user = session?.user || null;
+    setNav();
+    if (event === "SIGNED_IN" && user) {
+      setTimeout(async () => {
+        await syncProfile();
+        if (location.search.includes("code=")) { history.replaceState(null, "", location.pathname + "#account"); route(); }
+        else if (location.hash === "#account") renderAccount();
+      }, 0);
+    } else if (location.hash === "#account") setTimeout(renderAccount, 0);
+  });
+}
+
+const views = ["home","servers","rules","legends","support","team","account","terms","privacy","refunds"];
 function route(){
   const v = views.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
   $$(".view").forEach(el => el.classList.toggle("active", el.id === "v-"+v));
   $$(".nav a[data-v]").forEach(a => a.classList.toggle("active", a.dataset.v === v));
   $(".nav").classList.remove("open");
+  if (v === "account") renderAccount();
   window.scrollTo(0,0);
 }
 window.addEventListener("hashchange", route); route();
