@@ -171,6 +171,26 @@
   .kf code{background:var(--bg);padding:1px 5px;border-radius:4px;font-size:.9em}
   .kf-empty{text-align:center;color:var(--muted);padding:40px 10px;border:1px dashed var(--line);border-radius:var(--radius)}
 
+  /* wipe countdown */
+  .wipe-card{position:relative;overflow:hidden}
+  .wipe-card .phase{display:inline-flex;align-items:center;gap:8px;font-family:"Barlow Condensed";font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:.95rem;padding:4px 12px;border-radius:999px;border:1px solid var(--line);margin-bottom:10px}
+  .wipe-card .phase i{width:8px;height:8px;border-radius:50%}
+  .ph-build{color:#7fb069}.ph-build i{background:#7fb069}
+  .ph-zones{color:var(--accent2)}.ph-zones i{background:var(--accent2)}
+  .ph-full{color:#e5484d}.ph-full i{background:#e5484d;animation:pulse 1.6s infinite}
+  .cd{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 6px}
+  .cd div{background:var(--bg);border:1px solid var(--line);border-radius:8px;text-align:center;padding:10px 4px}
+  .cd b{display:block;font-family:"Barlow Condensed";font-weight:800;font-size:clamp(2rem,6vw,2.8rem);line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
+  .cd span{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+  .wipe-when{color:var(--muted);font-size:.95rem}
+  .tl{position:relative;height:12px;border-radius:6px;overflow:hidden;display:flex;margin:22px 0 6px;background:var(--bg)}
+  .tl .s1{background:#3f5a33}.tl .s2{background:#8a5a22}.tl .s3{background:#7a2a2a}
+  .tl-wrap{position:relative}
+  .tl-now{position:absolute;top:-6px;width:3px;height:24px;background:var(--text);border-radius:2px;box-shadow:0 0 0 2px var(--panel);transform:translateX(-50%)}
+  .tl-legend{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted);gap:8px}
+  .next-step{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:.95rem}
+  .next-step b{color:var(--text)}
+
   footer{border-top:1px solid var(--line);background:var(--bg2);padding:36px 0 28px;font-size:.95rem}
   .foot{display:grid;grid-template-columns:2fr 1fr 1fr;gap:28px}
   .foot a{color:var(--muted);text-decoration:none;display:block;padding:3px 0}
@@ -196,7 +216,7 @@
       <a href="#servers" data-v="servers">Servers</a>
       <a href="#rules" data-v="rules">Rules</a>
       <a href="#legends" data-v="legends">Legends</a>
-      <a href="#live-killfeed" data-v="live">Live</a>
+      <a href="#live-wipes" data-v="live">Live</a>
       <a href="#support" data-v="support">Support Us</a>
       <a href="#team" data-v="team">Team</a>
       <a href="#account" data-v="account" id="nav-account">Sign in</a>
@@ -302,6 +322,20 @@
       <div class="kicker-sm">Live from the servers</div>
       <h2>Live</h2>
       <nav class="subnav" id="live-tabs"></nav>
+
+      <!-- sub page: Wipe Countdown -->
+      <div class="subview" id="sv-live-wipes">
+        <div class="grid g2" id="wipe-cards"></div>
+        <div class="card" style="margin-top:18px">
+          <h3>How the wipe cycle works</h3>
+          <ul class="clean">
+            <li><b>Wipe:</b> the server resets. No raiding while everyone rebuilds.</li>
+            <li><b>Raid week:</b> when the <i>other</i> server wipes, raiding opens here — PvP zones only for the first week.</li>
+            <li><b>Full-map raids:</b> the final stretch before wipe — the whole map is fair game.</li>
+          </ul>
+          <p class="muted" style="margin:6px 0 0;font-size:.92rem">Times are shown in your local time zone. Date changes are announced in Discord.</p>
+        </div>
+      </div>
 
       <!-- sub page: Killfeed -->
       <div class="subview" id="sv-live-killfeed">
@@ -571,6 +605,18 @@ const CONFIG = {
   /* ---- LIVE → KILLFEED ----
      Keys must match the ?server=... value in each server's killfeed webhook URL. */
   killfeedServers: { nasdara: "Nasdara", chernarus: "Chernarus" },
+
+  /* ---- LIVE → WIPE COUNTDOWN ----
+     wipeDay:      day of the month this server wipes (30 = last day in February)
+     raidStartDay: day raid week opens here (= the other server's wipe day)
+     zoneDays:     how many days raiding is PvP-zones-only before the whole map opens
+     nextWipeOverride: one-off date change, e.g. "2026-12-20 18:00" (Eastern). Leave "" normally. */
+  wipeTime: "12:00",               // time of day wipes happen, Eastern Time (24h)
+  wipeTimeZone: "America/New_York",
+  wipes: [
+    { key: "nasdara",   name: "Nasdara | Scorched Earth", wipeDay: 15, raidStartDay: 30, zoneDays: 7, nextWipeOverride: "" },
+    { key: "chernarus", name: "Chernarus Badlands",       wipeDay: 30, raidStartDay: 15, zoneDays: 7, nextWipeOverride: "" }
+  ],
 
   legendsQuip: "Legends never log off."     // the line at the bottom of the page
 };
@@ -846,8 +892,116 @@ loadLegends();
 /* ===== LIVE SECTION (sub pages) =====
    To add a sub page: add it here, and add <div class="subview" id="sv-live-NAME"> in the Live view. */
 const LIVE_TABS = [
+  { id: "live-wipes", label: "Wipe Countdown" },
   { id: "live-killfeed", label: "Killfeed" }
 ];
+
+/* ===== WIPE COUNTDOWN ===== */
+// UTC timestamp for a wall-clock time in a time zone (handles daylight saving)
+function zonedTs(y, mo, d, h, mi, tz){
+  const want = Date.UTC(y, mo, d, h, mi);
+  let t = want;
+  const fmt = new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  for (let i = 0; i < 3; i++) {
+    const p = Object.fromEntries(fmt.formatToParts(new Date(t)).map(x => [x.type, x.value]));
+    const shown = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute);
+    t += want - shown;
+  }
+  return t;
+}
+function zonedParts(ts, tz){
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, year: "numeric", month: "numeric" }).formatToParts(new Date(ts)).map(x => [x.type, x.value]));
+  return { y: +p.year, m: +p.month - 1 };
+}
+// all occurrences of "day N of the month" from 2 months back to 3 months ahead
+function monthlyTimes(day, now = Date.now()){
+  const tz = CONFIG.wipeTimeZone, [h, mi] = CONFIG.wipeTime.split(":").map(Number);
+  const { y, m } = zonedParts(now, tz), out = [];
+  for (let k = -2; k <= 3; k++) {
+    const yy = y + Math.floor((m + k) / 12), mm = ((m + k) % 12 + 12) % 12;
+    const dim = new Date(Date.UTC(yy, mm + 1, 0)).getUTCDate();
+    out.push(zonedTs(yy, mm, Math.min(day, dim), h, mi, tz));
+  }
+  return out;
+}
+function parseOverride(str){
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{1,2}):(\d{2}))?$/.exec((str || "").trim());
+  if (!m) return null;
+  const [h, mi] = m[4] ? [+m[4], +m[5]] : CONFIG.wipeTime.split(":").map(Number);
+  return zonedTs(+m[1], +m[2] - 1, +m[3], h, mi, CONFIG.wipeTimeZone);
+}
+function wipeState(w, now = Date.now()){
+  const wipes = monthlyTimes(w.wipeDay, now);
+  const last = wipes.filter(t => t <= now).pop();
+  let next = wipes.find(t => t > now);
+  const ov = parseOverride(w.nextWipeOverride);
+  if (ov && ov > now) next = ov;
+  const raidStart = monthlyTimes(w.raidStartDay, now).find(t => t > last && t < next) ?? next;
+  const fullStart = Math.min(raidStart + w.zoneDays * 864e5, next);
+  const phase = now < raidStart ? "build" : now < fullStart ? "zones" : "full";
+  return { last, next, raidStart, fullStart, phase };
+}
+const PHASES = {
+  build: { cls: "ph-build", label: "Building — no raiding" },
+  zones: { cls: "ph-zones", label: "Raid week — PvP zones only" },
+  full:  { cls: "ph-full",  label: "Full-map raids" }
+};
+function fmtWhen(ts){
+  return new Date(ts).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+function fmtLeft(ms){
+  const d = Math.floor(ms / 864e5), h = Math.floor(ms / 36e5) % 24, m = Math.floor(ms / 6e4) % 60;
+  return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
+}
+function renderWipes(){
+  const now = Date.now();
+  $("#wipe-cards").innerHTML = CONFIG.wipes.map(w => {
+    const st = wipeState(w, now), ph = PHASES[st.phase], span = st.next - st.last;
+    const pct = t => Math.max(0, Math.min(100, (t - st.last) / span * 100));
+    const step = st.phase === "build" ? `Raid week opens in <b>${fmtLeft(st.raidStart - now)}</b> · ${fmtWhen(st.raidStart)}`
+              : st.phase === "zones" ? `Whole map opens for raiding in <b>${fmtLeft(st.fullStart - now)}</b> · ${fmtWhen(st.fullStart)}`
+              : `Last chance to raid — wipe in <b>${fmtLeft(st.next - now)}</b>`;
+    return `
+    <div class="card wipe-card" data-wipe="${esc(w.key)}">
+      <div class="phase ${ph.cls}"><i></i>${ph.label}</div>
+      <h3>${esc(w.name)}</h3>
+      <div class="cd" aria-label="Time until wipe">
+        <div><b data-u="d">0</b><span>Days</span></div><div><b data-u="h">0</b><span>Hours</span></div>
+        <div><b data-u="m">0</b><span>Min</span></div><div><b data-u="s">0</b><span>Sec</span></div>
+      </div>
+      <div class="wipe-when">Next wipe: <b style="color:var(--text)">${fmtWhen(st.next)}</b></div>
+      <div class="tl-wrap">
+        <div class="tl">
+          <div class="s1" style="width:${pct(st.raidStart)}%"></div>
+          <div class="s2" style="width:${pct(st.fullStart) - pct(st.raidStart)}%"></div>
+          <div class="s3" style="flex:1"></div>
+        </div>
+        <div class="tl-now" style="left:${pct(now)}%"></div>
+      </div>
+      <div class="tl-legend"><span>Wiped ${new Date(st.last).toLocaleDateString(undefined,{month:"short",day:"numeric"})}</span><span>Raids open</span><span>Full map</span><span>Wipe</span></div>
+      <div class="next-step">${step}</div>
+    </div>`;
+  }).join("");
+  tickWipes();
+}
+let wipeTimer = null, wipeNextRender = 0;
+function tickWipes(){
+  const now = Date.now();
+  let rerender = false;
+  CONFIG.wipes.forEach(w => {
+    const st = wipeState(w, now), card = document.querySelector(`[data-wipe="${w.key}"]`);
+    if (!card) return;
+    if (!card.querySelector(".phase").classList.contains(PHASES[st.phase].cls)) rerender = true;
+    const left = Math.max(0, st.next - now);
+    const v = { d: Math.floor(left / 864e5), h: Math.floor(left / 36e5) % 24, m: Math.floor(left / 6e4) % 60, s: Math.floor(left / 1e3) % 60 };
+    for (const k in v) card.querySelector(`[data-u="${k}"]`).textContent = k === "d" ? v[k] : String(v[k]).padStart(2, "0");
+  });
+  if (rerender || now > wipeNextRender) { wipeNextRender = now + 60000; if (rerender) renderWipes(); else setTimeout(renderWipes, 0); }
+}
+function startWipes(){
+  renderWipes();
+  if (!wipeTimer) wipeTimer = setInterval(() => { if (location.hash === "#live-wipes") tickWipes(); }, 1000);
+}
 $("#live-tabs").innerHTML = LIVE_TABS.map(t => `<a href="#${t.id}" data-sub="${t.id}">${t.label}</a>`).join("");
 
 /* ===== KILLFEED ===== */
@@ -942,6 +1096,7 @@ function route(){
   $(".nav").classList.remove("open");
   if (v === "account") renderAccount();
   if (v === "live-killfeed") startKillfeed();
+  if (v === "live-wipes") startWipes();
   window.scrollTo(0,0);
 }
 window.addEventListener("hashchange", route); route();
