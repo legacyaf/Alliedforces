@@ -494,14 +494,18 @@ async function loadMe(){
 
 async function loadDb(){
   if (!SB) return;
-  const [f, p, c, i, t, tl] = await Promise.all([
+  const [f, p, c, i, t, tl, ev] = await Promise.all([
     SB.from("factions").select("*").order("created_at"),
     SB.from("players").select("discord_id,name,avatar,faction_id,rank,role,active,joined_at").limit(2000),
     SB.from("challenges").select("*").order("created_at", { ascending:false }).limit(200),
     me ? SB.from("faction_invites").select("*").order("created_at", { ascending:false }).limit(200) : { data:[] },
     SB.from("territory").select("*").order("sort_order").order("zone"),
-    SB.from("territory_log").select("*").order("created_at", { ascending:false }).limit(12)
+    SB.from("territory_log").select("*").order("created_at", { ascending:false }).limit(12),
+    SB.from("events").select("title,starts_at,ends_at,kind,server").in("server", ["chernarus","both"]).eq("cancelled", false)
+      .gte("starts_at", new Date(Date.now() - 3 * 36e5).toISOString()).order("starts_at").limit(1)
   ]);
+  /* Next event comes from the Events posted on the main site (Servers → Chernarus) */
+  if (!ev.error) SITE.nextEvent = ev.data?.length ? { name: ev.data[0].title, date: ev.data[0].starts_at } : { name: "No event scheduled", date: null };
   if (!t.error && t.data) TERRITORY = t.data.map(z => ({ id:z.id, zone:z.zone, owner:z.owner || null, contested:!!z.contested, sort:z.sort_order, updated:z.updated_at, inDb:true }));
   terrLog = tl.error ? [] : (tl.data || []);
   db.factions   = f.error ? null : f.data;
@@ -561,8 +565,10 @@ function renderStats(){
   $("#sWars").textContent = WARS.filter(w => w.status === "war" && byId[w.a] && byId[w.b]).length;
   $("#sChal").textContent = challengeList().filter(c => c.status === "pending").length;
   $("#sEventName").textContent = SITE.nextEvent.name;
+  tick();
 }
 function tick(){
+  if (!SITE.nextEvent.date) { $("#sCountdown").textContent = "TBD"; return; }
   const ms = new Date(SITE.nextEvent.date) - new Date();
   if (ms <= 0) { $("#sCountdown").textContent = "LIVE"; return; }
   const d = Math.floor(ms/864e5), h = Math.floor(ms%864e5/36e5), m = Math.floor(ms%36e5/6e4);
