@@ -971,13 +971,21 @@ if (sb) {
 }
 
 /* ===== LEGENDS (from Supabase, editable by the legend) ===== */
-function myDiscordId(){ return user ? (user.identities?.find(i => i.provider === "discord")?.id || meta(user).provider_id || null) : null; }
-function myLegend(){ const id = myDiscordId(); return id ? legendsData.find(l => l.discord_id && l.discord_id === id) : null; }
+/* Every place Supabase may put the Discord user id (it varies between versions) */
+function myDiscordIds(){
+  if (!user) return [];
+  const m = meta(user), ids = [m.provider_id, m.sub, m.custom_claims?.id];
+  (user.identities || []).filter(i => i.provider === "discord").forEach(i => ids.push(i.provider_id, i.identity_data?.provider_id, i.identity_data?.sub, i.id));
+  return [...new Set(ids.filter(Boolean).map(x => String(x).trim()))];
+}
+const isMyDiscord = id => !!id && myDiscordIds().includes(String(id).trim());
+function myDiscordId(){ return myDiscordIds()[0] || null; }
+function myLegend(){ return legendsData.find(l => isMyDiscord(l.discord_id)) || null; }
 
 function renderLegends(){
-  const mine = myDiscordId();
+
   $("#legend-list").innerHTML = legendsData.map((l, i) => {
-    const isMine = mine && l.discord_id === mine;
+    const isMine = isMyDiscord(l.discord_id);
     return `
     <div class="legend${isMine ? " mine" : ""}">
       <div class="photo">
