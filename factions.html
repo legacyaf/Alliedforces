@@ -464,7 +464,7 @@ let profileSynced = false;
 let db = { factions:null, profiles:null, challenges:null, invites:null };
 let factions = [], byId = {}, ranked = [];
 let inboxNote = null;
-let amAdmin = false, terrLog = [];
+let amAdmin = false, terrLog = [], chests = {};
 
 const canSend   = () => !!me?.faction && ["Leader","Co-Leader","Officer"].includes(me.rank);
 const canManage = fid => !!me && me.faction === fid && ["Leader","Co-Leader"].includes(me.rank);
@@ -494,7 +494,7 @@ async function loadMe(){
 
 async function loadDb(){
   if (!SB) return;
-  const [f, p, c, i, t, tl, ev] = await Promise.all([
+  const [f, p, c, i, t, tl, ev, ch] = await Promise.all([
     SB.from("factions").select("*").order("created_at"),
     SB.from("players").select("discord_id,name,avatar,faction_id,rank,role,active,joined_at").limit(2000),
     SB.from("challenges").select("*").order("created_at", { ascending:false }).limit(200),
@@ -502,8 +502,10 @@ async function loadDb(){
     SB.from("territory").select("*").order("sort_order").order("zone"),
     SB.from("territory_log").select("*").order("created_at", { ascending:false }).limit(12),
     SB.from("events").select("title,starts_at,ends_at,kind,server").in("server", ["chernarus","both"]).eq("cancelled", false)
-      .gte("starts_at", new Date(Date.now() - 3 * 36e5).toISOString()).order("starts_at").limit(1)
+      .gte("starts_at", new Date(Date.now() - 3 * 36e5).toISOString()).order("starts_at").limit(1),
+    SB.from("faction_chests").select("faction_id,balance")
   ]);
+  chests = {}; if (!ch.error) (ch.data || []).forEach(r => chests[r.faction_id] = r.balance);
   /* Next event comes from the Events posted on the main site (Servers → Chernarus) */
   if (!ev.error) SITE.nextEvent = ev.data?.length ? { name: ev.data[0].title, date: ev.data[0].starts_at } : { name: "No event scheduled", date: null };
   if (!t.error && t.data) TERRITORY = t.data.map(z => ({ id:z.id, zone:z.zone, owner:z.owner || null, contested:!!z.contested, sort:z.sort_order, updated:z.updated_at, inDb:true }));
@@ -833,7 +835,9 @@ function openProfile(id){
       <div><b>${f.kills}</b><span>Kills</span></div>
       <div><b>${f.eventsWon}</b><span>Events won</span></div>
       <div><b>${f.points}</b><span>Points</span></div>
+      <div style="grid-column:1/-1"><b>🪙 ${chests[f.id] || 0}</b><span>War chest</span></div>
     </div>
+    ${mine ? `<p class="hint" style="margin:0 0 14px">Add AFtokens to your war chest on the <a href="index.html#wheel" style="color:var(--accent)">AF Wheel</a> page.</p>` : ""}
     <h5>INTEL</h5>
     <ul>
       <li><b>Leader:</b> ${esc(f.leader)}</li>
