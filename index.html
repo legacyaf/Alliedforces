@@ -338,6 +338,42 @@
   .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   @media(max-width:520px){.two{grid-template-columns:1fr}}
 
+  /* AF Wheel */
+  .wh-layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px;align-items:start}
+  @media(max-width:900px){.wh-layout{grid-template-columns:1fr}}
+  .wh-stage{position:relative;max-width:440px;margin:0 auto;aspect-ratio:1/1}
+  .wh-stage svg{width:100%;height:100%;display:block}
+  .wh-rotor{transform-origin:50% 50%;transform-box:fill-box;transition:transform 4.6s cubic-bezier(.12,.72,.1,1)}
+  .wh-pointer{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-top:30px solid var(--accent2);filter:drop-shadow(0 3px 4px rgba(0,0,0,.6));z-index:2}
+  .wh-hub{position:absolute;inset:0;margin:auto;width:22%;height:22%;border-radius:50%;background:var(--bg);border:4px solid var(--accent);display:flex;align-items:center;justify-content:center;font-family:"Barlow Condensed";font-weight:800;color:var(--accent2);font-size:clamp(.9rem,3vw,1.3rem);letter-spacing:.05em}
+  .wh-spin{display:block;margin:18px auto 0;font-size:1.3rem;padding:13px 34px}
+  .wh-spin[disabled]{opacity:.5;cursor:not-allowed}
+  .wh-sub{text-align:center;color:var(--muted);margin-top:8px;font-size:.95rem}
+  .wh-bal{display:flex;align-items:baseline;gap:10px}
+  .wh-bal b{font-family:"Barlow Condensed";font-size:3rem;font-weight:800;line-height:1;color:var(--accent2)}
+  .wh-bal span{color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-size:.85rem}
+  .wh-chest{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .wh-chest input{width:110px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font:inherit;padding:8px 10px}
+  .wh-list{list-style:none;margin:0}
+  .wh-list li{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:.95rem}
+  .wh-list li:last-child{border-bottom:0}
+  .wh-list small{color:var(--muted);display:block;font-size:.8rem}
+  .amt-pos{color:var(--ok);font-weight:700}.amt-neg{color:#e5735c;font-weight:700}
+  .st{font:700 .72rem Barlow,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:4px;white-space:nowrap}
+  .st-pending{background:#3a2a1e;color:var(--accent2)}.st-delivered{background:#22301b;color:var(--ok)}.st-cancelled{background:#333;color:var(--muted)}
+  .wh-win{text-align:center}
+  .wh-win .big{font-family:"Barlow Condensed";font-size:2.4rem;font-weight:800;color:var(--accent2);line-height:1.1;margin:6px 0 10px}
+  .wh-rule{font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);margin-top:14px;padding-top:10px}
+  .staff-card{border:1px dashed var(--accent)}
+  .staff-card h3 .adm{vertical-align:4px}
+  table.pz{width:100%;border-collapse:collapse;font-size:.92rem}
+  table.pz th{text-align:left;color:var(--muted);font-weight:600;padding:6px;border-bottom:1px solid var(--line)}
+  table.pz td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+  table.pz .sw{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:6px}
+  table.pz tr.off{opacity:.45}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  @media(max-width:560px){.three{grid-template-columns:1fr}}
+
   footer{border-top:1px solid var(--line);background:var(--bg2);padding:36px 0 28px;font-size:.95rem}
   .foot{display:grid;grid-template-columns:2fr 1fr 1fr;gap:28px}
   .foot a{color:var(--muted);text-decoration:none;display:block;padding:3px 0}
@@ -364,6 +400,7 @@
       <a href="#rules" data-v="rules">Rules</a>
       <a href="#legends" data-v="legends">Legends</a>
       <a href="factions.html">Factions</a>
+      <a href="#wheel" data-v="wheel">AF Wheel</a>
       <a href="#live-wipes" data-v="live">Live</a>
       <a href="#support" data-v="support">Support Us</a>
       <a href="#feed" data-v="feed">Community</a>
@@ -604,6 +641,18 @@
   </section>
 </div>
 
+<!-- AF WHEEL -->
+<div class="view" id="v-wheel">
+  <section>
+    <div class="wrap">
+      <div class="kicker-sm">Spoils of war</div>
+      <h2>AF Wheel</h2>
+      <p class="muted" style="max-width:760px">Win wars, earn AFtokens. Spend them on a daily spin for in-game loot, or stack your faction's war chest.</p>
+      <div id="wheel-root" style="margin-top:18px"></div>
+    </div>
+  </section>
+</div>
+
 <!-- INBOX -->
 <div class="view" id="v-inbox">
   <section>
@@ -644,6 +693,12 @@
         <li>Only post photos you have the right to share.</li>
       </ul>
       <p>AF staff can remove any post or comment and can block anyone from posting or messaging. Use the ⚑ report button to flag anything that breaks these rules.</p>
+      <h3>3b. AFtokens and the AF Wheel</h3>
+      <ul>
+        <li>AFtokens are earned only by playing (winning wars and events). They can't be bought, sold, traded for money or cashed out, and they're never part of a donation or supporter package.</li>
+        <li>AFtokens and wheel prizes have no real-world value. Item prizes are in-game items handed out by AF staff and may be lost to wipes like any other loot.</li>
+        <li>Staff can adjust balances, odds and prizes, and remove tokens gained by exploiting bugs or breaking the rules.</li>
+      </ul>
       <h3>4. Donations and supporter packages</h3>
       <ul>
         <li>Donations are voluntary and do not entitle you to any goods, services or benefits.</li>
@@ -723,6 +778,7 @@
         <a href="#rules">Rules</a>
         <a href="#legends">AF Legends</a>
         <a href="factions.html">Factions</a>
+        <a href="#wheel">AF Wheel</a>
         <a href="#feed">Community</a>
         <a href="#team">Team</a>
         <a href="#live-killfeed">Killfeed</a>
@@ -1741,7 +1797,7 @@ async function onUserChanged(){
   $("#nav-inbox").hidden = !user;
   amAdmin = false;
   if (inboxChannel) { sb.removeChannel(inboxChannel); inboxChannel = null; }
-  if (!sb || !user) { setBadge(); refreshEventViews(); return; }
+  if (!sb || !user) { setBadge(); refreshEventViews(); if (location.hash === "#wheel") renderWheel(); return; }
   const { data } = await sb.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
   amAdmin = !!data;
   refreshBadge();
@@ -1763,6 +1819,7 @@ async function onUserChanged(){
     .subscribe();
   if (location.hash === "#feed") renderFeed();
   if (location.hash === "#inbox") renderInbox();
+  if (location.hash === "#wheel") renderWheel();
   refreshEventViews();
 }
 function startDm(otherId){
@@ -2277,10 +2334,254 @@ $("#v-servers").addEventListener("click", async ev => {
 });
 async function startEvents(){ await loadEvents(); refreshEventViews(); }
 
+/* ===================== AF WHEEL + AFtokens ===================== */
+let whPrizes = [], whSettings = { spin_cost: 25, daily_spins: 1, war_win_reward: 50 }, whBalance = 0, whSpinsLeft = 0, whRot = 0, whBusy = false, whFaction = null;
+const SRV_LABEL = { nasdara: "Nasdara", chernarus: "Chernarus" };
+const WH_COLORS = ["#8a5a22", "#2a4f7a", "#5b6e3a", "#7a2a2a", "#4a3f6b", "#3f6b5e", "#6b5a3f", "#5a2a4f"];
+
+function etMidnightISO(){
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric", month: "numeric", day: "numeric" }).formatToParts(new Date()).map(x => [x.type, x.value]));
+  return new Date(zonedTs(+p.year, +p.month - 1, +p.day, 0, 0, "America/New_York")).toISOString();
+}
+function wheelSVG(){
+  const list = whPrizes.filter(p => p.active);
+  if (!list.length) return `<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="96" fill="#211e1b" stroke="#34302b" stroke-width="4"/></svg>`;
+  const n = list.length, seg = 360 / n, R = 96, rad = d => (d - 90) * Math.PI / 180;
+  const pt = (d, r) => [100 + r * Math.cos(rad(d)), 100 + r * Math.sin(rad(d))];
+  const slices = list.map((p, i) => {
+    const a0 = i * seg, a1 = (i + 1) * seg, [x0, y0] = pt(a0, R), [x1, y1] = pt(a1, R);
+    const mid = a0 + seg / 2, [tx, ty] = pt(mid, R * 0.6);
+    const label = p.label.length > 14 ? p.label.slice(0, 13) + "…" : p.label;
+    const path = n === 1 ? `<circle cx="100" cy="100" r="${R}" fill="${esc(p.color || WH_COLORS[i % WH_COLORS.length])}"/>`
+      : `<path d="M100,100 L${x0.toFixed(2)},${y0.toFixed(2)} A${R},${R} 0 ${seg > 180 ? 1 : 0} 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z" fill="${esc(p.color || WH_COLORS[i % WH_COLORS.length])}" stroke="#121110" stroke-width="1.2"/>`;
+    return `${path}<text x="${tx.toFixed(2)}" y="${ty.toFixed(2)}" transform="rotate(${(mid > 180 ? mid + 90 : mid - 90).toFixed(2)} ${tx.toFixed(2)} ${ty.toFixed(2)})" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-family="Barlow Condensed, sans-serif" font-weight="700" font-size="${n > 8 ? 7 : 8.5}" letter-spacing=".3">${esc(label.toUpperCase())}</text>`;
+  }).join("");
+  return `<svg viewBox="0 0 200 200" aria-label="Prize wheel"><circle cx="100" cy="100" r="99" fill="#121110" stroke="#e0662b" stroke-width="2"/>
+    <g class="wh-rotor" id="wh-rotor" style="transform:rotate(${whRot}deg)">${slices}</g></svg>`;
+}
+
+async function loadWheelData(){
+  const tasks = [
+    sb.from("wheel_prizes").select("*").order("sort_order").order("id"),
+    sb.from("token_settings").select("*").eq("id", 1).maybeSingle(),
+    sb.from("wheel_recent_wins").select("*").limit(12)
+  ];
+  if (user) tasks.push(
+    sb.from("token_wallets").select("balance").eq("user_id", user.id).maybeSingle(),
+    sb.from("wheel_spins").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("created_at", etMidnightISO()),
+    sb.from("prize_claims").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
+    sb.from("token_ledger").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(15),
+    sb.rpc("my_faction")
+  );
+  const [pz, st, rw, wl, sp, cl, lg, fc] = await Promise.all(tasks);
+  if (pz.error) return { error: pz.error };
+  whPrizes = pz.data || [];
+  if (st.data) whSettings = st.data;
+  whBalance = wl?.data?.balance || 0;
+  whSpinsLeft = user ? Math.max(0, whSettings.daily_spins - (sp?.count || 0)) : 0;
+  whFaction = fc?.data || null;
+  return { wins: rw.data || [], claims: cl?.data || [], ledger: lg?.data || [] };
+}
+
+async function renderWheel(){
+  const box = $("#wheel-root");
+  if (!sb) { box.innerHTML = `<div class="kf-empty">The AF Wheel is coming soon.</div>`; return; }
+  box.innerHTML = `<div class="kf-empty">Loading the wheel…</div>`;
+  const d = await loadWheelData();
+  if (d.error) { box.innerHTML = `<div class="kf-empty">The AF Wheel isn't set up yet${amAdmin ? " — run tokens-setup.sql in Supabase" : ""}.</div>`; return; }
+  const totalW = whPrizes.filter(p => p.active).reduce((a, p) => a + p.weight, 0) || 1;
+  const canSpin = user && whSpinsLeft > 0 && whBalance >= whSettings.spin_cost && whPrizes.some(p => p.active);
+  const why = !user ? "Sign in to spin" : whSpinsLeft <= 0 ? "No spins left today · resets at midnight ET"
+    : whBalance < whSettings.spin_cost ? `You need ${whSettings.spin_cost} AFtokens to spin` : `${whSpinsLeft} spin${whSpinsLeft === 1 ? "" : "s"} left today`;
+  box.innerHTML = `<div class="wh-layout">
+    <div class="card">
+      <div class="wh-stage"><div class="wh-pointer"></div>${wheelSVG()}<div class="wh-hub">AF</div></div>
+      ${user ? `<button class="btn wh-spin" id="wh-spin" ${canSpin ? "" : "disabled"}>Spin · ${whSettings.spin_cost} AFtokens</button>`
+             : `<button class="btn discord-btn wh-spin" id="wh-signin">${DISCORD_SVG} Sign in to spin</button>`}
+      <div class="wh-sub">${esc(why)}</div>
+      <div class="wh-rule">AFtokens are earned by winning wars and events. They can't be bought, sold or cashed out. Item prizes are handed out in game by AF staff.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px">
+      ${user ? `<div class="card">
+        <div class="wh-bal"><b id="wh-bal">${whBalance}</b><span>AFtokens</span></div>
+        <p class="muted" style="margin:6px 0 0;font-size:.92rem">Every member of the winning faction gets <b style="color:var(--text)">${whSettings.war_win_reward}</b> AFtokens when staff record a war win.</p>
+        <h3 style="margin-top:16px">⚔️ War chest</h3>
+        ${whFaction ? `<p class="muted" style="margin:0">${esc(whFaction.name)} has <b style="color:var(--text)" id="wh-chest">${whFaction.chest}</b> AFtokens in its chest.</p>
+          <div class="wh-chest"><input type="number" id="wh-amt" min="1" step="1" placeholder="Amount"><button class="btn sm" id="wh-give">Contribute</button></div>
+          <div id="wh-cmsg"></div>`
+          : `<p class="muted" style="margin:0">Join a faction on the <a href="factions.html">War Board</a> to contribute to its war chest.</p>`}
+      </div>` : ""}
+      ${user ? `<div class="card"><h3>🎁 My prizes</h3>${d.claims.length ? `<ul class="wh-list">${d.claims.map(c => `<li><div><b>${esc(c.item_name)}</b>
+          <small>${new Date(c.created_at).toLocaleDateString()}${c.server ? " · " + esc(SRV_LABEL[c.server] || c.server) : ""}${c.note ? " · " + esc(c.note) : ""}</small></div>
+          ${c.status === "pending" && !c.server ? `<button class="btn sm" data-claim-srv="${c.id}">Pick server</button>` : `<span class="st st-${esc(c.status)}">${esc(c.status === "pending" ? "Waiting for staff" : c.status)}</span>`}</li>`).join("")}</ul>`
+          : `<p class="muted" style="margin:0">No item prizes yet. Spin to win!</p>`}</div>` : ""}
+      <div class="card"><h3>🏆 Recent wins</h3>${d.wins.length ? `<ul class="wh-list">${d.wins.map(w => `<li><span><b>${esc(w.name)}</b> won ${esc(w.prize_label)}</span><small>${ago(w.created_at)}</small></li>`).join("")}</ul>` : `<p class="muted" style="margin:0">No winners yet.</p>`}</div>
+      <div class="card"><h3>🎯 Odds</h3><ul class="wh-list">${whPrizes.filter(p => p.active).map(p => `<li><span><span class="sw" style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${esc(p.color || "#555")};margin-right:8px"></span>${esc(p.label)}</span><b>${(p.weight / totalW * 100).toFixed(1)}%</b></li>`).join("")}</ul></div>
+      ${user && d.ledger.length ? `<div class="card"><h3>📜 Token history</h3><ul class="wh-list">${d.ledger.map(l => `<li><div>${esc(l.reason)}<small>${new Date(l.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</small></div><span class="${l.amount >= 0 ? "amt-pos" : "amt-neg"}">${l.amount >= 0 ? "+" : ""}${l.amount}</span></li>`).join("")}</ul></div>` : ""}
+    </div>
+  </div>
+  ${amAdmin ? `<div id="wh-staff" style="margin-top:22px"></div>` : ""}`;
+
+  if ($("#wh-signin")) $("#wh-signin").onclick = signIn;
+  if ($("#wh-spin")) $("#wh-spin").onclick = spinWheel;
+  if ($("#wh-give")) $("#wh-give").onclick = contributeChest;
+  $$("[data-claim-srv]").forEach(b => b.onclick = () => pickClaimServer(+b.dataset.claimSrv, d.claims.find(c => c.id === +b.dataset.claimSrv)?.item_name));
+  if (amAdmin) renderWheelStaff();
+}
+
+async function spinWheel(){
+  if (whBusy) return; whBusy = true;
+  const btn = $("#wh-spin"); btn.disabled = true; btn.textContent = "Spinning…";
+  const { data, error } = await sb.rpc("spin_wheel");
+  if (error) { whBusy = false; toast(error.message.replace(/^.*?:\s*/, "")); renderWheel(); return; }
+  const list = whPrizes.filter(p => p.active), idx = Math.max(0, list.findIndex(p => p.id === data.prize_id)), seg = 360 / list.length;
+  const jitter = (Math.random() - 0.5) * seg * 0.6;
+  const target = 360 - (idx * seg + seg / 2) + jitter;
+  whRot = whRot + 360 * 6 + ((target - (whRot % 360)) + 360) % 360;
+  $("#wh-rotor").style.transform = `rotate(${whRot}deg)`;
+  $("#wh-bal").textContent = data.balance;
+  setTimeout(() => {
+    whBusy = false;
+    if (data.kind === "nothing") {
+      openModal(`<div class="wh-win"><div style="font-size:2.4rem">😬</div><div class="big">${esc(data.label)}</div><p class="muted">Better luck next time.</p><button class="btn" id="wh-ok">OK</button></div>`);
+      $("#wh-ok").onclick = () => { closeModal(); renderWheel(); };
+    } else if (data.kind === "tokens") {
+      openModal(`<div class="wh-win"><div style="font-size:2.4rem">🪙</div><div class="big">${esc(data.label)}</div><p class="muted">Added to your balance. You now have <b style="color:var(--text)">${data.balance}</b> AFtokens.</p><button class="btn" id="wh-ok">Nice</button></div>`);
+      $("#wh-ok").onclick = () => { closeModal(); renderWheel(); };
+    } else {
+      pickClaimServer(data.claim_id, data.item_name, true);
+    }
+  }, 4800);
+}
+function pickClaimServer(claimId, itemName, justWon = false){
+  openModal(`<div class="wh-win">${justWon ? `<div style="font-size:2.4rem">🎉</div><div class="big">You won ${esc(itemName)}!</div>` : `<h3>Where should we deliver ${esc(itemName)}?</h3>`}
+    <p class="muted">Pick the server you want it on. AF staff will hand it out in game. Make sure your in-game name is saved on your <a href="#account" id="wh-acc">Account</a> page.</p>
+    <div class="row" style="justify-content:center;margin:12px 0">${Object.entries(SRV_LABEL).map(([k, l]) => `<button class="btn" data-srv="${k}">${l}</button>`).join("")}</div>
+    <button class="btn ghost sm" id="wh-later">Decide later</button><div id="wh-pmsg"></div></div>`);
+  $("#wh-later").onclick = () => { closeModal(); renderWheel(); };
+  $("#wh-acc").onclick = closeModal;
+  $$("[data-srv]").forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc("set_claim_server", { p_claim: claimId, p_server: b.dataset.srv });
+    if (error) { $("#wh-pmsg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+    closeModal(); toast(`Got it — staff will deliver on ${SRV_LABEL[b.dataset.srv]}`); renderWheel();
+  });
+}
+async function contributeChest(){
+  const amt = parseInt($("#wh-amt").value, 10), msg = $("#wh-cmsg");
+  if (!amt || amt < 1) { msg.innerHTML = `<p class="msg err">Enter how many AFtokens to give.</p>`; return; }
+  if (amt > whBalance) { msg.innerHTML = `<p class="msg err">You only have ${whBalance} AFtokens.</p>`; return; }
+  if (!(await confirmModal(`Give ${amt} AFtokens to ${whFaction.name}?`, "Contributions go into the faction's war chest and can't be taken back.", "Contribute"))) return;
+  const { data, error } = await sb.rpc("contribute_to_chest", { p_amount: amt });
+  if (error) { msg.innerHTML = `<p class="msg err">${esc(error.message.replace(/^.*?:\s*/, ""))}</p>`; return; }
+  toast(`+${amt} to the ${whFaction.name} war chest`); renderWheel();
+}
+
+/* ---------- staff panel ---------- */
+async function renderWheelStaff(){
+  const box = $("#wh-staff"); if (!box) return;
+  const { data: claims, error } = await sb.rpc("admin_claims");
+  const totalW = whPrizes.filter(p => p.active).reduce((a, p) => a + p.weight, 0) || 1;
+  const pending = (claims || []).filter(c => c.status === "pending");
+  box.innerHTML = `<div class="card staff-card">
+    <h3>Staff controls <span class="adm">Staff</span></h3>
+    <h4 style="margin:14px 0 8px">📦 Prizes to deliver (${pending.length})</h4>
+    ${error ? `<p class="msg err">${esc(error.message)}</p>` : (claims || []).length ? `<ul class="wh-list">${claims.map(c => `<li><div><b>${esc(c.item_name)}</b> → ${esc(c.discord_username || "Unknown")}
+        <small>IGN: ${esc(c.ingame_name || "not set")} · Steam: ${esc(c.steam_id || "not set")} · Server: ${esc(SRV_LABEL[c.server] || "not picked yet")} · ${new Date(c.created_at).toLocaleDateString()}</small></div>
+        ${c.status === "pending" ? `<span class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm" data-deliver="${c.id}">Delivered</button><button class="btn sm ghost" data-cancelc="${c.id}">Cancel</button></span>` : `<span class="st st-${esc(c.status)}">${esc(c.status)}</span>`}</li>`).join("")}</ul>` : `<p class="muted">Nothing to deliver.</p>`}
+
+    <h4 style="margin:22px 0 8px">⚙️ Settings</h4>
+    <div class="three">
+      <div class="field"><label for="ws-cost">Spin cost</label><input id="ws-cost" type="number" min="0" value="${whSettings.spin_cost}"></div>
+      <div class="field"><label for="ws-daily">Spins per day</label><input id="ws-daily" type="number" min="0" max="20" value="${whSettings.daily_spins}"></div>
+      <div class="field"><label for="ws-war">Tokens per war win (each member)</label><input id="ws-war" type="number" min="0" value="${whSettings.war_win_reward}"></div>
+    </div>
+    <button class="btn sm" id="ws-save">Save settings</button> <span id="ws-msg"></span>
+
+    <h4 style="margin:22px 0 8px">🎡 Wheel prizes</h4>
+    <div style="overflow-x:auto"><table class="pz"><thead><tr><th>Prize</th><th>Gives</th><th>Weight</th><th>Odds</th><th></th></tr></thead><tbody>
+      ${whPrizes.map(p => `<tr class="${p.active ? "" : "off"}"><td><span class="sw" style="background:${esc(p.color || "#555")}"></span>${esc(p.label)}</td>
+        <td>${p.kind === "item" ? "🎁 " + esc(p.item_name || p.label) : p.kind === "tokens" ? `🪙 ${p.token_amount} tokens` : "Nothing"}</td>
+        <td>${p.weight}</td><td>${p.active ? (p.weight / totalW * 100).toFixed(1) + "%" : "off"}</td>
+        <td style="white-space:nowrap"><button class="icon-btn" data-pz-edit="${p.id}" title="Edit">✏️</button><button class="icon-btn" data-pz-del="${p.id}" title="Delete">🗑</button></td></tr>`).join("")}
+    </tbody></table></div>
+    <button class="btn sm" id="pz-add" style="margin-top:10px">+ Add prize</button>
+    <p class="muted" style="font-size:.85rem;margin-top:8px">Weight sets the odds: a prize with weight 20 is twice as likely as one with weight 10.</p>
+
+    <h4 style="margin:22px 0 8px">🪙 Give or take AFtokens</h4>
+    <div id="aw-pick"></div>
+    <div class="two" style="margin-top:10px"><div class="field"><label for="aw-amt">Amount (negative takes away)</label><input id="aw-amt" type="number" placeholder="e.g. 100"></div>
+      <div class="field"><label for="aw-why">Reason</label><input id="aw-why" maxlength="150" placeholder="e.g. Won the Elektro event"></div></div>
+    <button class="btn sm" id="aw-go">Send</button> <span id="aw-msg"></span>
+  </div>`;
+
+  box.querySelectorAll("[data-deliver],[data-cancelc]").forEach(b => b.onclick = async () => {
+    const id = +(b.dataset.deliver || b.dataset.cancelc), status = b.dataset.deliver ? "delivered" : "cancelled";
+    if (status === "cancelled" && !(await confirmModal("Cancel this prize?", "The player keeps nothing for this spin.", "Cancel prize"))) return;
+    const { error } = await sb.rpc("admin_update_claim", { p_claim: id, p_status: status });
+    if (error) return toast(error.message);
+    toast(status === "delivered" ? "Marked delivered" : "Prize cancelled"); renderWheelStaff();
+  });
+  $("#ws-save").onclick = async () => {
+    const row = { spin_cost: Math.max(0, parseInt($("#ws-cost").value, 10) || 0), daily_spins: Math.min(20, Math.max(0, parseInt($("#ws-daily").value, 10) || 0)),
+      war_win_reward: Math.max(0, parseInt($("#ws-war").value, 10) || 0), updated_at: new Date().toISOString() };
+    const { error } = await sb.from("token_settings").update(row).eq("id", 1);
+    $("#ws-msg").innerHTML = error ? `<span class="msg err">${esc(error.message)}</span>` : `<span class="msg ok">Saved</span>`;
+    if (!error) { whSettings = { ...whSettings, ...row }; }
+  };
+  box.querySelectorAll("[data-pz-edit]").forEach(b => b.onclick = () => openPrizeEditor(+b.dataset.pzEdit));
+  box.querySelectorAll("[data-pz-del]").forEach(b => b.onclick = async () => {
+    if (!(await confirmModal("Delete this prize?", "It disappears from the wheel. Past wins stay in the history."))) return;
+    const { error } = await sb.from("wheel_prizes").delete().eq("id", +b.dataset.pzDel);
+    if (error) return toast(error.message);
+    renderWheel();
+  });
+  $("#pz-add").onclick = () => openPrizeEditor(null);
+  let target = null;
+  memberPicker($("#aw-pick"), m => { target = m; }, "Search the player by Discord name…");
+  $("#aw-go").onclick = async () => {
+    const amt = parseInt($("#aw-amt").value, 10), msg = $("#aw-msg");
+    if (!target) { msg.innerHTML = `<span class="msg err">Pick a player first</span>`; return; }
+    if (!amt) { msg.innerHTML = `<span class="msg err">Enter an amount</span>`; return; }
+    const { data, error } = await sb.rpc("admin_award_tokens", { p_user: target.id, p_amount: amt, p_reason: $("#aw-why").value.trim() });
+    msg.innerHTML = error ? `<span class="msg err">${esc(error.message.replace(/^.*?:\s*/, ""))}</span>` : `<span class="msg ok">${amt > 0 ? "Gave" : "Took"} ${Math.abs(amt)} · ${esc(target.name)} now has ${data}</span>`;
+    if (!error) { $("#aw-amt").value = ""; $("#aw-why").value = ""; }
+  };
+}
+function openPrizeEditor(id){
+  const p = id ? whPrizes.find(x => x.id === id) : null;
+  openModal(`<h3>${p ? "Edit prize" : "Add a prize"}</h3>
+    <div class="field"><label for="pz-label">Label on the wheel</label><input id="pz-label" maxlength="40" value="${esc(p?.label || "")}" placeholder="e.g. M4-A1 kit"></div>
+    <div class="two"><div class="field"><label for="pz-kind">Gives</label><select id="pz-kind">
+        <option value="item" ${p?.kind === "item" || !p ? "selected" : ""}>An in-game item</option>
+        <option value="tokens" ${p?.kind === "tokens" ? "selected" : ""}>AFtokens</option>
+        <option value="nothing" ${p?.kind === "nothing" ? "selected" : ""}>Nothing (try again)</option></select></div>
+      <div class="field"><label for="pz-weight">Weight (odds)</label><input id="pz-weight" type="number" min="1" max="10000" value="${p?.weight ?? 10}"></div></div>
+    <div class="field" id="pz-item-f"><label for="pz-item">Item staff hand out</label><input id="pz-item" maxlength="100" value="${esc(p?.item_name || "")}" placeholder="e.g. M4-A1 with 3 mags"></div>
+    <div class="field" id="pz-tok-f"><label for="pz-tok">AFtokens won</label><input id="pz-tok" type="number" min="0" value="${p?.token_amount ?? 10}"></div>
+    <div class="two"><div class="field"><label for="pz-color">Color</label><input id="pz-color" type="color" value="${esc(p?.color || "#8a5a22")}" style="height:44px;padding:4px"></div>
+      <div class="field"><label for="pz-sort">Order on the wheel</label><input id="pz-sort" type="number" value="${p?.sort_order ?? whPrizes.length + 1}"></div></div>
+    <label style="display:flex;gap:8px;align-items:center;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="pz-active" ${p?.active === false ? "" : "checked"}> On the wheel</label>
+    <div class="row"><button class="btn" id="pz-save">Save prize</button><button class="btn ghost" id="pz-x">Cancel</button></div><div id="pz-msg"></div>`);
+  const sync = () => { const k = $("#pz-kind").value; $("#pz-item-f").hidden = k !== "item"; $("#pz-tok-f").hidden = k !== "tokens"; };
+  $("#pz-kind").onchange = sync; sync();
+  $("#pz-x").onclick = closeModal;
+  $("#pz-save").onclick = async () => {
+    const kind = $("#pz-kind").value, label = $("#pz-label").value.trim();
+    if (!label) { $("#pz-msg").innerHTML = `<p class="msg err">Give it a label.</p>`; return; }
+    const row = { label, kind, weight: Math.max(1, parseInt($("#pz-weight").value, 10) || 1),
+      item_name: kind === "item" ? ($("#pz-item").value.trim() || label) : null,
+      token_amount: kind === "tokens" ? Math.max(0, parseInt($("#pz-tok").value, 10) || 0) : 0,
+      color: $("#pz-color").value, sort_order: parseInt($("#pz-sort").value, 10) || 100, active: $("#pz-active").checked };
+    const { error } = p ? await sb.from("wheel_prizes").update(row).eq("id", p.id) : await sb.from("wheel_prizes").insert(row);
+    if (error) { $("#pz-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+    closeModal(); toast("Prize saved"); renderWheel();
+  };
+}
+
 renderServerOverview();
 startEvents();
 
-const views = ["home","servers","rules","legends","feed","inbox","support","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id), ...CONFIG.servers.map(s => "server-" + s.key)];
+const views = ["home","servers","rules","legends","wheel","feed","inbox","support","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id), ...CONFIG.servers.map(s => "server-" + s.key)];
 function route(){
   const v = views.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
   const section = v.startsWith("live-") ? "live" : v.startsWith("server-") ? "servers" : v;
@@ -2294,6 +2595,7 @@ function route(){
   if (v === "account") renderAccount();
   if (v === "feed") renderFeed();
   if (v === "inbox") renderInbox();
+  if (v === "wheel") renderWheel();
   if (v === "live-killfeed") startKillfeed();
   if (v === "live-wipes") startWipes();
   if (v === "live-leaderboard") startLeaderboard();
