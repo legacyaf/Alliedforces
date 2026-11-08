@@ -5,54 +5,54 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Factions | Allied Forces DayZ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0e110d; --panel:#171c15; --panel2:#1f261c; --line:#2c3528;
-    --text:#e6e8df; --muted:#9aa38f; --accent:#b8c76a; --warn:#e0a43a; --red:#d9534f;
+    --bg:#050505; --panel:rgba(20,20,22,.6); --panel2:rgba(255,255,255,.05); --line:rgba(255,255,255,.09);
+    --text:#f4f4f5; --muted:#a1a1aa; --accent:#ff7a1a; --warn:#ffad5c; --red:#ff5a5f;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;line-height:1.5}
+  body{background:var(--bg);color:var(--text);font-family:Sora,system-ui,sans-serif;line-height:1.5}
   a{color:var(--accent)}
   .wrap{max-width:1100px;margin:0 auto;padding:0 16px}
 
   /* Header */
   header{padding:40px 0 24px;border-bottom:1px solid var(--line);
-    background:radial-gradient(ellipse at top,#232b1e 0%,var(--bg) 70%)}
-  .kicker{color:var(--accent);font-size:12px;letter-spacing:3px;font-weight:800}
-  h1{font-family:'Black Ops One',sans-serif;font-size:clamp(34px,8vw,60px);line-height:1.05;margin:6px 0 10px}
+    background:none}
+  .kicker{color:var(--accent);font-size:12px;font-weight:800}
+  h1{font-family:Sora,system-ui,sans-serif;font-size:clamp(34px,8vw,60px);line-height:1.05;margin:6px 0 10px}
   .sub{color:var(--muted);max-width:620px}
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:22px}
   .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
-  .stat b{display:block;font-size:24px;font-family:'Black Ops One',sans-serif;color:var(--accent)}
-  .stat span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+  .stat b{display:block;font-size:24px;font-family:Sora,system-ui,sans-serif;color:var(--accent)}
+  .stat span{font-size:12px;color:var(--muted);}
 
   /* Tabs */
-  nav.tabs{position:sticky;top:0;z-index:5;background:rgba(14,17,13,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+  nav.tabs{position:sticky;top:0;z-index:5;background:rgba(5,5,5,.65);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
   nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
-  nav.tabs button{background:none;border:0;color:var(--muted);font:600 14px Inter;padding:14px 14px;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent}
+  nav.tabs button{background:none;border:0;color:var(--muted);font:600 14px Sora,system-ui,sans-serif;padding:14px 14px;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent}
   nav.tabs button.active{color:var(--text);border-color:var(--accent)}
   section{display:none;padding:28px 0 60px}
   section.active{display:block}
-  h2{font-family:'Black Ops One',sans-serif;font-size:26px;margin-bottom:6px}
+  h2{font-family:Sora,system-ui,sans-serif;font-size:26px;margin-bottom:6px}
   .hint{color:var(--muted);font-size:14px;margin-bottom:18px}
 
   /* Spotlight */
   .spot{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;background:linear-gradient(135deg,var(--panel2),var(--panel));
     border:1px solid var(--accent);border-radius:14px;padding:18px;margin-bottom:28px;cursor:pointer}
-  .spot .tag{font-size:11px;letter-spacing:2px;color:var(--bg);background:var(--accent);padding:3px 8px;border-radius:4px;font-weight:800;display:inline-block;margin-bottom:6px}
-  .spot h3{font-family:'Black Ops One',sans-serif;font-size:24px}
+  .spot .tag{font-size:11px;color:var(--bg);background:var(--accent);padding:3px 8px;border-radius:4px;font-weight:800;display:inline-block;margin-bottom:6px}
+  .spot h3{font-family:Sora,system-ui,sans-serif;font-size:24px}
   .spot p{color:var(--muted);font-size:14px}
 
   /* Emblem */
-  .emb{width:64px;height:64px;border-radius:12px;display:grid;place-items:center;font-family:'Black Ops One',sans-serif;font-size:22px;color:#fff;
+  .emb{width:64px;height:64px;border-radius:12px;display:grid;place-items:center;font-family:Sora,system-ui,sans-serif;font-size:22px;color:#fff;
     border:2px solid rgba(255,255,255,.25);flex-shrink:0;text-shadow:0 2px 4px rgba(0,0,0,.5)}
   .emb.lg{width:84px;height:84px;font-size:30px}
 
   /* Controls */
   .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-  .controls input{flex:1;min-width:180px;background:var(--panel);border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:8px;font:14px Inter}
-  .chip{background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:8px 12px;border-radius:999px;font:600 13px Inter;cursor:pointer}
+  .controls input{flex:1;min-width:180px;background:var(--panel);border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:8px;font:14px Sora,system-ui,sans-serif}
+  .chip{background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:8px 12px;border-radius:999px;font:600 13px Sora,system-ui,sans-serif;cursor:pointer}
   .chip.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}
 
   /* Faction grid */
@@ -70,13 +70,13 @@
   /* Rankings */
   .rank{display:grid;grid-template-columns:40px 48px 1fr auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);
     border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer}
-  .rank .n{font-family:'Black Ops One',sans-serif;font-size:22px;color:var(--muted);text-align:center}
+  .rank .n{font-family:Sora,system-ui,sans-serif;font-size:22px;color:var(--muted);text-align:center}
   .rank:nth-child(1) .n{color:#e8c45a}.rank:nth-child(2) .n{color:#c9ced6}.rank:nth-child(3) .n{color:#c98a52}
   .rank .emb{width:44px;height:44px;font-size:15px;border-radius:8px}
   .rank small{color:var(--muted)}
   .mv{font-weight:800;font-size:13px}
   .up{color:var(--accent)}.down{color:var(--red)}.same{color:var(--muted)}
-  .pts{font-family:'Black Ops One',sans-serif;font-size:18px;text-align:right}
+  .pts{font-family:Sora,system-ui,sans-serif;font-size:18px;text-align:right}
 
   /* Territory */
   .terr{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
@@ -84,14 +84,14 @@
   .zone::before{content:"";position:absolute;inset:0 auto 0 0;width:6px;background:var(--c,#444)}
   .zone h4{font-size:15px}
   .zone p{font-size:13px;color:var(--muted)}
-  .zone .cont{position:absolute;top:10px;right:10px;font-size:10px;font-weight:800;letter-spacing:1px;color:var(--warn);border:1px solid var(--warn);padding:2px 6px;border-radius:4px;animation:pulse 1.6s infinite}
+  .zone .cont{position:absolute;top:10px;right:10px;font-size:10px;font-weight:800;color:var(--warn);border:1px solid var(--warn);padding:2px 6px;border-radius:4px;animation:pulse 1.6s infinite}
   @keyframes pulse{50%{opacity:.4}}
   .legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;font-size:13px;color:var(--muted)}
-  .zone .zedit{position:absolute;bottom:10px;right:10px;background:var(--panel2);border:1px solid var(--line);color:var(--text);font:600 12px Inter;padding:4px 10px;border-radius:6px;cursor:pointer}
+  .zone .zedit{position:absolute;bottom:10px;right:10px;background:var(--panel2);border:1px solid var(--line);color:var(--text);font:600 12px Sora,system-ui,sans-serif;padding:4px 10px;border-radius:6px;cursor:pointer}
   .zone .zedit:hover{border-color:var(--accent)}
   .zone .ztime{font-size:11px;color:var(--muted);margin-top:4px}
   .adminbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--panel2);border:1px dashed var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px}
-  .adminbar b{color:var(--accent);letter-spacing:1px}
+  .adminbar b{color:var(--accent);}
   .tlog{margin-top:22px}
   .tlog h3{font-size:15px;margin-bottom:8px}
   .tlog li{list-style:none;border-bottom:1px solid var(--line);padding:9px 0;font-size:13px}
@@ -108,17 +108,17 @@
   .war .vs{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;text-align:center}
   .war .side{display:flex;flex-direction:column;align-items:center;gap:6px;font-weight:600;font-size:14px}
   .war .side .emb{width:52px;height:52px;font-size:18px}
-  .war .mid{font-family:'Black Ops One',sans-serif;font-size:20px}
-  .status{display:inline-block;font-size:11px;font-weight:800;letter-spacing:1px;padding:3px 8px;border-radius:4px;margin-top:6px}
+  .war .mid{font-family:Sora,system-ui,sans-serif;font-size:20px}
+  .status{display:inline-block;font-size:11px;font-weight:800;padding:3px 8px;border-radius:4px;margin-top:6px}
   .s-war{background:var(--red);color:#fff}.s-cease{background:var(--warn);color:#111}.s-ally{background:var(--accent);color:#111}
   .war .note{color:var(--muted);font-size:13px;text-align:center;margin-top:10px}
-  .score{font-family:'Black Ops One',sans-serif;font-size:26px}
+  .score{font-family:Sora,system-ui,sans-serif;font-size:26px}
 
   /* Dispatches */
   .feed{border-left:2px solid var(--line);margin-left:8px}
   .post{position:relative;padding:0 0 22px 22px}
   .post::before{content:"";position:absolute;left:-7px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--accent)}
-  .post time{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+  .post time{font-size:12px;color:var(--muted);}
   .post h4{font-size:16px;margin:2px 0}
   .post p{font-size:14px;color:var(--muted)}
 
@@ -128,13 +128,13 @@
   .sheet{background:var(--panel);border:1px solid var(--line);border-radius:16px 16px 0 0;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;padding:22px}
   @media(min-width:700px){.modal{align-items:center}.sheet{border-radius:16px}}
   .sheet .hd{display:flex;gap:16px;align-items:center;margin-bottom:14px}
-  .sheet h3{font-family:'Black Ops One',sans-serif;font-size:26px;line-height:1.1}
+  .sheet h3{font-family:Sora,system-ui,sans-serif;font-size:26px;line-height:1.1}
   .x{float:right;background:none;border:0;color:var(--muted);font-size:28px;cursor:pointer;line-height:1}
   .kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
   .kv div{background:var(--panel2);border-radius:8px;padding:10px;text-align:center}
-  .kv b{display:block;font-size:20px;font-family:'Black Ops One',sans-serif}
-  .kv span{font-size:11px;color:var(--muted);text-transform:uppercase}
-  .sheet h5{font-size:12px;letter-spacing:2px;color:var(--accent);margin:16px 0 6px}
+  .kv b{display:block;font-size:20px;font-family:Sora,system-ui,sans-serif}
+  .kv span{font-size:11px;color:var(--muted);}
+  .sheet h5{font-size:12px;color:var(--accent);margin:16px 0 6px}
   .sheet ul{list-style:none}
   .sheet li{padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
   .btn{display:block;text-align:center;background:var(--accent);color:var(--bg);font-weight:800;padding:14px;border-radius:10px;text-decoration:none;margin-top:18px}
@@ -144,15 +144,15 @@
   .roster li{display:flex;align-items:center;gap:10px}
   .dot{width:9px;height:9px;border-radius:50%;background:#555;flex-shrink:0}
   .dot.on{background:#5fd068;box-shadow:0 0 6px #5fd068}
-  .role{margin-left:auto;font-size:11px;font-weight:800;letter-spacing:.5px;padding:3px 8px;border-radius:4px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+  .role{margin-left:auto;font-size:11px;font-weight:800;padding:3px 8px;border-radius:4px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
   .role.r0{background:#e8c45a;color:#111;border-color:#e8c45a}
   .role.r1{color:var(--accent);border-color:var(--accent)}
   .pill.live{color:#5fd068;border-color:#5fd068}
 
   /* Challenge */
-  .btn.ghost{background:none;border:2px solid var(--red);color:var(--red);cursor:pointer;width:100%;font:800 15px Inter}
-  .form label{display:block;font-size:12px;letter-spacing:1px;color:var(--muted);margin:12px 0 4px;text-transform:uppercase}
-  .form select,.form input,.form textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:10px;border-radius:8px;font:14px Inter}
+  .btn.ghost{background:none;border:2px solid var(--red);color:var(--red);cursor:pointer;width:100%;font:800 15px Sora,system-ui,sans-serif}
+  .form label{display:block;font-size:12px;color:var(--muted);margin:12px 0 4px;}
+  .form select,.form input,.form textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:10px;border-radius:8px;font:14px Sora,system-ui,sans-serif}
   .form textarea{min-height:70px;resize:vertical}
   .ok{background:#1e3320;border:1px solid #5fd068;color:#bfe9c3;padding:12px;border-radius:8px;font-size:14px;margin-top:14px;display:none}
   .chal{background:var(--panel);border:1px dashed var(--warn);border-radius:12px;padding:14px;margin-bottom:10px}
@@ -161,7 +161,7 @@
   .chal small{color:var(--muted);display:block;margin-top:6px}
   .s-pend{background:var(--panel2);color:var(--warn);border:1px solid var(--warn)}
   .s-acc{background:var(--red);color:#fff}
-  h3.sec{font-family:'Black Ops One',sans-serif;font-size:20px;margin:26px 0 10px}
+  h3.sec{font-family:Sora,system-ui,sans-serif;font-size:20px;margin:26px 0 10px}
 
 
   /* Account bar */
@@ -169,10 +169,10 @@
   .acct .who{color:var(--muted);margin-right:auto}
   .acct .who b{font-weight:800}
   .avatar{width:30px;height:30px;border-radius:50%;border:1px solid var(--line)}
-  .sbtn{background:var(--panel);border:1px solid var(--line);color:var(--text);padding:8px 12px;border-radius:8px;font:600 13px Inter;cursor:pointer;position:relative}
+  .sbtn{background:var(--panel);border:1px solid var(--line);color:var(--text);padding:8px 12px;border-radius:8px;font:600 13px Sora,system-ui,sans-serif;cursor:pointer;position:relative}
   .sbtn.discord{background:#5865F2;border-color:#5865F2;color:#fff}
   .badge{position:absolute;top:-7px;right:-7px;background:var(--red);color:#fff;border-radius:999px;font-size:11px;font-weight:800;min-width:19px;height:19px;display:grid;place-items:center;padding:0 5px}
-  button.btn{width:100%;border:0;cursor:pointer;font:800 15px Inter}
+  button.btn{width:100%;border:0;cursor:pointer;font:800 15px Sora,system-ui,sans-serif}
   button.btn:disabled{opacity:.6}
   .btn.discordbtn{background:#5865F2;color:#fff}
   .btn.ghost{border:2px solid var(--red)}
@@ -187,7 +187,7 @@
   .inb .det{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.7}
   .inb .det b{color:var(--text);font-weight:600}
   .acts{display:flex;gap:8px;margin-top:12px}
-  .acts button{flex:1;padding:11px;border-radius:8px;font:800 14px Inter;cursor:pointer}
+  .acts button{flex:1;padding:11px;border-radius:8px;font:800 14px Sora,system-ui,sans-serif;cursor:pointer}
   .b-acc{background:var(--accent);color:#111;border:0}
   .b-dec{background:none;border:1px solid var(--red);color:var(--red)}
   .note{background:#1e3320;border:1px solid #5fd068;color:#bfe9c3;padding:12px;border-radius:8px;font-size:14px;margin-bottom:12px}
@@ -204,12 +204,12 @@
   .mrow .act{display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;color:var(--muted);margin:0;text-transform:none;letter-spacing:0}
   .mrow .act input{width:auto}
   .rm{background:none;border:1px solid var(--line);color:var(--red);border-radius:8px;height:36px;cursor:pointer;font-size:14px}
-  .mhead{display:grid;grid-template-columns:1fr 104px 58px 34px;gap:6px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+  .mhead{display:grid;grid-template-columns:1fr 104px 58px 34px;gap:6px;font-size:11px;color:var(--muted);margin-bottom:4px}
 
 
   /* Join box (War Board) */
   .joinbox{background:linear-gradient(135deg,var(--panel2),var(--panel));border:1px solid var(--accent);border-radius:14px;padding:18px;margin-bottom:24px}
-  .joinbox h3{font-family:'Black Ops One',sans-serif;font-size:20px;margin-bottom:4px}
+  .joinbox h3{font-family:Sora,system-ui,sans-serif;font-size:20px;margin-bottom:4px}
   .joinbox p{color:var(--muted);font-size:14px}
   .joinbox .btn{margin-top:14px}
 
@@ -229,6 +229,35 @@
   .b-red{background:none;border:1px solid var(--red);color:var(--red)}
 
   footer{border-top:1px solid var(--line);padding:24px 0;color:var(--muted);font-size:13px;text-align:center}
+
+  /* ===== modern glass theme (matches the main site) ===== */
+  body{background:#050505;-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
+  body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
+    radial-gradient(55% 45% at 88% -8%, rgba(255,122,26,.2), transparent 62%),
+    radial-gradient(45% 40% at -8% 108%, rgba(255,90,0,.1), transparent 60%), #050505}
+  h1{font-weight:700;letter-spacing:-.035em;background:linear-gradient(180deg,#fff 30%,#ffd2b0);-webkit-background-clip:text;background-clip:text;color:transparent}
+  h2{font-weight:650;letter-spacing:-.025em}
+  .kicker{font-size:13px;font-weight:600;color:var(--warn)}
+  .stat b{font-weight:700;letter-spacing:-.02em}
+  nav.tabs{backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border-bottom-color:rgba(255,255,255,.06)}
+  .stat,.card,.rank,.zone,.war,.chal,.sheet,.post,.spot{backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 24px 48px -28px rgba(0,0,0,.9)}
+  .stat,.card,.rank,.war,.chal{border-radius:16px}
+  .sheet{border-radius:20px 20px 0 0;background:rgba(14,14,16,.92)}
+  .btn,button.btn{border-radius:12px;font-weight:600;color:#140800;background:linear-gradient(180deg,#ff8c33,#ff7a1a);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 10px 28px -12px rgba(255,122,26,.55)}
+  .btn.off{background:var(--panel2);color:var(--muted);box-shadow:none}
+  .btn.ghost{background:none;box-shadow:none;color:var(--red)}
+  .btn.edit{background:rgba(255,255,255,.05);color:var(--text);box-shadow:none}
+  .btn.discordbtn{background:linear-gradient(180deg,#6b77f5,#5865F2);color:#fff;box-shadow:0 10px 28px -12px rgba(88,101,242,.7)}
+  .sbtn{border-radius:10px;background:rgba(255,255,255,.05)}
+  .sbtn:hover{border-color:rgba(255,122,26,.5)}
+  .chip{background:rgba(255,255,255,.05)}
+  .chip.on{background:rgba(255,122,26,.16);color:#fff;border-color:rgba(255,122,26,.6)}
+  .sheet h5{font-size:13px;font-weight:600;color:var(--warn)}
+  .form label{font-size:13px}
+  .form select,.form input,.form textarea,.controls input{background:rgba(0,0,0,.4);border-radius:10px}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:8px}
+  ::selection{background:rgba(255,122,26,.35)}
 </style>
 </head>
 <body>
@@ -237,7 +266,7 @@
   <div class="wrap">
     <a href="./" style="display:inline-block;margin-bottom:10px;color:var(--muted);text-decoration:none;font-size:13px;font-weight:600">← Allied Forces home</a>
     <div class="acct" id="acct"></div>
-    <div class="kicker">ALLIED FORCES · CHERNARUS</div>
+    <div class="kicker">Allied Forces on Chernarus</div>
     <h1>Factions of Chernarus</h1>
     <p class="sub">Every group that holds ground, wages war and makes history on Allied Forces. Rankings, territory and the war board update every week.</p>
     <div class="stats">
@@ -623,13 +652,13 @@ function renderJoinBox(){
   }
   const f = F(me.faction);
   el.innerHTML = `<div class="joinbox"><div class="spot" style="border:0;padding:0;margin:0;background:none" data-id="${esc(f.id)}">${emb(f)}
-    <div><span class="tag">YOUR FACTION</span><h3>${esc(f.name)}</h3><p>${esc(me.rank)} · ${f.activeCount}/${f.members} active</p></div></div></div>`;
+    <div><span class="tag">Your faction</span><h3>${esc(f.name)}</h3><p>${esc(me.rank)} · ${f.activeCount}/${f.members} active</p></div></div></div>`;
 }
 
 function renderSpotlight(){
   const f = byId[SITE.factionOfTheWeek];
   $("#spotlight").innerHTML = f ? `<div class="spot" data-id="${esc(f.id)}">${emb(f,"lg")}
-    <div><span class="tag">FACTION OF THE WEEK</span><h3>${esc(f.name)}</h3><p>${esc(SITE.spotlightReason)}</p></div></div>` : "";
+    <div><span class="tag">Faction of the week</span><h3>${esc(f.name)}</h3><p>${esc(SITE.spotlightReason)}</p></div></div>` : "";
 }
 
 let filter = "all";
@@ -674,7 +703,7 @@ function renderTerritory(){
   $("#terr").innerHTML = TERRITORY.map((t, i) => {
     const f = t.owner && byId[t.owner] ? F(t.owner) : null;
     return `<div class="zone" style="--c:${f ? safeColor(f.color) : "#444"}">
-      ${t.contested ? '<span class="cont">CONTESTED</span>' : ""}
+      ${t.contested ? '<span class="cont">Contested</span>' : ""}
       <h4>${esc(t.zone)}</h4><p>${f ? "Held by " + esc(f.name) : "Unclaimed"}</p>
       ${canEdit && t.updated ? `<div class="ztime">Updated ${new Date(t.updated).toLocaleDateString([], { month:"short", day:"numeric" })}</div>` : ""}
       ${canEdit ? `<button class="zedit" data-zone="${i}">Edit</button>` : ""}</div>`;
@@ -776,8 +805,8 @@ function renderChallenges(){
   const list = challengeList().filter(c => c.status !== "declined").slice(0, 15);
   $("#chals").innerHTML = list.map(c => {
     const A = F(c.from), B = F(c.to), acc = c.status === "accepted";
-    const badge = c.winner ? `<span class="status s-won" style="margin:0 0 0 auto">WON BY ${esc(F(c.winner).name).toUpperCase()}</span>`
-      : `<span class="status ${acc ? "s-acc" : "s-pend"}" style="margin:0 0 0 auto">${acc ? "ACCEPTED" : "AWAITING REPLY"}</span>`;
+    const badge = c.winner ? `<span class="status s-won" style="margin:0 0 0 auto">Won by ${esc(F(c.winner).name)}</span>`
+      : `<span class="status ${acc ? "s-acc" : "s-pend"}" style="margin:0 0 0 auto">${acc ? "Accepted" : "Awaiting reply"}</span>`;
     const staffBtn = amAdmin && acc && c.id != null ? `<button class="sbtn rbtn" data-result="${esc(c.id)}">${c.winner ? "Edit result" : "Record result"}</button>` : "";
     return `<div class="chal"><div class="row">${emb(A)}<b>${esc(A.name)}</b><span style="color:var(--muted)">challenged</span>${emb(B)}<b>${esc(B.name)}</b>
       ${badge}${staffBtn}</div>
@@ -838,7 +867,7 @@ function openProfile(id){
       <div style="grid-column:1/-1"><b>🪙 ${chests[f.id] || 0}</b><span>War chest</span></div>
     </div>
     ${mine ? `<p class="hint" style="margin:0 0 14px">Add AFtokens to your war chest on the <a href="index.html#wheel" style="color:var(--accent)">AF Wheel</a> page.</p>` : ""}
-    <h5>INTEL</h5>
+    <h5>Intel</h5>
     <ul>
       <li><b>Leader:</b> ${esc(f.leader)}</li>
       <li><b>Home base:</b> ${esc(f.base)}</li>
@@ -848,13 +877,13 @@ function openProfile(id){
       <li><b>Allies:</b> ${names(f.allies)}</li>
       <li><b>Rivals:</b> ${names(f.rivals)}</li>
     </ul>
-    <h5>ROSTER · ${f.activeCount} OF ${f.members} ACTIVE</h5>
+    <h5>Roster: ${f.activeCount} of ${f.members} active</h5>
     <ul class="roster">${f.roster.map(m => {
       const r = rankIdx(m);
       return `<li><span class="dot ${m.active ? "on" : ""}" title="${m.active ? "Active" : "Inactive"}"></span>${esc(m.name)}
         <span class="role ${r === 0 ? "r0" : r < 3 ? "r1" : ""}">${esc(m.role)}</span></li>`;
     }).join("") || '<li class="empty">No members listed yet.</li>'}</ul>
-    <h5>HONORS</h5>
+    <h5>Honors</h5>
     <ul>${f.achievements.map(a => `<li>🎖️ ${esc(a)}</li>`).join("") || '<li class="empty">None yet</li>'}</ul>
     ${canManage(f.id) ? `<button class="btn edit" id="editBtn">✏️ Manage faction & members</button>` : ""}
     ${!mine && f.recruiting ? `<p class="hint" style="margin:18px 0 0">Recruiting: ask ${esc(f.leader)} on Discord for an invite. Invites show up in your Inbox.</p>
@@ -898,7 +927,7 @@ function readFields(){
 function openCreate(){
   if (!me) return login();
   openSheet(`
-    <div class="kicker">START A FACTION</div><h3 style="margin-bottom:6px">Raise your banner</h3>
+    <div class="kicker">Start a faction</div><h3 style="margin-bottom:6px">Raise your banner</h3>
     <p class="hint">You'll be the Leader. After creating it, invite players from your faction page.</p>
     <div class="form">${factionFields()}
       <button class="btn" id="cfGo" style="margin-top:20px">Create faction</button>
@@ -924,7 +953,7 @@ function openCreate(){
 /* ---------- Challenges ---------- */
 function openChallenge(id){
   const t = F(id);
-  const head = `<div class="hd">${emb(t,"lg")}<div><div class="kicker">ISSUE A CHALLENGE TO</div><h3>${esc(t.name)}</h3></div></div>`;
+  const head = `<div class="hd">${emb(t,"lg")}<div><div class="kicker">Challenge</div><h3>${esc(t.name)}</h3></div></div>`;
   if (SB && !me) return openSheet(head + `<p class="hint">Log in with Discord to send a challenge. It goes straight to ${esc(t.name)}'s leader inbox.</p>
       <button class="btn discordbtn" id="login2">Log in with Discord</button>`, () => $("#login2").onclick = login);
   if (SB && !canSend()) return openSheet(head + `<p class="hint">Only a faction's Leader, Co-Leaders and Officers can send challenges.${me.faction ? "" : " Start or join a faction first."}</p>`);
@@ -982,9 +1011,9 @@ async function sendChallenge(t){
 /* ---------- Inbox (invites + challenges) ---------- */
 function openInbox(){
   const fid = me.faction, all = challengeList();
-  const statusTag = s => s === "accepted" ? `<span class="status s-acc" style="margin:0 0 0 auto">ACCEPTED</span>`
-    : s === "declined" ? `<span class="status s-cease" style="margin:0 0 0 auto">DECLINED</span>`
-    : `<span class="status s-pend" style="margin:0 0 0 auto">AWAITING REPLY</span>`;
+  const statusTag = s => s === "accepted" ? `<span class="status s-acc" style="margin:0 0 0 auto">Accepted</span>`
+    : s === "declined" ? `<span class="status s-cease" style="margin:0 0 0 auto">Declined</span>`
+    : `<span class="status s-pend" style="margin:0 0 0 auto">Awaiting reply</span>`;
   const details = c => `<div class="det">
       ⚔️ <b>${esc(c.type)}</b><br>📍 ${esc(c.zone)}<br>📅 ${esc(c.date)}<br>🏆 ${esc(c.stakes || "Bragging rights")}
       ${c.created_at ? `<br><span style="font-size:12px">Sent ${esc(fmtDate(c.created_at))}</span>` : ""}</div>`;
@@ -1016,16 +1045,16 @@ function openInbox(){
     const row = (c, otherId, verb) => { const O = F(otherId); return `
       <div class="inb"><div class="row">${emb(O)}<div><small style="color:var(--muted)">${verb}</small><br><b>${esc(O.name)}</b></div>${statusTag(c.status)}</div>${details(c)}</div>`; };
     chHtml = `
-      <h5>INCOMING CHALLENGES (${incoming.length})</h5>${inc}
-      <h5>SENT BY YOUR FACTION</h5>${sent.map(c => row(c, c.to, "You challenged")).join("") || '<p class="empty">Nothing sent yet.</p>'}
-      <h5>ANSWERED</h5>${past.map(c => row(c, c.from, "Challenge from")).join("") || '<p class="empty">Nothing answered yet.</p>'}`;
+      <h5>Incoming challenges (${incoming.length})</h5>${inc}
+      <h5>Sent by your faction</h5>${sent.map(c => row(c, c.to, "You challenged")).join("") || '<p class="empty">Nothing sent yet.</p>'}
+      <h5>Answered</h5>${past.map(c => row(c, c.from, "Challenge from")).join("") || '<p class="empty">Nothing answered yet.</p>'}`;
   }
 
   const note = inboxNote ? `<div class="note">${esc(inboxNote.text)}${inboxNote.copy ? `<button class="btn" id="copyAnn">Copy announcement for Discord</button>` : ""}</div>` : "";
   openSheet(`
     <div class="kicker">INBOX</div><h3 style="margin-bottom:10px">${esc(me.name)}</h3>
     ${note}
-    ${inv.length || !fid ? `<h5>FACTION INVITES (${inv.length})</h5>${invHtml || '<p class="empty">No invites right now. Ask a faction Leader to invite you, or start your own from the War Board.</p>'}` : ""}
+    ${inv.length || !fid ? `<h5>Faction invites (${inv.length})</h5>${invHtml || '<p class="empty">No invites right now. Ask a faction Leader to invite you, or start your own from the War Board.</p>'}` : ""}
     ${chHtml}
     <div class="err" id="ibErr"></div>`,
   () => {
@@ -1077,14 +1106,14 @@ function openEdit(fid, flash){
   const pend = sentInvites();
 
   openSheet(`
-    <div class="hd">${emb(f,"lg")}<div><div class="kicker">MANAGE FACTION</div><h3>${esc(f.name)}</h3></div></div>
+    <div class="hd">${emb(f,"lg")}<div><div class="kicker">Manage faction</div><h3>${esc(f.name)}</h3></div></div>
     ${flash ? `<div class="note">${esc(flash)}</div>` : ""}
     <div class="form">
-      <h5>INVITE PLAYERS</h5>
+      <h5>Invite players</h5>
       <p class="hint" style="margin-bottom:6px">Search players who have logged in to the site. They'll get the invite in their Inbox.</p>
       <input id="invQ" placeholder="Search by Discord name…" autocomplete="off">
       <div id="invRes"></div>
-      ${pend.length ? `<h5>PENDING INVITES</h5>${pend.map(i => `<div class="prow">${esc(profileName(i.discord_id))}<small style="color:var(--muted)">· sent ${esc(fmtDate(i.created_at))}</small><button class="sbtn" data-cancel="${i.id}">Cancel</button></div>`).join("")}` : ""}
+      ${pend.length ? `<h5>Pending invites</h5>${pend.map(i => `<div class="prow">${esc(profileName(i.discord_id))}<small style="color:var(--muted)">· sent ${esc(fmtDate(i.created_at))}</small><button class="sbtn" data-cancel="${i.id}">Cancel</button></div>`).join("")}` : ""}
 
       <h5 style="margin-top:22px">MEMBERS (${rows.length})</h5>
       <div id="mlist"></div>
@@ -1096,7 +1125,7 @@ function openEdit(fid, flash){
       <button class="btn" id="saveF" style="margin-top:20px">Save changes</button>
       <div class="ok" id="eOk"></div><div class="err" id="eErr"></div>
 
-      ${isLeader ? `<div class="danger"><h5>LEADER ONLY</h5>
+      ${isLeader ? `<div class="danger"><h5>Leader only</h5>
         ${rows.length > 1 ? `<label>Pass leadership to</label>
           <select id="tlWho">${rows.filter(m => m.discordId !== me.discordId).map(m => `<option value="${esc(m.discordId)}">${esc(m.name)}</option>`).join("")}</select>
           <button class="sbtn" id="tlGo" style="width:100%;margin-top:8px">Pass leadership</button>` : ""}
