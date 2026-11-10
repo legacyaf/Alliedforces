@@ -355,8 +355,8 @@ const SITE = {
 
   rankingsUpdated: "Week of Nov 7, 2026",
   nextEvent: { name: "Territory War", date: "2026-11-14T20:00:00-05:00" },
-  factionOfTheWeek: "iron-wolves",
-  spotlightReason: "Took and held NWAF for three straight days against two rival factions."
+  factionOfTheWeek: "",          // a faction's id to feature it, or "" for none
+  spotlightReason: ""
 };
 
 /* Staff-controlled stats, matched to factions by id (points, rank, kills,
@@ -454,21 +454,11 @@ let TERRITORY = [
 
 /* status: "war" | "ceasefire" | "alliance" */
 const WARS = [
-  { a:"iron-wolves", b:"black-tide", status:"war", scoreA:3, scoreB:2,
-    note:"Started over control of Elektro. Decided at the next Territory War." },
-  { a:"ghost-unit", b:"black-tide", status:"ceasefire", scoreA:1, scoreB:1,
-    note:"Ceasefire holds until Nov 14." },
-  { a:"iron-wolves", b:"red-cross-collective", status:"alliance",
-    note:"Wolves protect the field hospital; medics treat Wolves first." }
+  // { a:"faction-id", b:"other-faction-id", status:"war" | "ceasefire" | "alliance", scoreA:0, scoreB:0, note:"What it's about" }
 ];
 
 const DISPATCHES = [
-  { date:"Nov 6, 2026", title:"Wolves hold the airfield",
-    body:"Iron Wolves pushed back a combined assault on NWAF. The zone is now contested ahead of next week's event." },
-  { date:"Nov 3, 2026", title:"Ceasefire declared",
-    body:"Ghost Unit and Black Tide agreed to a temporary ceasefire after a costly week of fighting near Tisy." },
-  { date:"Oct 30, 2026", title:"New faction: Northern Traders Guild",
-    body:"A new trading faction set up shop in Novodmitrovsk and is now recruiting." }
+  // newest first: { date:"Nov 15, 2026", title:"Headline", body:"What happened" }
 ];
 
 /* ================= END OF EDIT SECTION ================= */
@@ -817,7 +807,8 @@ function renderChallenges(){
 
 function renderFeed(){
   $("#feed").innerHTML = DISPATCHES.map(d =>
-    `<div class="post"><time>${esc(d.date)}</time><h4>${esc(d.title)}</h4><p>${esc(d.body)}</p></div>`).join("");
+    `<div class="post"><time>${esc(d.date)}</time><h4>${esc(d.title)}</h4><p>${esc(d.body)}</p></div>`).join("")
+    || `<div class="post"><p class="muted" style="margin:0">No dispatches yet. Staff post war news here.</p></div>`;
 }
 
 function renderAll(){
