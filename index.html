@@ -2781,7 +2781,16 @@ async function renderDiscordRoles(force = false){
   } else if (r.reason === "not_configured") {
     html = `<p class="muted" style="margin:0">Discord roles are coming soon.</p>`;
   } else {
-    html = `<p class="muted" style="margin:0 0 10px">Couldn't reach Discord right now. Try again in a minute.</p>${again}`;
+    const why = {
+      discord_error_403: "The AF bot isn't in the Discord server yet, or it's missing permissions.",
+      discord_error_401: "The bot token in Supabase is wrong. Reset it in the Discord Developer Portal and update DISCORD_BOT_TOKEN.",
+      discord_error_404: "Discord couldn't find the server. Check the server ID in the Discord settings.",
+      no_discord_id: "Your account isn't linked to a Discord ID. Sign out and sign in again with Discord.",
+      not_signed_in: "Your sign-in expired. Sign out and sign in again.",
+      server_error: "The Discord function hit an error. Check its Logs in Supabase.",
+      unreachable: "Couldn't reach the Discord function. Make sure it's deployed as \"discord\" with Verify JWT off."
+    }[r.reason] || `Couldn't sync with Discord (${esc(r.reason || "unknown error")}).`;
+    html = `<p class="muted" style="margin:0 0 10px">${esc(why)}</p>${again}`;
   }
   box.innerHTML = html + staff;
   if ($("#dc-again")) $("#dc-again").onclick = () => renderDiscordRoles(true);
