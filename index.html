@@ -812,6 +812,31 @@
   .pbadge.lvb{background:rgba(255,173,92,.12);border-color:rgba(255,173,92,.35);color:#ffd27a}
   @media(max-width:900px){.bt-hub,.dk-ed{grid-template-columns:1fr}.bt-hub .bt-start{grid-row:auto}.dk-side{position:static}.bt-mid{grid-template-columns:1fr}}
   @media(max-width:560px){.tc-md{width:140px;min-height:210px}.tc-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}.tc-sm{width:92px;min-height:132px}.bt-row{gap:6px;min-height:140px}.flip{width:140px;height:212px}.bt-board{padding:8px}}
+  .bt-mode.rk{border-color:rgba(251,191,36,.45);background:linear-gradient(120deg,rgba(251,191,36,.14),rgba(255,255,255,.02))}
+  .tier{display:inline-flex;align-items:center;gap:4px;font-size:.78rem;font-weight:700;padding:3px 9px;border-radius:99px;color:var(--tr);background:color-mix(in srgb,var(--tr) 14%,transparent);border:1px solid color-mix(in srgb,var(--tr) 45%,transparent);white-space:nowrap}
+  .pbadge.champ{background:rgba(251,191,36,.14);border-color:rgba(251,191,36,.5);color:#fde68a}
+  .rk-grid{display:grid;grid-template-columns:320px minmax(0,1fr);gap:16px;align-items:start}
+  .rk-staff{grid-column:1/-1}
+  .rk-me{--tr:#d08b4f;text-align:left}
+  .rk-season{display:flex;flex-direction:column;margin-bottom:10px}
+  .rk-emblem{display:flex;flex-direction:column;align-items:center;margin:6px 0 10px}
+  .rk-emblem span{font-size:3.2rem;filter:drop-shadow(0 0 18px var(--tr))}
+  .rk-emblem b{font-family:Sora,system-ui,sans-serif;font-size:1.5rem;color:var(--tr)}
+  .rk-emblem em{font-style:normal;font-size:1.1rem;font-weight:700}
+  .rk-bar i{background:linear-gradient(90deg,var(--tr),#fff)}
+  .rk-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0;text-align:center}
+  .rk-stats b{display:block;font-size:1.1rem}.rk-stats small{color:var(--muted);font-size:.75rem}
+  .rk-go{width:100%;margin-top:10px}.rk-go small{font-weight:500;opacity:.75}
+  .rk-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:.9rem}
+  .rk-table th{text-align:left;font-weight:600;color:var(--muted);font-size:.78rem;padding:6px}
+  .rk-table td{padding:7px 6px;border-top:1px solid rgba(255,255,255,.05)}
+  .rk-table tr[data-profile]{cursor:pointer}.rk-table tr:hover td{background:rgba(255,255,255,.03)}
+  .rk-table tr.me td{background:rgba(255,122,26,.1)}
+  .rk-table tr.top1 td:first-child{font-size:1.2rem}
+  .rk-pl{display:flex;align-items:center;gap:8px}
+  .rk-prev{margin-top:14px;display:flex;gap:14px;flex-wrap:wrap;font-size:.88rem;color:var(--muted)}
+  .rk-prev b{color:var(--text)}
+  @media(max-width:900px){.rk-grid{grid-template-columns:1fr}.rk-table th:nth-child(5),.rk-table td:nth-child(5){display:none}}
 </style>
 </head>
 <body>
@@ -3471,7 +3496,7 @@ async function renderCardsPage(){
       <button class="btn ghost sm" id="cd-how">How to play</button></div>`
     : `<div class="card mo-cta"><div><h3>Collect them all. Battle everyone.</h3><p class="muted" style="margin:0">A DayZ trading card game: Survivors, Infected, vehicles and supplies — plus the real AF Legends. Sign in to get your free starter deck.</p></div><div class="row"><button class="btn ghost" id="cd-how">How to play</button><button class="btn discord-btn" id="cd-signin">${DISCORD_SVG} Sign in</button></div></div>`}
     ${s && !s.starter ? `<div class="card hl mo-cta"><div><h3>🎒 Your starter deck is waiting</h3><p class="muted" style="margin:0">20 cards and a ready-to-play deck, free.</p></div><button class="btn" id="cd-starter">Claim starter deck</button></div>` : ""}
-    <div class="kf-filters cd-tabs">${[["battle", "⚔️ Battle"], ["collection", "📚 Collection"], ["packs", "🎁 Packs"], ["decks", "🗂️ Decks"]].map(([k, l]) => `<button class="chip${cdTab === k ? " active" : ""}" data-cdt="${k}">${l}${k === "packs" && s?.daily_ready ? ` <i class="dot-new"></i>` : ""}</button>`).join("")}</div>
+    <div class="kf-filters cd-tabs">${[["battle", "⚔️ Battle"], ["ranked", "🏅 Ranked"], ["collection", "📚 Collection"], ["packs", "🎁 Packs"], ["decks", "🗂️ Decks"]].map(([k, l]) => `<button class="chip${cdTab === k ? " active" : ""}" data-cdt="${k}">${l}${k === "packs" && s?.daily_ready ? ` <i class="dot-new"></i>` : ""}</button>`).join("")}</div>
     <div id="cd-body"></div>`;
   $("#cd-how").onclick = cardsHowTo;
   if ($("#cd-signin")) $("#cd-signin").onclick = signIn;
@@ -3485,6 +3510,7 @@ async function renderCardsPage(){
   if (cdTab === "collection" || !s) renderCollection(body);
   else if (cdTab === "packs") renderPacks(body);
   else if (cdTab === "decks") renderDecks(body);
+  else if (cdTab === "ranked") renderRanked(body);
   else renderBattleHub(body);
 }
 
@@ -3611,6 +3637,7 @@ async function renderBattleHub(body){
         <button class="bt-mode" data-mode="ai"><span>🤖</span><b>Battle the bot</b><small>Turn by turn. The bot's deck matches yours.</small></button>
         <button class="bt-mode" data-mode="quick"><span>⚡</span><b>Quick battle</b><small>Instant result vs a deck with similar power.</small></button>
         <button class="bt-mode" data-mode="pvp"><span>🎯</span><b>Challenge a player</b><small>Live, turn by turn. They get a notification.</small></button>
+        <button class="bt-mode rk" data-mode="ranked"><span>🏅</span><b>Ranked</b><small>Climb the season ladder — Bronze to Diamond.</small></button>
       </div>
       <div id="bt-pvp-pick" hidden style="margin-top:12px"></div>
     </div>
@@ -3620,6 +3647,7 @@ async function renderBattleHub(body){
   $("#bt-deck").onchange = e => cdDeckSel = +e.target.value;
   body.querySelectorAll("[data-mode]").forEach(b => b.onclick = async () => {
     const deck = +$("#bt-deck").value; cdDeckSel = deck;
+    if (b.dataset.mode === "ranked") { cdTab = "ranked"; return renderCardsPage(); }
     if (b.dataset.mode === "pvp") {
       const box = $("#bt-pvp-pick"); box.hidden = false;
       memberPicker(box, m => challengePlayer(m.id, deck), "Who do you want to battle?");
@@ -3642,7 +3670,8 @@ async function renderBattleHub(body){
     else if (b.status === "pending") act = `<span class="muted" style="font-size:.85rem">Waiting…</span><button class="btn sm ghost" data-cancel="${b.id}">Cancel</button>`;
     else if (b.status === "active") act = `<button class="btn sm" data-open="${b.id}">${b.mode === "pvp" ? (b.my_turn ? "Your turn!" : "Watch") : "Resume"}</button>`;
     else if (b.mode !== "quick") act = `<button class="btn sm ghost" data-open="${b.id}">Log</button>`;
-    return `<li><div><b>${mode[b.mode]} vs ${esc(b.opponent || "Bot")}</b><small>${b.status === "pending" ? (b.me === 1 ? "challenged you" : "challenge sent") : b.status === "active" ? "in progress" : esc(b.status)} · ${ago(b.created_at)}${b.rewards && b.rewards[b.me] ? ` · +${b.rewards[b.me]} XP` : ""}</small></div><span class="row" style="gap:6px;flex-wrap:nowrap">${res}${act}</span></li>`;
+    const rd = b.rewards && b.ranked ? b.rewards["r" + b.me] : null;
+    return `<li><div><b>${b.ranked ? "🏅 Ranked" : mode[b.mode]} vs ${esc(b.opponent || "Bot")}</b><small>${b.status === "pending" ? (b.me === 1 ? "challenged you" : "challenge sent") : b.status === "active" ? "in progress" : esc(b.status)} · ${ago(b.created_at)}${b.rewards && b.rewards[b.me] ? ` · +${b.rewards[b.me]} XP` : ""}${rd ? ` · <b class="${rd > 0 ? "amt-pos" : "amt-neg"}">${rd > 0 ? "+" : ""}${rd} rating</b>` : ""}</small></div><span class="row" style="gap:6px;flex-wrap:nowrap">${res}${act}</span></li>`;
   }).join("")}</ul>` : `<p class="muted" style="margin:0">No battles yet. Pick a mode above!</p>`;
   const LB = lb.data || [];
   $("#bt-lb").innerHTML = LB.length ? `<ol class="bt-lb">${LB.map(p => `<li data-profile="${esc(p.user_id)}">${avatar({ name: p.name, avatar_url: p.avatar_url }, 30)}<span class="lb-nm"><b>${esc(p.name)}</b><small>Lv ${p.level} ${esc(p.title)} · ${p.wins}W ${p.losses}L</small></span><em>${p.xp.toLocaleString()} XP</em></li>`).join("")}</ol>` : `<p class="muted" style="margin:0">No one yet.</p>`;
@@ -3651,18 +3680,20 @@ async function renderBattleHub(body){
   body.querySelectorAll("[data-dec]").forEach(b => b.onclick = async () => { await sb.rpc("respond_challenge", { p_battle: +b.dataset.dec, p_accept: false }); toast("Declined"); renderCardsPage(); });
   body.querySelectorAll("[data-cancel]").forEach(b => b.onclick = async () => { await sb.rpc("cancel_challenge", { p_battle: +b.dataset.cancel }); renderCardsPage(); });
 }
-async function challengePlayer(targetId, deckId){
+async function challengePlayer(targetId, deckId, ranked = false){
   if (!deckId) {
     await loadCardDefs(); await loadCardState();
     if (!cdState.decks.length) { toast("Build a deck first in Arcade → Cards"); location.hash = "#cards"; return; }
-    openModal(`<h3>Challenge to a card battle</h3><p class="muted">Pick the deck you'll use.</p>${deckPicker("ch-deck")}<div class="row" style="margin-top:14px"><button class="btn" id="ch-go">Send challenge</button><button class="btn ghost" id="ch-x">Cancel</button></div>`);
+    openModal(`<h3>Challenge to a card battle</h3><p class="muted">Pick the deck you'll use.</p>${deckPicker("ch-deck")}
+      <label class="pe-check" style="margin-top:12px"><input type="checkbox" id="ch-rk"> 🏅 Ranked (both ratings move)</label>
+      <div class="row" style="margin-top:14px"><button class="btn" id="ch-go">Send challenge</button><button class="btn ghost" id="ch-x">Cancel</button></div>`);
     $("#ch-x").onclick = closeModal;
-    $("#ch-go").onclick = () => { const d = +$("#ch-deck").value; closeModal(); challengePlayer(targetId, d); };
+    $("#ch-go").onclick = () => { const d = +$("#ch-deck").value, rk = $("#ch-rk").checked; closeModal(); challengePlayer(targetId, d, rk); };
     return;
   }
-  const { error } = await sb.rpc("challenge_player", { p_target: targetId, p_deck: deckId });
+  const { error } = await sb.rpc("challenge_player", { p_target: targetId, p_deck: deckId, p_ranked: !!ranked });
   if (error) return toast(error.message.replace(/^.*?:\s*/, ""));
-  toast("Challenge sent! You'll get a notification when they answer.");
+  toast(`${ranked ? "Ranked challenge" : "Challenge"} sent! You'll get a notification when they answer.`);
   if (location.hash === "#cards") renderCardsPage();
 }
 async function acceptChallenge(id){
@@ -3674,15 +3705,15 @@ async function acceptChallenge(id){
     closeModal(); openBattle(data);
   };
 }
-function showQuickResult(v){
+function showQuickResult(v, after){
   const won = v.winner === v.me, s = v.state, me = s.p[v.me], op = s.p[1 - v.me];
   openModal(`<div class="wh-win"><div style="font-size:2.6rem">${v.draw ? "🤝" : won ? "🏆" : "💀"}</div>
     <div class="big">${v.draw ? "Draw" : won ? "Victory!" : "Defeat"}</div>
-    <p class="muted">vs ${esc(op.name)} · ${me.kos}–${op.kos} knock-outs · ${s.turn} turns${v.rewards?.[v.me] ? ` · <b style="color:var(--ok)">+${v.rewards[v.me]} XP</b>` : ""}</p>
+    <p class="muted">vs ${esc(op.name)} · ${me.kos}–${op.kos} knock-outs · ${s.turn} turns${v.rewards?.[v.me] ? ` · <b style="color:var(--ok)">+${v.rewards[v.me]} XP</b>` : ""}${v.ranked && v.rewards ? ` · <b class="${v.rewards["r" + v.me] >= 0 ? "amt-pos" : "amt-neg"}">${v.rewards["r" + v.me] >= 0 ? "+" : ""}${v.rewards["r" + v.me]} rating</b>` : ""}</p>
     <div class="bt-log modal-log">${s.log.map(l => `<div>${esc(l.m)}</div>`).join("")}</div>
     <div class="row" style="justify-content:center;margin-top:12px"><button class="btn" id="qr-again">Again</button><button class="btn ghost" id="qr-x">Close</button></div></div>`);
-  $("#qr-x").onclick = () => { closeModal(); renderCardsPage(); };
-  $("#qr-again").onclick = async () => { closeModal(); const { data, error } = await sb.rpc("quick_battle", { p_deck: cdDeckSel }); if (error) return toast(error.message); showQuickResult(data); };
+  $("#qr-x").onclick = () => { closeModal(); after ? after() : renderCardsPage(); };
+  $("#qr-again").onclick = async () => { closeModal(); const { data, error } = await sb.rpc(v.ranked ? "ranked_match" : "quick_battle", { p_deck: cdDeckSel }); if (error) return toast(error.message.replace(/^.*?:\s*/, "")); showQuickResult(data, after); };
 }
 function showBattleLog(v){
   openModal(`<h3>Battle log</h3><div class="bt-log modal-log">${(v.state?.log || []).map(l => `<div>${esc(l.m)}</div>`).join("")}</div><button class="btn" id="bl-x" style="margin-top:12px">Close</button>`);
@@ -3739,7 +3770,7 @@ function renderBattleBoard(){
       : /revive/.test(ab) ? P.grave.some(g => isFighter(cdById[g])) : true);
     return `<div class="bt-h${cdSel?.hand === i ? " sel" : ""}${playable ? "" : " dim"}" data-h="${i}">${cardHTML(c, { size: "sm", rules: true })}</div>`;
   }).join("");
-  const title = v.mode === "ai" ? "vs the bot" : v.mode === "pvp" ? "Player battle" : "Quick battle";
+  const title = v.mode === "ai" ? "vs the bot" : v.mode === "pvp" ? (v.ranked ? "🏅 Ranked battle" : "Player battle") : "Quick battle";
   box.innerHTML = `<div class="bt-board">
     <div class="bt-bar"><button class="btn ghost sm" id="bt-back">← Leave</button><b>${title}</b><span class="bt-turn">${s.over ? "Battle over" : myTurn ? "Your turn" : `${esc(O.name)}'s turn`} · turn ${s.turn}</span><span id="bt-clock"></span><button class="btn ghost sm" id="bt-help">?</button></div>
     <div class="bt-side op">
@@ -3823,10 +3854,81 @@ function showBattleOver(v){
   if ($("#ui-modal").classList.contains("open")) return;
   const won = v.winner === v.me, xp = v.rewards?.[v.me];
   openModal(`<div class="wh-win"><div style="font-size:2.8rem">${v.draw ? "🤝" : won ? "🏆" : "💀"}</div><div class="big">${v.draw ? "Draw" : won ? "Victory!" : "Defeat"}</div>
-    <p class="muted">${xp ? `<b style="color:var(--ok)">+${xp} XP</b>` : "No XP this time (daily bot limit reached)"}</p>
+    <p class="muted">${xp ? `<b style="color:var(--ok)">+${xp} XP</b>` : "No XP this time (daily bot limit reached)"}${v.ranked && v.rewards ? ` · <b class="${v.rewards["r" + v.me] >= 0 ? "amt-pos" : "amt-neg"}">${v.rewards["r" + v.me] >= 0 ? "+" : ""}${v.rewards["r" + v.me]} rating</b>` : ""}</p>
     <div class="row" style="justify-content:center">${v.mode === "ai" ? `<button class="btn" id="bo-again">Play again</button>` : ""}<button class="btn ghost" id="bo-x">Back to Cards</button></div></div>`);
   $("#bo-x").onclick = () => { closeModal(); closeBattle(); };
   if ($("#bo-again")) $("#bo-again").onclick = async () => { closeModal(); const { data, error } = await sb.rpc("start_ai_battle", { p_deck: cdDeckSel }); if (error) return toast(error.message.replace(/^.*?:\s*/, "")); openBattle(data); };
+}
+
+/* ---------- ranked ladder ---------- */
+const TIERS = { Bronze: "#d08b4f", Silver: "#cbd5e1", Gold: "#fbbf24", Platinum: "#67e8f9", Diamond: "#a78bfa" };
+const TIER_STEPS = [["Bronze", 0], ["Silver", 1100], ["Gold", 1250], ["Platinum", 1400], ["Diamond", 1550]];
+const tierBadge = (t, r) => t ? `<span class="tier" style="--tr:${TIERS[t] || "#a1a1aa"}">🏅 ${esc(t)}${r != null ? ` · ${r}` : ""}</span>` : "";
+function nextWipeTs(key){
+  const w = (CONFIG.wipes || []).find(x => x.key === key) || (CONFIG.wipes || [])[0];
+  try { return w ? wipeState(w).next : null; } catch { return null; }
+}
+async function renderRanked(body){
+  body.innerHTML = `<div class="kf-empty">Loading the ladder…</div>`;
+  const { data: L, error } = await sb.rpc("ranked_ladder");
+  if (error) { body.innerHTML = `<div class="kf-empty">The ranked ladder isn't set up yet${amAdmin ? " — run the latest cards-setup.sql" : ""}.</div>`; return; }
+  const me = L.me, ends = L.season.ends_at ? new Date(L.season.ends_at) : null;
+  const left = ends ? Math.max(0, ends - Date.now()) : 0, days = Math.floor(left / 864e5), hrs = Math.floor(left / 36e5) % 24;
+  const r = me?.rating ?? 1000, played = me && (me.wins + me.losses + me.draws) > 0;
+  const ti = TIER_STEPS.findLastIndex(([, m]) => r >= m), cur = TIER_STEPS[ti], nxt = TIER_STEPS[ti + 1];
+  const prog = nxt ? Math.min(100, (r - cur[1]) / (nxt[1] - cur[1]) * 100) : 100;
+  body.innerHTML = `<div class="rk-grid">
+    <div class="card rk-me" style="--tr:${TIERS[cur[0]]}">
+      <div class="rk-season"><b>${esc(L.season.name)}</b><span class="muted">${ends ? `ends in ${days}d ${hrs}h · ${ends.toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "end date not set yet"}</span></div>
+      <div class="rk-emblem"><span>🏅</span><b>${cur[0]}</b><em>${r}</em></div>
+      ${nxt ? `<div class="xp-bar rk-bar"><i style="width:${prog.toFixed(1)}%"></i></div><div class="muted" style="font-size:.82rem;text-align:center">${nxt[1] - r} to ${nxt[0]}</div>` : `<div class="muted" style="text-align:center;font-size:.85rem">Top tier!</div>`}
+      <div class="rk-stats"><div><b>${played ? "#" + me.place : "—"}</b><small>Place</small></div><div><b>${me?.wins || 0}-${me?.losses || 0}</b><small>W-L</small></div><div><b>${me?.peak || 1000}</b><small>Peak</small></div></div>
+      ${cdState?.decks?.length ? `${deckPicker("rk-deck")}
+        <button class="btn rk-go" id="rk-match" ${L.matches_today >= 10 ? "disabled" : ""}>🏅 Ranked match <small>(${L.matches_today}/10 today)</small></button>
+        <button class="btn ghost rk-go" id="rk-chal">🎯 Ranked challenge</button><div id="rk-pick" hidden style="margin-top:10px"></div>` : `<p class="muted">Build a deck first.</p>`}
+      <div class="wh-rule" style="margin-top:12px;font-size:.8rem">Ranked match: your deck vs a real player's deck near your rating (instant, 10 a day). Ranked challenge: live battle, both ratings move. Everyone starts at 1000 each season.</div>
+    </div>
+    <div class="card rk-board">
+      <div class="row" style="justify-content:space-between"><h3 style="margin:0">🏆 Ladder</h3><span class="muted" style="font-size:.82rem">Rewards: #1 500 · #2 300 · #3 200 · top 10 100 · 5+ games 25 AFtokens</span></div>
+      ${L.top.length ? `<table class="rk-table"><thead><tr><th>#</th><th>Player</th><th>Rank</th><th>Rating</th><th>W-L</th></tr></thead><tbody>
+        ${L.top.map(t => `<tr class="${user && t.user_id === user.id ? "me" : ""}${t.place <= 3 ? " top" + t.place : ""}" data-profile="${esc(t.user_id)}"><td>${t.place <= 3 ? ["🥇", "🥈", "🥉"][t.place - 1] : t.place}</td>
+          <td><span class="rk-pl">${avatar({ name: t.name, avatar_url: t.avatar_url }, 28)}<b>${esc(t.name)}</b></span></td><td>${tierBadge(t.tier)}</td><td><b>${t.rating}</b></td><td>${t.wins}-${t.losses}</td></tr>`).join("")}
+      </tbody></table>` : `<p class="muted">No ranked games yet this season. Be the first on the board!</p>`}
+      ${L.previous?.top?.length ? `<div class="rk-prev"><b>${esc(L.previous.name)} podium</b> ${L.previous.top.map(p => `<span>${["🥇", "🥈", "🥉"][p.place - 1]} ${esc(p.name)} <small>${p.rating}</small></span>`).join("")}</div>` : ""}
+    </div>
+    ${amAdmin ? `<div class="card staff-card rk-staff"><h3 style="margin-top:0">Season controls <span class="adm">Staff</span></h3>
+      <p class="muted" style="font-size:.88rem">Set the season to end on wipe day. When it ends, rewards are paid, top 10 get a notice, and the next season starts automatically with the same length.</p>
+      <div class="three"><div class="field"><label for="ss-name">Season name</label><input id="ss-name" maxlength="40" value="${esc(L.season.name)}"></div>
+        <div class="field"><label for="ss-end">Ends (your time)</label><input id="ss-end" type="datetime-local" value="${ends ? toLocalInput(ends.getTime()) : ""}"></div>
+        <div class="field"><label>Use next wipe</label><div class="row" style="gap:6px">${(CONFIG.wipes || []).map(w => `<button type="button" class="btn ghost sm" data-wipe="${esc(w.key)}">${esc(CONFIG.servers.find(s => s.key === w.key)?.name.split(" ")[0] || w.key)}</button>`).join("")}</div></div></div>
+      <div class="row"><button class="btn sm" id="ss-save">Save season</button><button class="btn ghost sm" id="ss-end-now">End season now</button><span id="ss-msg"></span></div></div>` : ""}
+  </div>`;
+  body.querySelectorAll("[data-wipe]").forEach(b => b.onclick = () => { const t = nextWipeTs(b.dataset.wipe); if (t) $("#ss-end").value = toLocalInput(t); });
+  if ($("#ss-save")) $("#ss-save").onclick = async () => {
+    const v = $("#ss-end").value;
+    const { error } = await sb.rpc("set_season", { p_name: $("#ss-name").value.trim(), p_ends_at: v ? new Date(v).toISOString() : null });
+    $("#ss-msg").innerHTML = error ? `<span class="msg err">${esc(error.message.replace(/^.*?:\s*/, ""))}</span>` : `<span class="msg ok">Saved</span>`;
+    if (!error) renderRanked(body);
+  };
+  if ($("#ss-end-now")) $("#ss-end-now").onclick = async () => {
+    if (!(await confirmModal("End the season now?", "Final places are locked in, rewards are paid and everyone starts the new season at 1000. This can't be undone.", "End season"))) return;
+    const { error } = await sb.rpc("end_season_now", { p_next_name: null, p_next_ends: null });
+    if (error) return toast(error.message.replace(/^.*?:\s*/, ""));
+    toast("New season started"); renderRanked(body);
+  };
+  if ($("#rk-deck")) $("#rk-deck").onchange = e => cdDeckSel = +e.target.value;
+  if ($("#rk-match")) $("#rk-match").onclick = async () => {
+    if (cdBusy) return; cdBusy = true; const b = $("#rk-match"); b.disabled = true; b.innerHTML = "Finding an opponent…";
+    const { data, error } = await sb.rpc("ranked_match", { p_deck: +$("#rk-deck").value });
+    cdBusy = false;
+    if (error) { toast(error.message.replace(/^.*?:\s*/, "")); return renderRanked(body); }
+    showQuickResult(data, () => renderRanked(body));
+  };
+  if ($("#rk-chal")) $("#rk-chal").onclick = () => {
+    const box = $("#rk-pick"); box.hidden = false;
+    memberPicker(box, m => challengePlayer(m.id, +$("#rk-deck").value, true), "Who do you want to battle (ranked)?");
+    box.querySelector("input").focus();
+  };
 }
 
 /* ---------- levels everywhere (Members list, profile cards) ---------- */
@@ -3835,7 +3937,7 @@ async function loadLevels(ids){
   if (!sb) return;
   const need = ids ? [...new Set(ids.filter(id => id && !levelCache.has(id)))] : null;
   if (need && !need.length) return;
-  let q = sb.from("player_levels").select("user_id,level,title,wins,losses");
+  let q = sb.from("player_levels").select("*");
   if (need) q = q.in("user_id", need); else q = q.limit(2000);
   const { data } = await q;
   (data || []).forEach(l => levelCache.set(l.user_id, l));
@@ -4078,7 +4180,9 @@ function profileCardHTML(m, opts = {}){
     m.is_admin ? `<span class="pbadge staff">🛡️ AF Staff</span>` : "",
     m.is_legend ? `<span class="pbadge legend">★ AF Legend</span>` : "",
     m.faction_name ? `<span class="pbadge" style="--fc:${hexOk(m.faction_color) || "#a1a1aa"}"><i></i>${esc(m.faction_name)}${m.faction_rank ? ` · ${esc(m.faction_rank)}` : ""}</span>` : "",
-    !opts.preview && levelCache.get(m.id) ? `<span class="pbadge lvb">⭐ Lv ${levelCache.get(m.id).level} · ${esc(levelCache.get(m.id).title)}</span>` : ""
+    !opts.preview && levelCache.get(m.id) ? `<span class="pbadge lvb">⭐ Lv ${levelCache.get(m.id).level} · ${esc(levelCache.get(m.id).title)}</span>` : "",
+    !opts.preview && levelCache.get(m.id)?.tier ? tierBadge(levelCache.get(m.id).tier, levelCache.get(m.id).rating) : "",
+    !opts.preview && levelCache.get(m.id)?.best_place && levelCache.get(m.id).best_place <= 3 ? `<span class="pbadge champ">🏆 #${levelCache.get(m.id).best_place} ${esc(levelCache.get(m.id).best_season || "")}</span>` : ""
   ].join("");
   const links = [
     m.twitch ? `<a class="plinkbtn tw" href="https://twitch.tv/${esc(m.twitch)}" target="_blank" rel="noopener nofollow">Twitch</a>` : "",
