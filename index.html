@@ -612,6 +612,72 @@
     .mo-tiles{grid-template-columns:repeat(2,1fr)}
     .mo-new{grid-template-columns:1fr}
   }
+  /* ===================== AF ARCADE: CRATES ===================== */
+  .arcade-drops{display:flex;align-items:center;gap:12px;margin-top:16px;padding:8px 10px;border-radius:14px;background:rgba(10,10,12,.7);border:1px solid rgba(255,255,255,.07);overflow:hidden}
+  .drops-live{display:flex;align-items:center;gap:7px;font-size:.8rem;font-weight:600;color:var(--muted);white-space:nowrap;flex:none}
+  .drops-live i{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px rgba(74,222,128,.15);animation:pulse 1.6s infinite}
+  @keyframes pulse{50%{opacity:.4}}
+  .drops-track{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;mask-image:linear-gradient(90deg,#000 85%,transparent)}
+  .drops-track::-webkit-scrollbar{display:none}
+  .drop{flex:none;display:flex;flex-direction:column;padding:6px 12px;border-radius:10px;background:linear-gradient(180deg,color-mix(in srgb,var(--rc) 14%,transparent),transparent);border-bottom:2px solid var(--rc);min-width:110px}
+  .drop b{font-size:.82rem;font-weight:600;white-space:nowrap;color:color-mix(in srgb,var(--rc) 45%,#fff)}
+  .drop small{font-size:.72rem;color:var(--muted);white-space:nowrap}
+  .cr-bar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:16px}
+  .cr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+  .cr-card{--cc:#ff7a1a;display:flex;flex-direction:column;align-items:center;text-align:center;padding:22px 18px 18px;cursor:pointer;color:var(--text);font:inherit;transition:transform .2s,box-shadow .2s,border-color .2s}
+  .cr-card:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--cc) 60%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--cc) 35%,transparent),0 30px 60px -30px var(--cc)}
+  .cr-name{font-family:Sora,system-ui,sans-serif;font-weight:650;font-size:1.15rem;margin-top:14px}
+  .cr-desc{color:var(--muted);font-size:.86rem;margin-top:4px;min-height:2.6em}
+  .cr-meta{display:flex;justify-content:space-between;width:100%;margin-top:12px;font-size:.88rem;font-weight:600}
+  .cr-cost{color:#ffd27a}
+  .cr-left{width:100%;margin-top:8px;font-size:.78rem;color:var(--muted)}
+  /* drawn crate */
+  .crate-art{position:relative;display:flex;align-items:center;justify-content:center;flex:none}
+  .crate-art::before{content:"";position:absolute;inset:8%;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--cc) 55%,transparent),transparent 70%);filter:blur(10px)}
+  .crate-box{position:relative;width:74%;height:62%;margin-top:14%;border-radius:10% / 14%;background:linear-gradient(160deg,#3a2c1e,#1d150e);border:2px solid color-mix(in srgb,var(--cc) 70%,#000);box-shadow:inset 0 0 0 3px rgba(0,0,0,.35),inset 0 -10px 18px rgba(0,0,0,.5),0 12px 22px -10px rgba(0,0,0,.9)}
+  .crate-lid{position:absolute;left:-6%;right:-6%;top:-22%;height:30%;border-radius:8px;background:linear-gradient(180deg,#4a3826,#2a1f14);border:2px solid color-mix(in srgb,var(--cc) 70%,#000)}
+  .crate-band{position:absolute;left:50%;top:-22%;bottom:0;width:16%;transform:translateX(-50%);background:color-mix(in srgb,var(--cc) 70%,#222);opacity:.85}
+  .crate-emo{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.2em;filter:drop-shadow(0 2px 4px rgba(0,0,0,.8))}
+  .crate-art[style*="84px"] .crate-emo{font-size:1.4em}
+  .cr-card:hover .crate-lid{animation:lid .6s ease}
+  @keyframes lid{40%{transform:translateY(-5px) rotate(-3deg)}}
+  /* roller */
+  .cr-stage{--cc:#ff7a1a;overflow:hidden}
+  .cr-head{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+  .roller{position:relative;height:172px;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.07);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+  .roller-strip{display:flex;gap:8px;padding:16px 4px;will-change:transform}
+  .roller-mark{position:absolute;left:50%;top:0;bottom:0;width:3px;transform:translateX(-50%);background:var(--cc);box-shadow:0 0 14px var(--cc),0 0 2px #fff;z-index:2;border-radius:2px}
+  .roller-mark::before,.roller-mark::after{content:"";position:absolute;left:50%;transform:translateX(-50%);border:8px solid transparent}
+  .roller-mark::before{top:0;border-top-color:var(--cc)}.roller-mark::after{bottom:0;border-bottom-color:var(--cc)}
+  .ci{--rc:#a1a1aa;flex:none;width:130px;height:138px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px;text-align:center;
+      background:linear-gradient(180deg,rgba(255,255,255,.04),color-mix(in srgb,var(--rc) 22%,transparent));border:1px solid rgba(255,255,255,.07);border-bottom:3px solid var(--rc);box-sizing:border-box}
+  .ci-emo{font-size:2.3rem;line-height:1;filter:drop-shadow(0 4px 10px color-mix(in srgb,var(--rc) 60%,transparent))}
+  .ci-name{font-size:.82rem;font-weight:600;line-height:1.2;max-height:2.4em;overflow:hidden}
+  .ci-rar{font-size:.7rem;color:var(--rc);font-weight:600}
+  .ci.won{animation:won 1.2s ease;box-shadow:0 0 0 2px var(--rc),0 0 30px color-mix(in srgb,var(--rc) 70%,transparent)}
+  @keyframes won{30%{transform:scale(1.08)}}
+  .cr-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+  .cr-go{min-width:220px;font-size:1.05rem}
+  .cr-contents{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+  .cc-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .cc-wrap .ci{width:100%}
+  .cc-odds{font-size:.78rem;color:var(--muted)}
+  .cw-glow{--rc:#a1a1aa;width:130px;height:130px;margin:4px auto 10px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,color-mix(in srgb,var(--rc) 45%,transparent),transparent 70%);animation:glowin .6s ease}
+  @keyframes glowin{from{transform:scale(.5);opacity:0}}
+  .cw-emo{font-size:3.6rem}
+  .cw-rar{font-weight:700;font-size:.9rem}
+  .cs-crate{padding:14px 0;border-top:1px solid rgba(255,255,255,.07)}
+  .cs-crate.off{opacity:.6}
+  .cs-crate table{margin-top:8px}
+  @media(max-width:600px){.roller{height:150px}.ci{width:110px;height:118px}.ci-emo{font-size:1.9rem}.cr-go{min-width:0;width:100%}}
+  .cc-odds-bar{display:flex;height:30px;border-radius:10px;overflow:hidden;margin:14px 0 6px;font-size:.72rem}
+  .cc-odds-bar span{display:flex;align-items:center;justify-content:center;gap:4px;min-width:64px;background:color-mix(in srgb,var(--rc) 22%,#0b0b0c);border-bottom:2px solid var(--rc);white-space:nowrap;color:#e4e4e7}
+  .cc-odds-bar b{color:var(--rc);font-weight:600}
+  .cc-group{margin-top:16px}
+  .cc-gh{font-weight:600;font-size:.88rem;margin-bottom:8px}
+  .cc-more{margin-top:10px}
+  details.cs-crate summary{cursor:pointer;padding:6px 0;list-style-position:outside}
+  details.cs-crate tbody tr td:nth-child(3){max-width:420px;font-size:.82rem;color:var(--muted);overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -629,7 +695,7 @@
       <a href="#rules" data-v="rules">Rules</a>
       <a href="#legends" data-v="legends">Legends</a>
       <a href="factions.html">Factions</a>
-      <a href="#wheel" data-v="wheel">AF Wheel</a>
+      <a href="#wheel" data-v="wheel">Arcade</a>
       <a href="#live-wipes" data-v="live">Live</a>
       <a href="#support" data-v="support">Support Us</a>
       <a href="#feed" data-v="feed">Community</a>
@@ -883,9 +949,12 @@
   <section>
     <div class="wrap">
       <div class="kicker-sm">Spoils of war</div>
-      <h2>AF Wheel</h2>
-      <p class="muted" style="max-width:760px">Win wars, earn AFtokens. Spend them on a daily spin for in-game loot, or stack your faction's war chest.</p>
-      <div id="wheel-root" style="margin-top:18px"></div>
+      <h2>AF Arcade</h2>
+      <p class="muted" style="max-width:760px">Win wars, earn AFtokens. Spend them on the daily wheel or crack open crates for in-game loot — or stack your faction's war chest.</p>
+      <div class="arcade-drops" id="arcade-drops" hidden></div>
+      <nav class="subnav" style="margin-top:14px"><a href="#wheel" data-sub="wheel">🎡 AF Wheel</a><a href="#crates" data-sub="crates">📦 Crates</a></nav>
+      <div class="subview" id="sv-wheel"><div id="wheel-root" style="margin-top:18px"></div></div>
+      <div class="subview" id="sv-crates"><div id="crates-root" style="margin-top:18px"></div></div>
     </div>
   </section>
 </div>
@@ -2054,7 +2123,7 @@ async function onUserChanged(){
   amAdmin = false;
   if (inboxChannel) { sb.removeChannel(inboxChannel); inboxChannel = null; }
   if (sb) { allMembersAt = 0; startPresence(); }
-  if (!sb || !user) { setBadge(); refreshEventViews(); if (location.hash === "#wheel") renderWheel(); return; }
+  if (!sb || !user) { setBadge(); refreshEventViews(); if (location.hash === "#wheel") renderWheel(); if (location.hash === "#crates") renderCrates(); return; }
   const { data } = await sb.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
   amAdmin = !!data;
   refreshBadge();
@@ -2078,6 +2147,7 @@ async function onUserChanged(){
   if (location.hash === "#feed") renderFeed();
   if (location.hash === "#inbox") renderInbox();
   if (location.hash === "#wheel") renderWheel();
+  if (location.hash === "#crates") renderCrates();
   refreshEventViews();
 }
 function startDm(otherId){
@@ -2711,17 +2781,18 @@ async function spinWheel(){
     }
   }, 4800);
 }
-function pickClaimServer(claimId, itemName, justWon = false){
+function pickClaimServer(claimId, itemName, justWon = false, onDone = null){
+  const done = () => (onDone || renderWheel)();
   openModal(`<div class="wh-win">${justWon ? `<div style="font-size:2.4rem">🎉</div><div class="big">You won ${esc(itemName)}!</div>` : `<h3>Where should we deliver ${esc(itemName)}?</h3>`}
     <p class="muted">Pick the server you want it on. AF staff will hand it out in game. Make sure your in-game name is saved on your <a href="#account" id="wh-acc">Account</a> page.</p>
     <div class="row" style="justify-content:center;margin:12px 0">${Object.entries(SRV_LABEL).map(([k, l]) => `<button class="btn" data-srv="${k}">${l}</button>`).join("")}</div>
     <button class="btn ghost sm" id="wh-later">Decide later</button><div id="wh-pmsg"></div></div>`);
-  $("#wh-later").onclick = () => { closeModal(); renderWheel(); };
+  $("#wh-later").onclick = () => { closeModal(); done(); };
   $("#wh-acc").onclick = closeModal;
   $$("[data-srv]").forEach(b => b.onclick = async () => {
     const { error } = await sb.rpc("set_claim_server", { p_claim: claimId, p_server: b.dataset.srv });
     if (error) { $("#wh-pmsg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
-    closeModal(); toast(`Got it — staff will deliver on ${SRV_LABEL[b.dataset.srv]}`); renderWheel();
+    closeModal(); toast(`Got it — staff will deliver on ${SRV_LABEL[b.dataset.srv]}`); done();
   });
 }
 async function contributeChest(){
@@ -2836,6 +2907,341 @@ function openPrizeEditor(id){
   };
 }
 
+/* ===================== AF CRATES (crate opening) ===================== */
+const RARITY = {
+  common:    { label: "Common",    color: "#a1a1aa" },
+  uncommon:  { label: "Uncommon",  color: "#4ade80" },
+  rare:      { label: "Rare",      color: "#3b82f6" },
+  epic:      { label: "Epic",      color: "#a855f7" },
+  legendary: { label: "Legendary", color: "#fbbf24" }
+};
+const rar = r => RARITY[r] || RARITY.common;
+let crList = [], crItems = [], crCounts = {}, crBalance = 0, crOpen = null, crBusy = false, crMuted = false, crDropsTimer = null;
+try { crMuted = localStorage.getItem("af-crate-mute") === "1"; } catch {}
+
+/* Supabase returns at most 1000 rows per request, and crates hold thousands of items */
+async function fetchAllRows(table){
+  const all = [];
+  for (let from = 0; from < 20000; from += 1000) {
+    const { data, error } = await sb.from(table).select("*").order("id").range(from, from + 999);
+    if (error) return { data: null, error };
+    all.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+  return { data: all, error: null };
+}
+async function loadCrateData(){
+  const tasks = [
+    sb.from("crates").select("*").order("sort_order").order("id"),
+    fetchAllRows("crate_items")
+  ];
+  if (user) tasks.push(
+    sb.from("token_wallets").select("balance").eq("user_id", user.id).maybeSingle(),
+    sb.rpc("my_crate_counts")
+  );
+  const [cr, it, wl, ct] = await Promise.all(tasks);
+  if (cr.error || it.error) return { error: cr.error || it.error };
+  crList = cr.data || []; crItems = it.data || [];
+  crBalance = wl?.data?.balance || 0;
+  crCounts = {}; (ct?.data || []).forEach(r => crCounts[r.crate_id] = r.opened);
+  return {};
+}
+const crateItems = id => crItems.filter(i => i.crate_id === id && i.active);
+const crateLeft = c => Math.max(0, c.daily_limit - (crCounts[c.id] || 0));
+function crateArt(c, size = 120){
+  return `<div class="crate-art" style="--cc:${hexOk(c.color) || "#ff7a1a"};width:${size}px;height:${size}px">
+    <div class="crate-box"><span class="crate-lid"></span><span class="crate-band"></span><span class="crate-emo">${esc(c.emoji || "📦")}</span></div></div>`;
+}
+function itemTile(i, extra = ""){
+  const R = rar(i.rarity);
+  return `<div class="ci ${extra}" style="--rc:${R.color}"><div class="ci-emo">${esc(i.emoji || (i.kind === "tokens" ? "🪙" : i.kind === "nothing" ? "🕸️" : "🎁"))}</div><div class="ci-name">${esc(i.label)}</div><div class="ci-rar">${R.label}</div></div>`;
+}
+
+/* live drops bar (shared by the Wheel and Crates tabs) */
+async function renderDrops(){
+  const bar = $("#arcade-drops"); if (!bar || !sb) return;
+  const [cd, wd] = await Promise.all([
+    sb.from("crate_recent_drops").select("*").limit(20),
+    sb.from("wheel_recent_wins").select("*").limit(10)
+  ]);
+  const drops = [
+    ...(cd.data || []).map(d => ({ at: d.created_at, name: d.name, label: d.label, color: rar(d.rarity).color, from: d.crate_name })),
+    ...(wd.data || []).map(d => ({ at: d.created_at, name: d.name, label: d.prize_label, color: "#ff7a1a", from: "AF Wheel" }))
+  ].sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 20);
+  bar.hidden = !drops.length;
+  bar.innerHTML = `<span class="drops-live"><i></i>Live drops</span><div class="drops-track">${drops.map(d => `<div class="drop" style="--rc:${d.color}" title="${esc(d.from)} · ${esc(ago(d.at))}"><b>${esc(d.label)}</b><small>${esc(d.name)}</small></div>`).join("")}</div>`;
+}
+function startDrops(){
+  renderDrops(); clearInterval(crDropsTimer);
+  crDropsTimer = setInterval(() => { if (/^#(wheel|crates)$/.test(location.hash)) renderDrops(); else clearInterval(crDropsTimer); }, 30000);
+}
+
+async function renderCrates(){
+  const box = $("#crates-root");
+  if (!sb) { box.innerHTML = `<div class="kf-empty">Crates are coming soon.</div>`; return; }
+  if (!crOpen) box.innerHTML = `<div class="kf-empty">Loading crates…</div>`;
+  const d = await loadCrateData();
+  if (!d.error && crOpen) return renderCrateDetail();
+  if (d.error) { box.innerHTML = `<div class="kf-empty">Crates aren't set up yet${amAdmin ? " — run crates-setup.sql in Supabase" : ""}.</div>`; return; }
+  const live = crList.filter(c => c.active);
+  box.innerHTML = `
+    ${user ? `<div class="cr-bar"><div class="wh-bal"><b>${crBalance}</b><span>AFtokens</span></div><span class="muted" style="font-size:.9rem">Win wars and events to earn more. Opens reset at midnight ET.</span></div>` : ""}
+    <div class="cr-grid">${live.map(c => {
+      const items = crateItems(c.id), best = items.reduce((a, i) => Object.keys(RARITY).indexOf(i.rarity) > Object.keys(RARITY).indexOf(a) ? i.rarity : a, "common");
+      return `<button type="button" class="card cr-card" data-crate="${c.id}" style="--cc:${hexOk(c.color) || "#ff7a1a"}">
+        ${crateArt(c, 130)}
+        <div class="cr-name">${esc(c.name)}</div>
+        ${c.description ? `<div class="cr-desc">${esc(c.description)}</div>` : ""}
+        <div class="cr-meta"><span class="cr-cost">🪙 ${c.cost}</span><span class="cr-best" style="color:${rar(best).color}">Up to ${rar(best).label}</span></div>
+        <div class="cr-left">${items.filter(i => i.kind === "item").length} items inside</div>
+        ${user ? `<div class="cr-left">${crateLeft(c)} of ${c.daily_limit} left today</div>` : ""}
+      </button>`;
+    }).join("") || `<div class="kf-empty">No crates yet.</div>`}</div>
+    <div class="wh-rule" style="margin-top:18px">Crates are opened with AFtokens, which are earned by winning wars and events — they can't be bought, sold or cashed out. Every result is picked on the server and the odds are shown on each crate. Item prizes are handed out in game by AF staff.</div>
+    ${amAdmin ? `<div id="cr-staff" style="margin-top:22px"></div>` : ""}`;
+  box.querySelectorAll("[data-crate]").forEach(b => b.onclick = () => { crOpen = +b.dataset.crate; renderCrateDetail(); window.scrollTo(0, $("#v-wheel").offsetTop); });
+  if (amAdmin) renderCrateStaff();
+}
+
+function renderCrateDetail(){
+  const box = $("#crates-root"), c = crList.find(x => x.id === crOpen);
+  if (!c) { crOpen = null; return renderCrates(); }
+  const items = crateItems(c.id), total = items.reduce((a, i) => a + i.weight, 0) || 1;
+  const sorted = [...items].sort((a, b) => Object.keys(RARITY).indexOf(b.rarity) - Object.keys(RARITY).indexOf(a.rarity) || a.weight - b.weight);
+  const left = crateLeft(c), can = user && left > 0 && crBalance >= c.cost && items.length;
+  const why = !user ? "Sign in to open for real — or try a free demo"
+    : !items.length ? "This crate is empty right now"
+    : left <= 0 ? "No opens left today · resets at midnight ET"
+    : crBalance < c.cost ? `You need ${c.cost} AFtokens (you have ${crBalance})` : `${left} of ${c.daily_limit} left today · you have ${crBalance} AFtokens`;
+  box.innerHTML = `
+    <div class="row" style="justify-content:space-between;margin-bottom:14px">
+      <button class="btn ghost sm" id="cr-back">← All crates</button>
+      <button class="btn ghost sm" id="cr-mute" aria-pressed="${crMuted}">${crMuted ? "🔇 Sound off" : "🔊 Sound on"}</button>
+    </div>
+    <div class="card cr-stage" style="--cc:${hexOk(c.color) || "#ff7a1a"}">
+      <div class="cr-head">${crateArt(c, 84)}<div><h3 style="margin:0">${esc(c.name)}</h3><div class="muted">${esc(c.description || "")}</div></div></div>
+      <div class="roller" id="roller"><div class="roller-mark"></div><div class="roller-strip" id="strip">${rollerStrip(items, null)}</div></div>
+      <div class="cr-actions">
+        ${user ? `<button class="btn cr-go" id="cr-go" ${can ? "" : "disabled"}>Open · 🪙 ${c.cost}</button>` : `<button class="btn discord-btn cr-go" id="cr-signin">${DISCORD_SVG} Sign in to open</button>`}
+        <button class="btn ghost" id="cr-demo" ${items.length ? "" : "disabled"}>Free demo</button>
+      </div>
+      <div class="wh-sub">${esc(why)}</div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">What's inside <span class="muted" style="font-weight:400;font-size:.9rem">${items.length} possible drops</span></h3>
+        <input class="ms-search" id="cc-q" type="search" placeholder="Search this crate" style="max-width:260px"></div>
+      <div class="cc-odds-bar">${Object.keys(RARITY).map(r => { const w = items.filter(i => i.rarity === r).reduce((a, i) => a + i.weight, 0); return w ? `<span style="--rc:${rar(r).color};flex:${w}" title="${rar(r).label} ${(w / total * 100).toFixed(1)}%"><b>${rar(r).label}</b> ${(w / total * 100).toFixed(w / total < .01 ? 2 : 1)}%</span>` : ""; }).join("")}</div>
+      <div id="cc-list"></div>
+    </div>`;
+  const pct = w => { const p = w / total * 100; return p >= 1 ? p.toFixed(1) + "%" : p >= .01 ? p.toFixed(2) + "%" : "<0.01%"; };
+  const shown = {};
+  const drawContents = () => {
+    const q = ($("#cc-q")?.value || "").trim().toLowerCase();
+    const list = q ? sorted.filter(i => (i.label + " " + (i.item_name || "")).toLowerCase().includes(q)) : sorted;
+    $("#cc-list").innerHTML = [...Object.keys(RARITY)].reverse().map(r => {
+      const g = list.filter(i => i.rarity === r); if (!g.length) return "";
+      const lim = shown[r] || 24;
+      return `<div class="cc-group"><div class="cc-gh" style="color:${rar(r).color}">${rar(r).label} · ${g.length}</div>
+        <div class="cr-contents">${g.slice(0, lim).map(i => `<div class="cc-wrap" title="${esc(i.item_name || i.label)}">${itemTile(i)}<div class="cc-odds">${pct(i.weight)}</div></div>`).join("")}</div>
+        ${g.length > lim ? `<button class="btn ghost sm cc-more" data-more="${r}">Show all ${g.length}</button>` : ""}</div>`;
+    }).join("") || `<p class="muted">Nothing matches.</p>`;
+    $$("#cc-list [data-more]").forEach(b => b.onclick = () => { shown[b.dataset.more] = 99999; drawContents(); });
+  };
+  drawContents();
+  $("#cc-q").oninput = drawContents;
+  $("#cr-back").onclick = () => { crOpen = null; renderCrates(); };
+  $("#cr-mute").onclick = () => { crMuted = !crMuted; try { localStorage.setItem("af-crate-mute", crMuted ? "1" : "0"); } catch {} renderCrateDetail(); };
+  if ($("#cr-signin")) $("#cr-signin").onclick = signIn;
+  if ($("#cr-go")) $("#cr-go").onclick = () => openCrate(c, false);
+  $("#cr-demo").onclick = () => openCrate(c, true);
+}
+
+const WIN_AT = 52;
+function pickWeighted(items){
+  const total = items.reduce((a, i) => a + i.weight, 0); let r = Math.random() * total;
+  for (const i of items) { r -= i.weight; if (r < 0) return i; }
+  return items[items.length - 1];
+}
+function rollerStrip(items, winner){
+  if (!items.length) return "";
+  const out = [];
+  for (let k = 0; k < WIN_AT + 8; k++) out.push(k === WIN_AT && winner ? winner : pickWeighted(items));
+  return out.map((i, k) => itemTile(i, k === WIN_AT && winner ? "win-slot" : "")).join("");
+}
+
+let audioCtx = null;
+function tick(pitch = 1){
+  if (crMuted) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = "square"; o.frequency.value = 900 * pitch;
+    g.gain.setValueAtTime(0.04, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
+    o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.06);
+  } catch {}
+}
+
+async function openCrate(c, demo){
+  if (crBusy) return;
+  const items = crateItems(c.id); if (!items.length) return;
+  crBusy = true;
+  const go = $("#cr-go"), dm = $("#cr-demo");
+  if (go) { go.disabled = true; go.textContent = "Opening…"; } dm.disabled = true;
+  let result;
+  if (demo) {
+    const w = pickWeighted(items);
+    result = { ...w, item_name: w.item_name || w.label, demo: true };
+  } else {
+    const { data, error } = await sb.rpc("open_crate", { p_crate: c.id });
+    if (error) { crBusy = false; toast(error.message.replace(/^.*?:\s*/, "")); await loadCrateData(); renderCrateDetail(); return; }
+    result = data;
+    crBalance = data.balance; crCounts[c.id] = (crCounts[c.id] || 0) + 1;
+  }
+  const winner = items.find(i => i.id === result.item_id) || items.find(i => i.label === result.label) || { ...result };
+  const strip = $("#strip"), roller = $("#roller");
+  strip.style.transition = "none"; strip.style.transform = "translateX(0)";
+  strip.innerHTML = rollerStrip(items, winner);
+  void strip.offsetWidth;
+  const w = strip.children[0].getBoundingClientRect().width, step = w + 8;
+  const center = roller.clientWidth / 2, jitter = (Math.random() - 0.5) * (w - 24);
+  const dist = 4 + WIN_AT * step + w / 2 - center + jitter;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches, dur = reduce ? 600 : 6500;
+  strip.style.transition = `transform ${dur}ms cubic-bezier(.08,.72,.12,1)`;
+  strip.style.transform = `translateX(${-dist}px)`;
+  // tick each time a tile passes the marker
+  let last = -1; const t0 = performance.now();
+  const watch = now => {
+    const m = new DOMMatrixReadOnly(getComputedStyle(strip).transform), idx = Math.floor((-m.m41 + center - 4) / step);
+    if (idx !== last) { last = idx; tick(1 + Math.min(.5, (now - t0) / dur * .3)); }
+    if (now - t0 < dur) requestAnimationFrame(watch);
+  };
+  requestAnimationFrame(watch);
+  setTimeout(() => {
+    crBusy = false;
+    $(".win-slot")?.classList.add("won");
+    if (!crMuted) { tick(1.6); setTimeout(() => tick(2), 90); }
+    showCrateWin(c, result);
+  }, dur + 250);
+}
+function showCrateWin(c, r){
+  const R = rar(r.rarity), em = esc(r.emoji || (r.kind === "tokens" ? "🪙" : r.kind === "nothing" ? "🕸️" : "🎁"));
+  const again = () => { closeModal(); renderCrateDetail(); };
+  const head = `<div class="cw-glow" style="--rc:${R.color}"><div class="cw-emo">${em}</div></div><div class="cw-rar" style="color:${R.color}">${R.label}</div><div class="big">${esc(r.label)}</div>`;
+  if (r.demo) {
+    openModal(`<div class="wh-win">${head}<p class="muted">That was a free demo — nothing was won or spent.${user ? "" : " Sign in with Discord to open crates for real."}</p><button class="btn" id="cw-ok">${user ? "OK" : "Got it"}</button></div>`);
+    $("#cw-ok").onclick = again; return;
+  }
+  if (r.kind === "item") {
+    openModal(`<div class="wh-win">${head}<p class="muted">Pick the server you want it on — AF staff will hand it out in game.</p><button class="btn" id="cw-ok">Claim it</button></div>`);
+    $("#cw-ok").onclick = () => pickClaimServer(r.claim_id, r.item_name, true, renderCrateDetail);
+    return;
+  }
+  openModal(`<div class="wh-win">${head}<p class="muted">${r.kind === "tokens" ? `Added to your balance. You now have <b style="color:var(--text)">${r.balance}</b> AFtokens.` : "Nothing this time. Better luck on the next one."}</p>
+    <div class="row" style="justify-content:center">${r.left_today > 0 && r.balance >= c.cost ? `<button class="btn" id="cw-again">Open another · 🪙 ${c.cost}</button>` : ""}<button class="btn ghost" id="cw-ok">Close</button></div></div>`);
+  $("#cw-ok").onclick = again;
+  if ($("#cw-again")) $("#cw-again").onclick = () => { closeModal(); renderCrateDetail(); setTimeout(() => openCrate(c, false), 50); };
+}
+
+/* ---------- staff: crates + contents ---------- */
+function renderCrateStaff(){
+  const box = $("#cr-staff"); if (!box) return;
+  box.innerHTML = `<div class="card staff-card">
+    <h3>Crate controls <span class="adm">Staff</span></h3>
+    <p class="muted" style="font-size:.9rem">Item prizes from crates show up in the <a href="#wheel">AF Wheel</a> staff list ("Prizes to deliver"), together with wheel prizes.</p>
+    ${crList.map(c => {
+      const items = crItems.filter(i => i.crate_id === c.id), tot = items.filter(i => i.active).reduce((a, i) => a + i.weight, 0) || 1;
+      const ev = items.filter(i => i.active && i.kind === "tokens").reduce((a, i) => a + i.token_amount * i.weight / tot, 0);
+      return `<details class="cs-crate${c.active ? "" : " off"}" data-cs="${c.id}">
+        <summary><b>${esc(c.emoji || "📦")} ${esc(c.name)}</b> <span class="muted">· ${items.length} items · cost ${c.cost} · ${c.daily_limit}/day · pays back ~${ev.toFixed(1)} tokens per open${ev >= c.cost ? " ⚠️ more than it costs" : ""}</span></summary>
+        <div class="cs-crate-in">
+        <div class="row" style="justify-content:space-between;margin-top:10px">
+          <input class="ms-search cs-q" type="search" placeholder="Search items or class names" style="max-width:300px">
+          <span class="row" style="gap:6px"><button class="btn sm ghost" data-cr-edit="${c.id}">Edit crate${c.active ? "" : " (hidden)"}</button><button class="btn sm ghost" data-ci-add="${c.id}">+ Item</button></span></div>
+        <div style="overflow-x:auto"><table class="pz"><thead><tr><th>Item</th><th>Rarity</th><th>Gives</th><th>Weight</th><th>Odds</th><th></th></tr></thead><tbody>
+        ${items.map(i => `<tr class="${i.active ? "" : "off"}" data-q="${esc((i.label + " " + (i.item_name || "")).toLowerCase())}"><td>${esc(i.emoji || "")} ${esc(i.label)}</td><td style="color:${rar(i.rarity).color}">${rar(i.rarity).label}</td>
+          <td>${i.kind === "item" ? "🎁 " + esc(i.item_name || i.label) : i.kind === "tokens" ? `🪙 ${i.token_amount}` : "Nothing"}</td><td>${i.weight}</td>
+          <td>${i.active ? (i.weight / tot * 100).toFixed(i.weight / tot < .01 ? 3 : 1) + "%" : "off"}</td>
+          <td style="white-space:nowrap"><button class="icon-btn" data-ci-edit="${i.id}" title="Edit">✏️</button><button class="icon-btn" data-ci-del="${i.id}" title="Delete">🗑</button></td></tr>`).join("")}
+        </tbody></table></div></div></details>`;
+    }).join("")}
+    <button class="btn sm" id="cr-add" style="margin-top:12px">+ New crate</button>
+  </div>`;
+  box.querySelectorAll(".cs-q").forEach(inp => inp.oninput = () => {
+    const q = inp.value.trim().toLowerCase();
+    inp.closest("details").querySelectorAll("tbody tr").forEach(tr => tr.hidden = q && !tr.dataset.q.includes(q));
+  });
+  box.querySelectorAll("[data-cr-edit]").forEach(b => b.onclick = () => openCrateEditor(+b.dataset.crEdit));
+  box.querySelectorAll("[data-ci-add]").forEach(b => b.onclick = () => openCrateItemEditor(null, +b.dataset.ciAdd));
+  box.querySelectorAll("[data-ci-edit]").forEach(b => b.onclick = () => openCrateItemEditor(+b.dataset.ciEdit));
+  box.querySelectorAll("[data-ci-del]").forEach(b => b.onclick = async () => {
+    if (!(await confirmModal("Delete this item?", "It's removed from the crate. Past drops stay in the history."))) return;
+    const { error } = await sb.from("crate_items").delete().eq("id", +b.dataset.ciDel);
+    if (error) return toast(error.message);
+    renderCrates();
+  });
+  $("#cr-add").onclick = () => openCrateEditor(null);
+}
+function openCrateEditor(id){
+  const c = id ? crList.find(x => x.id === id) : null;
+  openModal(`<h3>${c ? "Edit crate" : "New crate"}</h3>
+    <div class="field"><label for="ce-name">Name</label><input id="ce-name" maxlength="40" value="${esc(c?.name || "")}" placeholder="e.g. Medic Crate"></div>
+    <div class="field"><label for="ce-desc">Description</label><input id="ce-desc" maxlength="200" value="${esc(c?.description || "")}"></div>
+    <div class="three"><div class="field"><label for="ce-cost">Cost (AFtokens)</label><input id="ce-cost" type="number" min="0" value="${c?.cost ?? 25}"></div>
+      <div class="field"><label for="ce-lim">Opens per day</label><input id="ce-lim" type="number" min="0" max="50" value="${c?.daily_limit ?? 3}"></div>
+      <div class="field"><label for="ce-emo">Emoji</label><input id="ce-emo" maxlength="8" value="${esc(c?.emoji || "📦")}"></div></div>
+    <div class="two"><div class="field"><label for="ce-color">Glow color</label><input id="ce-color" type="color" value="${esc(hexOk(c?.color) || "#ff7a1a")}" style="height:44px;padding:4px"></div>
+      <div class="field"><label for="ce-sort">Order</label><input id="ce-sort" type="number" value="${c?.sort_order ?? crList.length + 1}"></div></div>
+    <label style="display:flex;gap:8px;align-items:center;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="ce-active" ${c?.active === false ? "" : "checked"}> Show on the site</label>
+    <div class="row"><button class="btn" id="ce-save">Save crate</button>${c ? `<button class="btn ghost" id="ce-del">Delete crate</button>` : ""}<button class="btn ghost" id="ce-x">Cancel</button></div><div id="ce-msg"></div>`);
+  $("#ce-x").onclick = closeModal;
+  if ($("#ce-del")) $("#ce-del").onclick = async () => {
+    if (!(await confirmModal("Delete this crate?", "The crate and everything in it are removed. Past drops stay in the history. To just hide it, untick \"Show on the site\" instead."))) return;
+    const { error } = await sb.from("crates").delete().eq("id", c.id);
+    if (error) return toast(error.message);
+    toast("Crate deleted"); renderCrates();
+  };
+  $("#ce-save").onclick = async () => {
+    const name = $("#ce-name").value.trim();
+    if (!name) { $("#ce-msg").innerHTML = `<p class="msg err">Give it a name.</p>`; return; }
+    const row = { name, description: $("#ce-desc").value.trim() || null, cost: Math.max(0, parseInt($("#ce-cost").value, 10) || 0),
+      daily_limit: Math.min(50, Math.max(0, parseInt($("#ce-lim").value, 10) || 0)), emoji: $("#ce-emo").value.trim() || null,
+      color: $("#ce-color").value, sort_order: parseInt($("#ce-sort").value, 10) || 100, active: $("#ce-active").checked };
+    const { error } = c ? await sb.from("crates").update(row).eq("id", c.id) : await sb.from("crates").insert(row);
+    if (error) { $("#ce-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+    closeModal(); toast("Crate saved"); renderCrates();
+  };
+}
+function openCrateItemEditor(id, crateId){
+  const i = id ? crItems.find(x => x.id === id) : null, cid = i?.crate_id ?? crateId;
+  openModal(`<h3>${i ? "Edit item" : "Add an item"}</h3>
+    <div class="two"><div class="field"><label for="ie-label">Name in the crate</label><input id="ie-label" maxlength="40" value="${esc(i?.label || "")}" placeholder="e.g. SVD"></div>
+      <div class="field"><label for="ie-emo">Emoji</label><input id="ie-emo" maxlength="8" value="${esc(i?.emoji || "")}" placeholder="🔫"></div></div>
+    <div class="two"><div class="field"><label for="ie-rar">Rarity</label><select id="ie-rar">${Object.entries(RARITY).map(([k, v]) => `<option value="${k}" ${(i?.rarity || "common") === k ? "selected" : ""}>${v.label}</option>`).join("")}</select></div>
+      <div class="field"><label for="ie-kind">Gives</label><select id="ie-kind">
+        <option value="item" ${i?.kind === "item" || !i ? "selected" : ""}>An in-game item</option>
+        <option value="tokens" ${i?.kind === "tokens" ? "selected" : ""}>AFtokens</option>
+        <option value="nothing" ${i?.kind === "nothing" ? "selected" : ""}>Nothing</option></select></div></div>
+    <div class="field" id="ie-item-f"><label for="ie-item">Item staff hand out</label><input id="ie-item" maxlength="300" value="${esc(i?.item_name || "")}" placeholder="e.g. SVD with 2 mags and PSO scope"></div>
+    <div class="field" id="ie-tok-f"><label for="ie-tok">AFtokens won</label><input id="ie-tok" type="number" min="0" value="${i?.token_amount ?? 10}"></div>
+    <div class="field"><label for="ie-w">Weight (odds)</label><input id="ie-w" type="number" min="1" max="1000000" value="${i?.weight ?? 10}"></div>
+    <label style="display:flex;gap:8px;align-items:center;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="ie-active" ${i?.active === false ? "" : "checked"}> In the crate</label>
+    <div class="row"><button class="btn" id="ie-save">Save item</button><button class="btn ghost" id="ie-x">Cancel</button></div><div id="ie-msg"></div>`);
+  const sync = () => { const k = $("#ie-kind").value; $("#ie-item-f").hidden = k !== "item"; $("#ie-tok-f").hidden = k !== "tokens"; };
+  $("#ie-kind").onchange = sync; sync();
+  $("#ie-x").onclick = closeModal;
+  $("#ie-save").onclick = async () => {
+    const kind = $("#ie-kind").value, label = $("#ie-label").value.trim();
+    if (!label) { $("#ie-msg").innerHTML = `<p class="msg err">Give it a name.</p>`; return; }
+    const row = { crate_id: cid, label, rarity: $("#ie-rar").value, kind, emoji: $("#ie-emo").value.trim() || null,
+      weight: Math.max(1, parseInt($("#ie-w").value, 10) || 1),
+      item_name: kind === "item" ? ($("#ie-item").value.trim() || label) : null,
+      token_amount: kind === "tokens" ? Math.max(0, parseInt($("#ie-tok").value, 10) || 0) : 0, active: $("#ie-active").checked };
+    const { error } = i ? await sb.from("crate_items").update(row).eq("id", i.id) : await sb.from("crate_items").insert(row);
+    if (error) { $("#ie-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+    closeModal(); toast("Item saved"); renderCrates();
+  };
+}
+
 /* ---------- home hero: server status panel ---------- */
 function renderHeroPanel(){
   const box = $("#hero-servers"); if (!box) return;
@@ -2944,7 +3350,7 @@ startEvents();
 
 /* ===================== PROFILES + MEMBERS LIST ===================== */
 const PLAYSTYLES = ["PvP","PvE","Builder","Raider","Trader","Medic","Sniper","Scout","Looter","Hunter","Crafter","Driver","Roleplayer","Solo","Squad"];
-const STATUS_EMOJI = ["🎯","🔫","🪓","🏕️","🚗","🩹","💀","🔥","🎮","😴","🍖","📦"];
+const STATUS_EMOJI = ["🎯","💥","🪓","🏕️","🚗","🩹","💀","🔥","🎮","😴","🍖","📦"];
 const ACCENTS = ["#ff7a1a","#ef4444","#f59e0b","#4ade80","#22d3ee","#5865F2","#a855f7","#ec4899","#e5e7eb"];
 const RESERVED_NAME = /(admin|staff|moderator|allied ?forces|official)/i;
 const hexOk = c => /^#[0-9a-f]{6}$/i.test(c || "") ? c : null;
@@ -3315,10 +3721,10 @@ async function mountProfileEditor(p){
 
 startPresence();
 
-const views = ["members","home","servers","rules","legends","wheel","feed","inbox","support","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id), ...CONFIG.servers.map(s => "server-" + s.key)];
+const views = ["crates","members","home","servers","rules","legends","wheel","feed","inbox","support","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id), ...CONFIG.servers.map(s => "server-" + s.key)];
 function route(){
   const v = views.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
-  const section = v.startsWith("live-") ? "live" : v.startsWith("server-") ? "servers" : v;
+  const section = v.startsWith("live-") ? "live" : v.startsWith("server-") ? "servers" : v === "crates" ? "wheel" : v;
   $$(".view").forEach(el => el.classList.toggle("active", el.id === "v-"+section));
   $$(".nav a[data-v]").forEach(a => a.classList.toggle("active", a.dataset.v === section));
   $$(".subview").forEach(el => el.classList.toggle("active", el.id === "sv-"+v));
@@ -3330,7 +3736,8 @@ function route(){
   if (v === "feed") { renderFeed(); renderMemberSide("#feed-side", true); }
   if (v === "members") renderMembers();
   if (v === "inbox") renderInbox();
-  if (v === "wheel") renderWheel();
+  if (v === "wheel") { renderWheel(); startDrops(); }
+  if (v === "crates") { renderCrates(); startDrops(); }
   if (v === "live-killfeed") startKillfeed();
   if (v === "live-wipes") startWipes();
   if (v === "live-leaderboard") startLeaderboard();
