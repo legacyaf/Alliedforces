@@ -451,6 +451,19 @@
   .nav a.btn,.nav a.btn:hover{color:#140800;padding:8px 16px;margin-left:8px}
   .nav a.btn.discord-link:hover{background:linear-gradient(180deg,#ffa057,#ff8c33)}
   .nav .badge{margin-left:5px}
+
+  /* Discord bridge */
+  .dc-strip{display:inline-flex;align-items:center;gap:12px;margin-top:26px;padding:8px 8px 8px 10px;border-radius:14px;text-decoration:none;color:var(--text);
+    background:rgba(88,101,242,.12);border:1px solid rgba(88,101,242,.35);transition:background .2s,border-color .2s}
+  .dc-strip:hover{background:rgba(88,101,242,.2);border-color:rgba(88,101,242,.6)}
+  .dc-strip img{width:34px;height:34px;border-radius:10px}
+  .dc-strip .dc-txt{display:flex;flex-direction:column;line-height:1.25;font-size:.9rem}
+  .dc-strip .dc-txt b{font-weight:600}
+  .dc-strip .dc-txt span{color:#c7c9f9;font-size:.82rem}
+  .dc-strip .dc-on{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:6px;vertical-align:1px}
+  .dc-strip .dc-join{background:#5865F2;color:#fff;font-weight:600;font-size:.85rem;padding:7px 14px;border-radius:10px}
+  .dc-roles{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+  .dc-role{font-size:.82rem;font-weight:600;padding:4px 10px;border-radius:999px;background:rgba(88,101,242,.15);border:1px solid rgba(88,101,242,.4);color:#dfe1ff}
   /* hero: launcher layout */
   .hero{padding:84px 0 56px;background:none}
   .hero-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:40px;align-items:center}
@@ -530,6 +543,7 @@
           <a class="btn discord-link" href="#">Join the Discord</a>
           <a class="btn ghost" href="#servers">View servers</a>
         </div>
+        <a class="dc-strip" id="discord-stats" href="#" target="_blank" rel="noopener" hidden></a>
         <ul class="hero-facts">
           <li><b>2</b> servers</li><li><b>PvE</b> with PvP zones</li><li><b>Monthly</b> staggered wipes</li><li><b>Ryzen 9</b> dedicated box</li>
         </ul>
@@ -919,6 +933,7 @@ const CONFIG = {
      Paste these from Supabase → Project Settings → API.
      Leave blank and the Account page says "coming soon". */
   supabaseUrl: "https://kbifstvpqputwqtalyxz.supabase.co",
+  discordBridge: "https://kbifstvpqputwqtalyxz.supabase.co/functions/v1/discord",  // Discord stats + role sync
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiaWZzdHZwcXB1dHdxdGFseXh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQwNjU3MTMsImV4cCI6MjEwOTY0MTcxM30.N_4HKBInF7x9srawAkJkW8uEMPZddsCSJ1lQqKxcfBg", // anon public key (safe to be public)
 
   discord: "https://discord.gg/W87ypFyNrp",
@@ -1096,8 +1111,10 @@ async function renderAccount(){
       <p class="muted">Change your card's photo, faction and quip anytime.</p>
       <div class="row"><button class="btn" id="edit-legend">Edit my Legend card</button><a class="btn ghost" href="#legends">View Legends</a></div>
     </div>` : ""}
+    <div class="card" style="margin-top:18px" id="dc-card"><h3>Discord roles</h3><div id="dc-roles"><p class="muted" style="margin:0">Checking your Discord roles…</p></div></div>
     <p class="muted" style="font-size:.9rem;margin-top:14px">Want your account deleted? Open a ticket in Discord.</p>`;
   if ($("#edit-legend")) $("#edit-legend").onclick = openLegendEditor;
+  renderDiscordRoles();
   $("#signout").onclick = async () => { await sb.auth.signOut(); };
   $("#pform").onsubmit = async e => {
     e.preventDefault();
@@ -1909,6 +1926,7 @@ async function onUserChanged(){
   const { data } = await sb.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
   amAdmin = !!data;
   refreshBadge();
+  autoSyncDiscord();
   inboxChannel = sb.channel("inbox-" + user.id)
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${user.id}` }, async ({ new: m }) => {
       await loadMembers([m.sender_id]);
@@ -2710,6 +2728,75 @@ function renderHeroPanel(){
 }
 renderHeroPanel();
 setInterval(() => { if (!location.hash || location.hash === "#home") renderHeroPanel(); }, 60000);
+
+/* ===================== DISCORD BRIDGE ===================== */
+async function loadDiscordStats(){
+  const el = $("#discord-stats"); if (!el || !CONFIG.discordBridge) return;
+  try {
+    const r = await fetch(CONFIG.discordBridge + "/stats");
+    const d = await r.json();
+    if (!d || d.members == null) return;
+    const fmt = n => Number(n).toLocaleString();
+    el.href = d.invite || CONFIG.discord;
+    el.innerHTML = `${d.icon ? `<img src="${esc(d.icon)}" alt="">` : ""}<span class="dc-txt"><b>${esc(d.name || "Allied Forces")} Discord</b>
+      <span><i class="dc-on"></i>${fmt(d.online)} online · ${fmt(d.members)} members</span></span><span class="dc-join">Join</span>`;
+    el.hidden = false;
+  } catch (e) { /* stats are a bonus — stay hidden if Discord can't be reached */ }
+}
+let dcLast = null;
+async function syncDiscordRoles(){
+  if (!sb || !user || !CONFIG.discordBridge) return null;
+  try {
+    const { data } = await sb.auth.getSession();
+    const token = data.session?.access_token; if (!token) return null;
+    const r = await fetch(CONFIG.discordBridge + "/sync", { method: "POST", headers: { Authorization: "Bearer " + token } });
+    dcLast = await r.json();
+  } catch (e) { dcLast = { ok: false, reason: "unreachable" }; }
+  return dcLast;
+}
+async function autoSyncDiscord(){
+  let done = false;
+  try { done = sessionStorage.getItem("af-dc-sync") === user.id; } catch (e) {}
+  if (done) return;
+  const r = await syncDiscordRoles();
+  try { if (r) sessionStorage.setItem("af-dc-sync", user.id); } catch (e) {}
+  if (r?.added?.length) toast(`Discord roles added: ${r.added.join(", ")}`);
+}
+async function renderDiscordRoles(force = false){
+  const box = $("#dc-roles"); if (!box) return;
+  if (force || !dcLast) { box.innerHTML = `<p class="muted" style="margin:0">Checking your Discord roles…</p>`; await syncDiscordRoles(); }
+  const r = dcLast || { ok: false, reason: "unreachable" };
+  const again = `<button class="btn sm ghost" id="dc-again">Sync again</button>`;
+  const staff = amAdmin ? `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)"><b style="font-size:.9rem">Staff</b>
+      <p class="muted" style="margin:4px 0 8px;font-size:.88rem">Update everyone's Discord roles now (faction, leader, legend, verified).</p>
+      <button class="btn sm" id="dc-all">Resync everyone</button> <span id="dc-all-msg"></span></div>` : "";
+  let html;
+  if (r.ok || r.reason === "missing_permission") {
+    html = `<p class="muted" style="margin:0">${r.ok ? "Your Discord roles match your website account." : "Most of your roles are synced. A few couldn't be added — AF staff can fix this."}</p>
+      ${r.roles?.length ? `<div class="dc-roles">${r.roles.map(n => `<span class="dc-role">${esc(n)}</span>`).join("")}</div>` : ""}
+      <p class="muted" style="font-size:.85rem;margin:6px 0 10px">Join a faction, become a Leader or make the Legends page and your roles update automatically.</p>${again}`;
+  } else if (r.reason === "not_in_server") {
+    html = `<p style="margin:0 0 10px">Join the Allied Forces Discord to get your roles (Verified, your faction and more).</p>
+      <div class="row"><a class="btn sm" href="${esc(CONFIG.discord)}" target="_blank" rel="noopener" style="background:linear-gradient(180deg,#6b77f5,#5865F2);color:#fff">Join the Discord</a>${again}</div>`;
+  } else if (r.reason === "not_configured") {
+    html = `<p class="muted" style="margin:0">Discord roles are coming soon.</p>`;
+  } else {
+    html = `<p class="muted" style="margin:0 0 10px">Couldn't reach Discord right now. Try again in a minute.</p>${again}`;
+  }
+  box.innerHTML = html + staff;
+  if ($("#dc-again")) $("#dc-again").onclick = () => renderDiscordRoles(true);
+  if ($("#dc-all")) $("#dc-all").onclick = async () => {
+    const b = $("#dc-all"), msg = $("#dc-all-msg"); b.disabled = true; b.textContent = "Syncing…";
+    try {
+      const { data } = await sb.auth.getSession();
+      const res = await fetch(CONFIG.discordBridge + "/sync-all", { method: "POST", headers: { Authorization: "Bearer " + data.session.access_token } });
+      const j = await res.json();
+      msg.innerHTML = j.ok ? `<span class="msg ok">Done: ${j.synced} synced, ${j.notInServer} not in the Discord${j.problems ? `, ${j.problems} problems` : ""}</span>` : `<span class="msg err">${esc(j.reason || "Failed")}</span>`;
+    } catch (e) { msg.innerHTML = `<span class="msg err">Couldn't reach Discord</span>`; }
+    b.disabled = false; b.textContent = "Resync everyone";
+  };
+}
+loadDiscordStats();
 
 renderServerOverview();
 startEvents();
