@@ -1260,7 +1260,7 @@ async function renderAccount(){
 async function syncProfile(){
   const m = meta(user);
   await sb.from("profiles").upsert({
-    id: user.id, discord_id: m.provider_id || null, discord_username: dName(user),
+    id: user.id, discord_id: myDiscordIds().find(x => /^\d{15,21}$/.test(x)) || m.provider_id || null, discord_username: dName(user),
     avatar_url: m.avatar_url || null, updated_at: new Date().toISOString()
   });
 }
