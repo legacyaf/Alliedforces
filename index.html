@@ -678,6 +678,140 @@
   .cc-more{margin-top:10px}
   details.cs-crate summary{cursor:pointer;padding:6px 0;list-style-position:outside}
   details.cs-crate tbody tr td:nth-child(3){max-width:420px;font-size:.82rem;color:var(--muted);overflow-wrap:anywhere}
+
+  /* ===================== AF CARDS ===================== */
+  .xp-card{display:flex;align-items:center;gap:18px;margin-bottom:14px;flex-wrap:wrap}
+  .xp-lvl{width:64px;height:64px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,#ff8c33,#c2410c);color:#140800;box-shadow:0 10px 30px -12px var(--glow);flex:none}
+  .xp-lvl b{font-size:1.6rem;line-height:1;font-family:Sora,system-ui,sans-serif}.xp-lvl span{font-size:.68rem;font-weight:600}
+  .xp-main{flex:1;min-width:220px}
+  .xp-row{display:flex;justify-content:space-between;gap:10px;font-size:.92rem}
+  .xp-bar{height:10px;border-radius:99px;background:rgba(255,255,255,.07);margin:8px 0;overflow:hidden}
+  .xp-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#ff7a1a,#ffd27a);box-shadow:0 0 12px rgba(255,122,26,.6)}
+  .xp-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}
+  .xp-free{color:#4ade80;font-weight:600}
+  .cd-tabs{margin:4px 0 16px}
+  .dot-new{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-left:4px;vertical-align:1px}
+  .cd-filters{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+  .cd-filters .chip{font-size:.82rem;padding:4px 11px}
+  /* trading card */
+  .tc{--tc:#38bdf8;--rc:#a1a1aa;position:relative;display:flex;flex-direction:column;border-radius:14px;padding:7px;cursor:pointer;color:var(--text);
+      background:linear-gradient(170deg,color-mix(in srgb,var(--tc) 30%,#16161a),#0c0c0e 55%);border:2px solid color-mix(in srgb,var(--rc) 75%,#000);
+      box-shadow:0 10px 24px -14px #000,inset 0 0 0 1px rgba(255,255,255,.05);transition:transform .15s,box-shadow .15s;user-select:none}
+  .tc:hover{transform:translateY(-3px);box-shadow:0 14px 30px -14px var(--rc),inset 0 0 0 1px rgba(255,255,255,.08)}
+  .tc-md{width:160px;min-height:230px}.tc-sm{width:104px;min-height:146px;padding:5px;border-radius:11px}.tc-lg{width:240px;min-height:340px;padding:10px}
+  .tc-top{display:flex;align-items:center;gap:6px}
+  .tc-cost{flex:none;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;color:#140800;background:radial-gradient(circle at 35% 30%,#ffd27a,#ff7a1a);box-shadow:0 0 8px rgba(255,122,26,.6)}
+  .tc-sm .tc-cost{width:19px;height:19px;font-size:.72rem}
+  .tc-name{font-family:Sora,system-ui,sans-serif;font-weight:700;font-size:.85rem;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tc-sm .tc-name{font-size:.68rem}.tc-lg .tc-name{font-size:1.1rem}
+  .tc-art{position:relative;margin:6px 0 4px;height:92px;border-radius:9px;overflow:hidden;display:flex;align-items:center;justify-content:center;
+          background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--tc) 35%,transparent),transparent 70%),repeating-linear-gradient(45deg,rgba(255,255,255,.025) 0 6px,transparent 6px 12px),#0b0b0d;border:1px solid rgba(255,255,255,.07)}
+  .tc-sm .tc-art{height:58px;margin:4px 0 3px}.tc-lg .tc-art{height:150px}
+  .tc-art img{width:100%;height:100%;object-fit:cover}
+  .tc-emo{font-size:2.8rem;filter:drop-shadow(0 6px 10px rgba(0,0,0,.6))}.tc-sm .tc-emo{font-size:1.8rem}.tc-lg .tc-emo{font-size:4.4rem}
+  .tc-legend{position:absolute;left:4px;bottom:4px;font-size:.58rem;font-weight:700;padding:2px 6px;border-radius:99px;background:rgba(0,0,0,.7);color:#fbbf24;border:1px solid rgba(251,191,36,.5)}
+  .tc-type{display:flex;justify-content:space-between;font-size:.62rem;font-weight:600;color:color-mix(in srgb,var(--tc) 70%,#fff);text-transform:none}
+  .tc-sm .tc-type{font-size:.55rem}
+  .tc-text{font-size:.66rem;line-height:1.3;color:#d4d4d8;margin-top:4px;flex:1}
+  .tc-sm .tc-text{font-size:.58rem;line-height:1.2;margin-top:2px}
+  .tc-text i{display:block;color:var(--muted);margin-top:6px}.tc-lg .tc-text{font-size:.82rem}
+  .tc-stats{display:flex;justify-content:space-between;margin-top:5px;font-weight:800;font-size:.85rem}
+  .tc-sm .tc-stats{font-size:.75rem;margin-top:3px}
+  .tc-atk{color:#fca5a5}.tc-hp{color:#86efac}.tc-hp.hurt{color:#fde047}.tc-hp small{font-size:.65em;color:var(--muted)}
+  .tc-qty,.tc-badge{position:absolute;top:-8px;right:-8px;font-size:.7rem;font-weight:800;padding:2px 7px;border-radius:99px;background:#ff7a1a;color:#140800;box-shadow:0 2px 8px #000}
+  .tc-badge{background:#4ade80}
+  .tc.missing{filter:grayscale(1) brightness(.45)}.tc.missing .tc-text,.tc.missing .tc-stats{visibility:hidden}
+  .tc.used{opacity:.4}
+  .tc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;justify-items:center}
+  .tc-grid.sm{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px}
+  .tc-modal{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+  .tc-modal-info{flex:1;min-width:160px}
+  .howto{padding-left:18px;margin:0 0 14px;font-size:.92rem;line-height:1.5}.howto li{margin-bottom:6px}
+  .modal-card.wide{max-width:960px}
+  /* packs */
+  .pk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+  .pk-card{--pc:#ff7a1a;text-align:center;display:flex;flex-direction:column;align-items:center}
+  .pk-card p{flex:1;font-size:.88rem}
+  .pk-art{width:110px;height:140px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:3rem;margin:4px 0 12px;
+          background:linear-gradient(160deg,color-mix(in srgb,var(--pc) 60%,#111),#0b0b0d);border:2px solid var(--pc);box-shadow:0 18px 40px -18px var(--pc);transform:rotate(-4deg)}
+  .pk-card:hover .pk-art{transform:rotate(3deg) scale(1.04);transition:transform .25s}
+  .pk-reveal{text-align:center}
+  .pk-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+  .flip{width:160px;height:236px;perspective:900px;cursor:pointer}
+  .flip-in{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+  .flip.on .flip-in{transform:rotateY(180deg)}
+  .flip.big.on{animation:won 1s ease}
+  .flip-back,.flip-front{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+  .flip-back{border-radius:14px;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg,#1a120b 0 8px,#120c07 8px 16px);border:2px solid #ff7a1a;box-shadow:0 10px 30px -12px var(--glow)}
+  .flip-back span{font-family:Sora,system-ui,sans-serif;font-weight:800;font-size:2rem;color:#ff7a1a}
+  .flip-front{transform:rotateY(180deg);display:flex;justify-content:center}
+  /* decks */
+  .dk-list{display:grid;gap:12px}
+  .dk-item{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .dk-peek{display:flex;gap:4px;margin-top:6px;font-size:1.2rem}
+  .dk-ed{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+  .dk-side{position:sticky;top:84px}
+  .dk-stats{display:flex;gap:10px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}.dk-stats .ok{color:var(--ok)}
+  .dk-curve{display:flex;gap:5px;height:56px;align-items:flex-end;margin:10px 0}
+  .dk-curve div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .dk-curve i{width:100%;background:linear-gradient(180deg,#ffad5c,#ff7a1a);border-radius:4px 4px 0 0;min-height:2px}
+  .dk-curve small{font-size:.65rem;color:var(--muted)}
+  .dk-rows{display:flex;flex-direction:column;gap:4px;max-height:46vh;overflow:auto}
+  .dk-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;border:0;border-left:3px solid var(--rc);background:rgba(255,255,255,.04);color:var(--text);font:inherit;font-size:.85rem;cursor:pointer;text-align:left}
+  .dk-row:hover{background:rgba(239,68,68,.15)}
+  .dk-cost{width:20px;height:20px;border-radius:50%;background:#ff7a1a;color:#140800;font-weight:800;font-size:.72rem;display:flex;align-items:center;justify-content:center;flex:none}
+  .dk-nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* battle hub */
+  .bt-hub{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px}
+  .bt-hub .bt-start{grid-row:span 2}
+  .bt-select{width:100%;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);color:var(--text);font:inherit}
+  .bt-modes{display:grid;gap:10px;margin-top:14px}
+  .bt-mode{display:grid;grid-template-columns:44px 1fr;grid-template-rows:auto auto;column-gap:12px;text-align:left;padding:14px;border-radius:14px;cursor:pointer;color:var(--text);font:inherit;
+           background:linear-gradient(120deg,rgba(255,122,26,.12),rgba(255,255,255,.02));border:1px solid rgba(255,122,26,.3);transition:transform .15s,border-color .15s}
+  .bt-mode:hover{transform:translateY(-2px);border-color:#ff7a1a}
+  .bt-mode span{grid-row:span 2;font-size:1.8rem;display:flex;align-items:center;justify-content:center}
+  .bt-mode small{color:var(--muted)}
+  .bt-mode.busy{opacity:.5;pointer-events:none}
+  .bt-lb{list-style:none;padding:0;margin:0;counter-reset:lb}
+  .bt-lb li{display:flex;align-items:center;gap:10px;padding:7px 4px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;counter-increment:lb}
+  .bt-lb li::before{content:counter(lb);width:18px;color:var(--muted);font-size:.8rem;font-weight:700}
+  .bt-lb .lb-nm{flex:1;display:flex;flex-direction:column;line-height:1.2}.bt-lb small{color:var(--muted);font-size:.75rem}
+  .bt-lb em{font-style:normal;font-size:.8rem;color:#ffd27a}
+  /* battle board */
+  .bt-board{border-radius:18px;padding:14px;background:radial-gradient(80% 60% at 50% 50%,rgba(255,122,26,.07),transparent),linear-gradient(180deg,#0c0d0b,#070707);border:1px solid rgba(255,255,255,.08)}
+  .bt-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+  .bt-turn{color:var(--muted);font-size:.88rem;flex:1}
+  #bt-clock{font-weight:700;color:#ffd27a}
+  .bt-side{padding:10px;border-radius:14px}
+  .bt-side.op{background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.15)}
+  .bt-side.me{background:rgba(56,189,248,.05);border:1px solid rgba(56,189,248,.15)}
+  .bt-who{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:.88rem;color:var(--muted);margin:4px 0}
+  .bt-who b{color:var(--text)}
+  .bt-sup{color:#ffd27a!important;font-weight:700}
+  .bt-kos i{font-style:normal;color:rgba(255,255,255,.15);margin-right:2px}.bt-kos i.on{color:#ef4444;text-shadow:0 0 8px #ef4444}
+  .bt-row{display:flex;gap:12px;justify-content:center;min-height:158px;align-items:center;margin:6px 0}
+  .bt-f{position:relative}
+  .bt-tags{position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);font-size:.85rem;background:rgba(0,0,0,.75);border-radius:99px;padding:1px 7px;white-space:nowrap}
+  .tc.ready{box-shadow:0 0 0 2px #4ade80,0 0 18px rgba(74,222,128,.5)}
+  .tc.sel{box-shadow:0 0 0 3px #ff7a1a,0 0 22px rgba(255,122,26,.8);transform:translateY(-6px)}
+  .tc.target{box-shadow:0 0 0 2px #ef4444,0 0 18px rgba(239,68,68,.6);animation:pulseT 1s infinite}
+  @keyframes pulseT{50%{transform:translateY(-3px)}}
+  .bt-empty{width:240px;height:120px;border:2px dashed rgba(255,255,255,.12);border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.9rem}
+  .bt-empty.target{border-color:#ef4444;color:#fca5a5;cursor:pointer;animation:pulseT 1s infinite}
+  .bt-mid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:center;margin:8px 0}
+  .bt-log{font-size:.78rem;color:#d4d4d8;background:rgba(0,0,0,.4);border-radius:10px;padding:8px 10px;max-height:110px;overflow:auto;border:1px solid rgba(255,255,255,.06)}
+  .bt-log div{padding:1px 0}
+  .modal-log{max-height:40vh;text-align:left;margin-top:10px}
+  .bt-hint{font-size:.85rem;color:#ffd27a;text-align:center}
+  .bt-hand{display:flex;gap:8px;overflow-x:auto;padding:12px 4px 6px;justify-content:center}
+  .bt-h{flex:none;transition:transform .15s}
+  .bt-h:hover{transform:translateY(-8px)}
+  .bt-h.sel .tc{box-shadow:0 0 0 3px #ff7a1a,0 0 22px rgba(255,122,26,.8)}
+  .bt-h.dim{opacity:.45}
+  .mrow-name .lv{font-style:normal;font-size:.62rem;font-weight:800;color:#140800;background:#ffad5c;border-radius:5px;padding:0 4px;margin-right:6px;vertical-align:1px}
+  .pbadge.lvb{background:rgba(255,173,92,.12);border-color:rgba(255,173,92,.35);color:#ffd27a}
+  @media(max-width:900px){.bt-hub,.dk-ed{grid-template-columns:1fr}.bt-hub .bt-start{grid-row:auto}.dk-side{position:static}.bt-mid{grid-template-columns:1fr}}
+  @media(max-width:560px){.tc-md{width:140px;min-height:210px}.tc-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}.tc-sm{width:92px;min-height:132px}.bt-row{gap:6px;min-height:140px}.flip{width:140px;height:212px}.bt-board{padding:8px}}
 </style>
 </head>
 <body>
@@ -950,11 +1084,12 @@
     <div class="wrap">
       <div class="kicker-sm">Spoils of war</div>
       <h2>AF Arcade</h2>
-      <p class="muted" style="max-width:760px">Win wars, earn AFtokens. Spend them on the daily wheel or crack open crates for in-game loot — or stack your faction's war chest.</p>
+      <p class="muted" style="max-width:760px">Win wars, earn AFtokens. Spin the daily wheel, crack open crates for in-game loot, or collect and battle with AF Cards.</p>
       <div class="arcade-drops" id="arcade-drops" hidden></div>
-      <nav class="subnav" style="margin-top:14px"><a href="#wheel" data-sub="wheel">🎡 AF Wheel</a><a href="#crates" data-sub="crates">📦 Crates</a></nav>
+      <nav class="subnav" style="margin-top:14px"><a href="#wheel" data-sub="wheel">🎡 AF Wheel</a><a href="#crates" data-sub="crates">📦 Crates</a><a href="#cards" data-sub="cards">🃏 Cards</a></nav>
       <div class="subview" id="sv-wheel"><div id="wheel-root" style="margin-top:18px"></div></div>
       <div class="subview" id="sv-crates"><div id="crates-root" style="margin-top:18px"></div></div>
+      <div class="subview" id="sv-cards"><div id="cards-root" style="margin-top:18px"></div></div>
     </div>
   </section>
 </div>
@@ -2123,7 +2258,7 @@ async function onUserChanged(){
   amAdmin = false;
   if (inboxChannel) { sb.removeChannel(inboxChannel); inboxChannel = null; }
   if (sb) { allMembersAt = 0; startPresence(); }
-  if (!sb || !user) { setBadge(); refreshEventViews(); if (location.hash === "#wheel") renderWheel(); if (location.hash === "#crates") renderCrates(); return; }
+  if (!sb || !user) { setBadge(); refreshEventViews(); if (location.hash === "#wheel") renderWheel(); if (location.hash === "#crates") renderCrates(); if (location.hash === "#cards") { cdState = null; cdBattle = null; renderCardsPage(); } return; }
   const { data } = await sb.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
   amAdmin = !!data;
   refreshBadge();
@@ -2141,13 +2276,15 @@ async function onUserChanged(){
       if (n.actor_id === user.id) return;
       unreadNotifs++; setBadge();
       if (location.hash === "#inbox" && inboxTab === "notifications") renderNotifications();
-      else toast(n.kind === "admin" ? "New notice from AF staff" : "New notification");
+      else toast(n.kind === "admin" ? "New notice from AF staff" : n.kind === "game" ? (n.title || "Card battle update") : "New notification");
+      if (n.kind === "game" && location.hash === "#cards" && !cdBattle) renderCardsPage();
     })
     .subscribe();
   if (location.hash === "#feed") renderFeed();
   if (location.hash === "#inbox") renderInbox();
   if (location.hash === "#wheel") renderWheel();
   if (location.hash === "#crates") renderCrates();
+  if (location.hash === "#cards") { cdState = null; cdBattle = null; renderCardsPage(); }
   refreshEventViews();
 }
 function startDm(otherId){
@@ -2316,15 +2453,16 @@ async function loadNotifList(){
   const seen = inboxSeenAt ? new Date(inboxSeenAt) : new Date(0);
   list.innerHTML = data.length ? data.map(n => {
     const a = mem(n.actor_id), isNew = new Date(n.created_at) > seen && n.actor_id !== user.id;
-    const ico = n.kind === "like" ? "♥" : n.kind === "comment" ? "💬" : "📢";
+    const ico = n.kind === "like" ? "♥" : n.kind === "comment" ? "💬" : n.kind === "game" ? "🃏" : "📢";
     const title = n.kind === "like" ? `${esc(a.name)} liked your post`
                 : n.kind === "comment" ? `${esc(a.name)} commented on your post`
+                : n.kind === "game" ? esc(n.title || "Card battle")
                 : `${esc(n.title || "Notice from AF staff")}${n.user_id ? "" : ` <span class="muted" style="font-weight:400;font-size:.85rem">· to everyone</span>`}`;
-    const body = n.kind === "comment" ? `“${esc(n.body || "")}”` : n.kind === "admin" ? linkify(esc(n.body || "")) : "";
+    const body = n.kind === "comment" ? `“${esc(n.body || "")}”` : n.kind === "admin" || n.kind === "game" ? linkify(esc(n.body || "")) : "";
     return `<div class="notif${isNew ? " new" : ""}">
       ${n.kind === "admin" ? `<div class="n-ico">${ico}</div>` : `<div style="position:relative">${avatar(a, 40)}<span style="position:absolute;right:-4px;bottom:-4px;font-size:.9rem">${ico}</span></div>`}
       <div class="n-main"><div class="n-title">${title}</div>${body ? `<div class="n-body">${body}</div>` : ""}
-        <div class="n-time">${n.kind === "admin" ? `From ${esc(a.name)} · ` : ""}${ago(n.created_at)}${n.post_id ? ` · <a href="#feed">View in Community</a>` : ""}</div></div>
+        <div class="n-time">${n.kind === "admin" ? `From ${esc(a.name)} · ` : ""}${ago(n.created_at)}${n.post_id ? ` · <a href="#feed">View in Community</a>` : ""}${n.kind === "game" ? ` · <a href="#cards">Open Cards</a>` : ""}</div></div>
       ${amAdmin && n.kind === "admin" ? `<button class="icon-btn" data-deln="${n.id}" title="Delete notice">🗑</button>` : ""}
     </div>`;
   }).join("") : `<p class="muted" style="padding:16px;margin:0">No notifications yet.</p>`;
@@ -3242,6 +3380,468 @@ function openCrateItemEditor(id, crateId){
   };
 }
 
+/* ===================== AF CARDS (trading card game) + XP ===================== */
+const CT = {
+  survivor: { label: "Survivor", color: "#38bdf8", icon: "🧍" },
+  infected: { label: "Infected", color: "#84cc16", icon: "🧟" },
+  vehicle:  { label: "Vehicle",  color: "#94a3b8", icon: "🚙" },
+  supply:   { label: "Supply",   color: "#fbbf24", icon: "🥫" }
+};
+const isFighter = c => c && (c.type === "survivor" || c.type === "infected");
+let cdCards = [], cdById = {}, cdState = null, cdTab = "battle", cdBattle = null, cdSel = null, cdChan = null, cdTimer = null, cdBusy = false;
+let cdFilter = { type: "all", rarity: "all", owned: false }, cdDeckSel = null;
+
+async function loadCardDefs(){
+  if (cdCards.length) return;
+  const { data, error } = await sb.from("cards").select("*").eq("active", true).order("num");
+  if (error) throw error;
+  cdCards = data || []; cdById = Object.fromEntries(cdCards.map(c => [c.id, c]));
+}
+async function loadCardState(){
+  if (!user) { cdState = null; return; }
+  const { data, error } = await sb.rpc("my_card_state");
+  if (error) throw error;
+  cdState = data;
+  if (!cdDeckSel || !cdState.decks.some(d => d.id === cdDeckSel)) cdDeckSel = cdState.decks[0]?.id || null;
+}
+const ownedN = id => cdState?.owned?.[id] || 0;
+function legendPhoto(c){
+  if (!c.legend_discord_id) return null;
+  const l = (legendsData || []).find(x => String(x.discord_id || "").replace(/\s/g, "") === c.legend_discord_id);
+  return l?.photo_url || null;
+}
+function cardArt(c){
+  const src = c.art_url || legendPhoto(c);
+  return src ? `<img src="${esc(src)}" alt="" loading="lazy">` : `<span class="tc-emo">${esc(c.emoji || CT[c.type].icon)}</span>`;
+}
+/* one card. opts: size (sm|md|lg), qty, missing, attrs, fighter (live board state) */
+function cardHTML(c, o = {}){
+  if (!c) return "";
+  const R = rar(c.rarity), T = CT[c.type], f = o.fighter;
+  const atk = f ? f.atkNow : c.atk, hp = f ? f.hp : c.hp;
+  return `<div class="tc tc-${o.size || "md"}${o.missing ? " missing" : ""}${o.cls ? " " + o.cls : ""}" style="--tc:${T.color};--rc:${R.color}" ${o.attrs || ""}>
+    <div class="tc-top"><span class="tc-cost" title="Supply cost">${c.cost}</span><span class="tc-name">${esc(c.name)}</span></div>
+    <div class="tc-art">${o.missing ? `<span class="tc-emo">?</span>` : cardArt(c)}${c.legend_discord_id ? `<span class="tc-legend">AF Legend</span>` : ""}</div>
+    <div class="tc-type"><span>${T.label}</span><span style="color:${R.color}">${R.label}</span></div>
+    ${o.size === "sm" && !o.rules ? "" : `<div class="tc-text">${esc(c.rules || "")}${c.flavor && o.size === "lg" ? `<i>${esc(c.flavor)}</i>` : ""}</div>`}
+    ${isFighter(c) ? `<div class="tc-stats"><span class="tc-atk" title="Attack">⚔ ${atk}</span><span class="tc-hp${f && f.hp < f.max ? " hurt" : ""}" title="Health">❤ ${hp}${f && f.hp < f.max ? `<small>/${f.max}</small>` : ""}</span></div>` : ""}
+    ${o.qty ? `<span class="tc-qty">×${o.qty}</span>` : ""}
+    ${o.badge ? `<span class="tc-badge">${o.badge}</span>` : ""}
+  </div>`;
+}
+function openCardModal(id){
+  const c = cdById[id]; if (!c) return;
+  openModal(`<div class="tc-modal">${cardHTML(c, { size: "lg" })}
+    <div class="tc-modal-info"><p class="muted" style="margin:0">${CT[c.type].label} · ${rar(c.rarity).label} · costs ${c.cost} Supply</p>
+    ${user ? `<p style="margin:8px 0 0">You own <b>${ownedN(c.id)}</b></p>` : ""}
+    <button class="btn ghost sm" id="tcm-x" style="margin-top:14px">Close</button></div></div>`);
+  $("#tcm-x").onclick = closeModal;
+}
+function cardsHowTo(){
+  openModal(`<h3>How to play AF Cards</h3>
+    <ul class="howto">
+      <li><b>Goal:</b> knock out 3 enemy fighters. Attacking when they have no fighters left raids their camp — that counts as a knock-out too (once per turn).</li>
+      <li><b>Decks:</b> 20 cards, max 2 copies of a card (1 for legendaries), at least 6 Survivors or Infected.</li>
+      <li><b>Supply ⚡:</b> you get 1 on your first turn, +1 every turn (max 6). Every card costs Supply.</li>
+      <li><b>Your turn:</b> draw a card, play cards, then attack with fighters that were already out at the start of the turn. Up to 3 fighters on the board.</li>
+      <li><b>Vehicles</b> attach to one of your fighters and boost it. <b>Supplies</b> are used once (heal, buff, draw…).</li>
+      <li><b>Rush</b> attacks the turn it's played · <b>Guard</b> must be attacked first · <b>Armor N</b> blocks N damage · <b>Dodge</b> ignores the first hit · <b>Horde</b> +1 attack per other Infected you have · <b>Strikes twice</b> attacks twice a turn · <b>Regen N</b> heals N each turn · <b>Scavenge</b> draws a card when it knocks something out.</li>
+      <li><b>After 40 turns</b> the player with more knock-outs wins.</li>
+      <li><b>Quick battle</b> plays both decks automatically against a deck with a similar power level — instant result.</li>
+      <li><b>XP:</b> daily visit +10, bot win +40 (first 5 a day), quick win +20 (first 10 a day), player battle +60 win / +20 loss, packs +5, crates +5, wheel +5, war win +150. Every level = a free Outbreak pack, every 5 levels = +50 AFtokens.</li>
+    </ul><button class="btn" id="ht-x">Got it</button>`);
+  $("#ht-x").onclick = closeModal;
+}
+
+/* ---------- page shell ---------- */
+async function renderCardsPage(){
+  const box = $("#cards-root"); if (!box) return;
+  if (!sb) { box.innerHTML = `<div class="kf-empty">AF Cards is coming soon.</div>`; return; }
+  if (!cdCards.length) box.innerHTML = `<div class="kf-empty">Shuffling the deck…</div>`;
+  try { await loadCardDefs(); await loadCardState(); }
+  catch (err) { box.innerHTML = `<div class="kf-empty">AF Cards isn't set up yet${amAdmin ? " — run cards-setup.sql in Supabase" : ""}.</div>`; return; }
+  if (cdBattle && cdTab === "battle") return renderBattleBoard();
+  const s = cdState, pct = s ? Math.min(100, (s.xp - s.level_xp) / Math.max(1, s.next_xp - s.level_xp) * 100) : 0;
+  box.innerHTML = `
+    ${s ? `<div class="card xp-card">
+      <div class="xp-lvl"><b>${s.level}</b><span>Level</span></div>
+      <div class="xp-main"><div class="xp-row"><b>${esc(s.title)}</b><span class="muted">${s.level >= 50 ? "Max level" : `${s.xp.toLocaleString()} / ${s.next_xp.toLocaleString()} XP`}</span></div>
+        <div class="xp-bar"><i style="width:${s.level >= 50 ? 100 : pct.toFixed(1)}%"></i></div>
+        <div class="xp-meta"><span>🏆 ${s.wins}W · ${s.losses}L</span>${s.pack_credits ? `<span class="xp-free">🎁 ${s.pack_credits} free pack${s.pack_credits === 1 ? "" : "s"}</span>` : ""}<span>📚 ${Object.keys(s.owned).length} / ${cdCards.length} cards</span></div></div>
+      <button class="btn ghost sm" id="cd-how">How to play</button></div>`
+    : `<div class="card mo-cta"><div><h3>Collect them all. Battle everyone.</h3><p class="muted" style="margin:0">A DayZ trading card game: Survivors, Infected, vehicles and supplies — plus the real AF Legends. Sign in to get your free starter deck.</p></div><div class="row"><button class="btn ghost" id="cd-how">How to play</button><button class="btn discord-btn" id="cd-signin">${DISCORD_SVG} Sign in</button></div></div>`}
+    ${s && !s.starter ? `<div class="card hl mo-cta"><div><h3>🎒 Your starter deck is waiting</h3><p class="muted" style="margin:0">20 cards and a ready-to-play deck, free.</p></div><button class="btn" id="cd-starter">Claim starter deck</button></div>` : ""}
+    <div class="kf-filters cd-tabs">${[["battle", "⚔️ Battle"], ["collection", "📚 Collection"], ["packs", "🎁 Packs"], ["decks", "🗂️ Decks"]].map(([k, l]) => `<button class="chip${cdTab === k ? " active" : ""}" data-cdt="${k}">${l}${k === "packs" && s?.daily_ready ? ` <i class="dot-new"></i>` : ""}</button>`).join("")}</div>
+    <div id="cd-body"></div>`;
+  $("#cd-how").onclick = cardsHowTo;
+  if ($("#cd-signin")) $("#cd-signin").onclick = signIn;
+  if ($("#cd-starter")) $("#cd-starter").onclick = async () => {
+    const { error } = await sb.rpc("claim_starter");
+    if (error) return toast(error.message.replace(/^.*?:\s*/, ""));
+    toast("Starter deck added!"); cdTab = "decks"; renderCardsPage();
+  };
+  $$("[data-cdt]").forEach(b => b.onclick = () => { cdTab = b.dataset.cdt; renderCardsPage(); });
+  const body = $("#cd-body");
+  if (cdTab === "collection" || !s) renderCollection(body);
+  else if (cdTab === "packs") renderPacks(body);
+  else if (cdTab === "decks") renderDecks(body);
+  else renderBattleHub(body);
+}
+
+/* ---------- collection book ---------- */
+function renderCollection(body){
+  const f = cdFilter;
+  const list = cdCards.filter(c => (f.type === "all" || c.type === f.type) && (f.rarity === "all" || c.rarity === f.rarity) && (!f.owned || ownedN(c.id)));
+  body.innerHTML = `<div class="cd-filters">
+      <div class="kf-filters">${["all", ...Object.keys(CT)].map(t => `<button class="chip${f.type === t ? " active" : ""}" data-ft="${t}">${t === "all" ? "All types" : CT[t].icon + " " + CT[t].label}</button>`).join("")}</div>
+      <div class="kf-filters">${["all", ...Object.keys(RARITY)].map(r => `<button class="chip${f.rarity === r ? " active" : ""}" data-fr="${r}"${r !== "all" ? ` style="color:${rar(r).color}"` : ""}>${r === "all" ? "All rarities" : rar(r).label}</button>`).join("")}
+        ${user ? `<label class="pe-check" style="margin-left:6px"><input type="checkbox" id="f-own"${f.owned ? " checked" : ""}> Owned only</label>` : ""}</div></div>
+    <div class="tc-grid">${list.map(c => cardHTML(c, { size: "md", qty: user && ownedN(c.id) > 1 ? ownedN(c.id) : 0, missing: user && !ownedN(c.id), attrs: `data-card="${c.id}"` })).join("") || `<p class="muted">No cards match.</p>`}</div>`;
+  body.querySelectorAll("[data-ft]").forEach(b => b.onclick = () => { f.type = b.dataset.ft; renderCollection(body); });
+  body.querySelectorAll("[data-fr]").forEach(b => b.onclick = () => { f.rarity = b.dataset.fr; renderCollection(body); });
+  if ($("#f-own")) $("#f-own").onchange = e => { f.owned = e.target.checked; renderCollection(body); };
+  body.querySelectorAll("[data-card]").forEach(el => el.onclick = () => openCardModal(el.dataset.card));
+}
+
+/* ---------- packs ---------- */
+function renderPacks(body){
+  const s = cdState, st = s.settings;
+  const pack = (k, name, emo, desc, price, can, color) => `<div class="card pk-card" style="--pc:${color}">
+      <div class="pk-art"><span>${emo}</span></div><h3>${name}</h3><p class="muted">${desc}</p>
+      <button class="btn${can ? "" : " ghost"}" data-pack="${k}" ${can ? "" : "disabled"}>${price}</button></div>`;
+  body.innerHTML = `<div class="pk-grid">
+    ${pack("daily", "Daily Supply Drop", "📦", "3 cards — commons and uncommons. Free once a day (resets midnight ET). +10 XP.", s.daily_ready ? "Open free" : "Come back tomorrow", s.daily_ready, "#4ade80")}
+    ${pack("outbreak", "Outbreak Pack", "🧟", "5 cards — 3 common, 1 uncommon or better, 1 rare or better (5% legendary).", s.pack_credits ? `Open free (${s.pack_credits} left)` : `Open · 🪙 ${st.outbreak_cost}`, true, "#ff7a1a")}
+    ${pack("elite", "Elite Pack", "👑", "5 cards — 2 uncommon+, 2 rare+, 1 guaranteed epic or legendary (20% legendary).", `Open · 🪙 ${st.elite_cost}`, true, "#fbbf24")}
+  </div>
+  <div class="wh-rule" style="margin-top:16px">Packs are free or bought with AFtokens, which are earned by playing — never with real money. Cards can't be sold or cashed out.</div>
+  <div id="pk-open"></div>`;
+  body.querySelectorAll("[data-pack]").forEach(b => b.onclick = async () => {
+    if (cdBusy) return; cdBusy = true; b.disabled = true; b.textContent = "Opening…";
+    const { data, error } = await sb.rpc("open_pack", { p_kind: b.dataset.pack });
+    cdBusy = false;
+    if (error) { toast(error.message.replace(/^.*?:\s*/, "")); renderPacks(body); return; }
+    await loadCardState();
+    showPackOpen(data, () => renderCardsPage());
+  });
+}
+function showPackOpen(r, done){
+  const order = [...r.cards].sort((a, b) => Object.keys(RARITY).indexOf(cdById[a]?.rarity) - Object.keys(RARITY).indexOf(cdById[b]?.rarity));
+  const isNew = new Set(r.new || []);
+  openModal(`<div class="pk-reveal"><h3>Tap a card to flip it</h3>
+    <div class="pk-row">${order.map((id, i) => `<div class="flip" data-i="${i}"><div class="flip-in"><div class="flip-back"><span>AF</span></div><div class="flip-front">${cardHTML(cdById[id], { size: "md", badge: isNew.has(id) ? "NEW" : "" })}</div></div></div>`).join("")}</div>
+    <div class="row" style="justify-content:center;margin-top:16px"><button class="btn ghost" id="pk-all">Flip all</button><button class="btn" id="pk-done">Done</button></div></div>`);
+  const m = $("#ui-modal"); m.querySelector(".modal-card").classList.add("wide");
+  const flip = el => { if (el.classList.contains("on")) return; el.classList.add("on"); const c = cdById[order[+el.dataset.i]]; if (c && ["epic", "legendary"].includes(c.rarity)) { el.classList.add("big"); tick(1.6); setTimeout(() => tick(2), 90); } else tick(1.2); };
+  m.querySelectorAll(".flip").forEach(el => el.onclick = () => flip(el));
+  $("#pk-all").onclick = () => m.querySelectorAll(".flip").forEach((el, i) => setTimeout(() => flip(el), i * 180));
+  $("#pk-done").onclick = () => { closeModal(); done(); };
+}
+
+/* ---------- decks ---------- */
+function renderDecks(body){
+  const s = cdState;
+  body.innerHTML = `<div class="dk-list">${s.decks.map(d => `<div class="card dk-item"><div><b>${esc(d.name)}</b><div class="muted" style="font-size:.88rem">${d.cards.length} cards · power ${d.power} · ${d.cards.filter(id => isFighter(cdById[id])).length} fighters</div>
+      <div class="dk-peek">${[...new Set(d.cards)].slice(0, 8).map(id => `<span title="${esc(cdById[id]?.name || "")}">${esc(cdById[id]?.emoji || "🃏")}</span>`).join("")}</div></div>
+      <div class="row" style="gap:6px"><button class="btn sm ghost" data-dk-edit="${d.id}">Edit</button><button class="btn sm ghost" data-dk-del="${d.id}">Delete</button></div></div>`).join("") || `<p class="muted">No decks yet.</p>`}</div>
+    ${s.decks.length < 5 ? `<button class="btn" id="dk-new" style="margin-top:12px">+ New deck</button>` : ""}`;
+  if ($("#dk-new")) $("#dk-new").onclick = () => openDeckEditor(null);
+  body.querySelectorAll("[data-dk-edit]").forEach(b => b.onclick = () => openDeckEditor(s.decks.find(d => d.id === +b.dataset.dkEdit)));
+  body.querySelectorAll("[data-dk-del]").forEach(b => b.onclick = async () => {
+    if (!(await confirmModal("Delete this deck?", "Your cards stay in your collection."))) return;
+    await sb.rpc("delete_deck", { p_id: +b.dataset.dkDel }); renderCardsPage();
+  });
+}
+function openDeckEditor(deck){
+  let cards = deck ? [...deck.cards] : [], name = deck?.name || "My deck", q = "";
+  const body = $("#cd-body");
+  const lim = c => c.rarity === "legendary" ? 1 : 2;
+  const draw = () => {
+    const counts = {}; cards.forEach(id => counts[id] = (counts[id] || 0) + 1);
+    const fighters = cards.filter(id => isFighter(cdById[id])).length;
+    const power = cards.reduce((a, id) => { const c = cdById[id]; return a + ({ common: 10, uncommon: 20, rare: 30, epic: 45, legendary: 60 }[c.rarity]) + c.cost * 5; }, 0);
+    const pool = cdCards.filter(c => ownedN(c.id) && (!q || c.name.toLowerCase().includes(q)));
+    const curve = [0, 1, 2, 3, 4, 5, 6].map(n => cards.filter(id => Math.min(6, cdById[id].cost) === n).length);
+    body.innerHTML = `<div class="dk-ed">
+      <div class="card dk-pool"><div class="row" style="justify-content:space-between"><h3 style="margin:0">Your cards</h3><input class="ms-search" id="dk-q" type="search" placeholder="Search" value="${esc(q)}" style="max-width:200px"></div>
+        <p class="muted" style="font-size:.85rem;margin:6px 0 10px">Tap a card to add it.</p>
+        <div class="tc-grid sm">${pool.map(c => { const left = Math.min(ownedN(c.id), lim(c)) - (counts[c.id] || 0); return cardHTML(c, { size: "sm", cls: left > 0 ? "" : "used", badge: `${counts[c.id] || 0}/${Math.min(ownedN(c.id), lim(c))}`, attrs: `data-add="${c.id}"` }); }).join("")}</div></div>
+      <div class="card dk-side">
+        <div class="field" style="margin-bottom:10px"><label for="dk-name">Deck name</label><input id="dk-name" maxlength="30" value="${esc(name)}"></div>
+        <div class="dk-stats"><span class="${cards.length === 20 ? "ok" : ""}">${cards.length}/20 cards</span><span class="${fighters >= 6 ? "ok" : ""}">${fighters} fighters (min 6)</span><span>Power ${power}</span></div>
+        <div class="dk-curve" title="Supply curve">${curve.map((n, i) => `<div><i style="height:${Math.min(100, n * 14)}%"></i><small>${i === 6 ? "6+" : i}</small></div>`).join("")}</div>
+        <div class="dk-rows">${Object.keys(counts).sort((a, b) => cdById[a].cost - cdById[b].cost || cdById[a].name.localeCompare(cdById[b].name)).map(id => { const c = cdById[id]; return `<button type="button" class="dk-row" data-rm="${id}" style="--rc:${rar(c.rarity).color};--tc:${CT[c.type].color}"><span class="dk-cost">${c.cost}</span><span class="dk-nm">${esc(c.emoji || "")} ${esc(c.name)}</span><b>×${counts[id]}</b></button>`; }).join("") || `<p class="muted" style="font-size:.9rem">Empty — add 20 cards.</p>`}</div>
+        <div class="row" style="margin-top:12px"><button class="btn" id="dk-save">Save deck</button><button class="btn ghost" id="dk-cancel">Cancel</button>${!deck ? `<button class="btn ghost sm" id="dk-auto">Auto-fill</button>` : ""}</div>
+        <div id="dk-msg"></div></div></div>`;
+    $("#dk-q").oninput = e => { q = e.target.value.trim().toLowerCase(); draw(); setTimeout(() => { const i = $("#dk-q"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 0); };
+    $("#dk-name").oninput = e => name = e.target.value;
+    body.querySelectorAll("[data-add]").forEach(el => el.onclick = () => {
+      const c = cdById[el.dataset.add];
+      if (cards.length >= 20) return toast("Deck is full (20)");
+      if ((counts[c.id] || 0) >= Math.min(ownedN(c.id), lim(c))) return toast(ownedN(c.id) < lim(c) ? "You don't own more copies" : `Max ${lim(c)} of this card`);
+      cards.push(c.id); draw();
+    });
+    body.querySelectorAll("[data-rm]").forEach(el => el.onclick = () => { const i = cards.lastIndexOf(el.dataset.rm); if (i >= 0) cards.splice(i, 1); draw(); });
+    $("#dk-cancel").onclick = () => renderCardsPage();
+    if ($("#dk-auto")) $("#dk-auto").onclick = () => {
+      const pool2 = cdCards.filter(c => ownedN(c.id)).sort((a, b) => Object.keys(RARITY).indexOf(b.rarity) - Object.keys(RARITY).indexOf(a.rarity) || a.cost - b.cost);
+      const want = (filter, n) => { for (const c of pool2.filter(filter)) { while (cards.length < 20 && n > 0 && cards.filter(x => x === c.id).length < Math.min(ownedN(c.id), lim(c))) { cards.push(c.id); n--; } } };
+      cards = []; want(isFighter, 13); want(c => !isFighter(c), 20); want(() => true, 20); draw();
+    };
+    $("#dk-save").onclick = async () => {
+      const { error } = await sb.rpc("save_deck", { p_id: deck?.id || null, p_name: name.trim(), p_cards: cards });
+      if (error) { $("#dk-msg").innerHTML = `<p class="msg err">${esc(error.message.replace(/^.*?:\s*/, ""))}</p>`; return; }
+      toast("Deck saved"); renderCardsPage();
+    };
+  };
+  draw();
+}
+
+/* ---------- battle hub ---------- */
+function deckPicker(id = "bt-deck"){
+  const d = cdState.decks;
+  return d.length ? `<select id="${id}" class="bt-select">${d.map(x => `<option value="${x.id}"${x.id === cdDeckSel ? " selected" : ""}>${esc(x.name)} · power ${x.power}</option>`).join("")}</select>` : "";
+}
+async function renderBattleHub(body){
+  if (!cdState.decks.length) { body.innerHTML = `<div class="kf-empty">Build a deck first (or claim your starter deck above).</div>`; return; }
+  body.innerHTML = `<div class="bt-hub">
+    <div class="card bt-start">
+      <h3 style="margin-top:0">Pick your deck</h3>${deckPicker()}
+      <div class="bt-modes">
+        <button class="bt-mode" data-mode="ai"><span>🤖</span><b>Battle the bot</b><small>Turn by turn. The bot's deck matches yours.</small></button>
+        <button class="bt-mode" data-mode="quick"><span>⚡</span><b>Quick battle</b><small>Instant result vs a deck with similar power.</small></button>
+        <button class="bt-mode" data-mode="pvp"><span>🎯</span><b>Challenge a player</b><small>Live, turn by turn. They get a notification.</small></button>
+      </div>
+      <div id="bt-pvp-pick" hidden style="margin-top:12px"></div>
+    </div>
+    <div class="card"><h3 style="margin-top:0">Your battles</h3><div id="bt-list"><p class="muted">Loading…</p></div></div>
+    <div class="card"><h3 style="margin-top:0">🏆 Top players</h3><div id="bt-lb"><p class="muted">Loading…</p></div></div>
+  </div>`;
+  $("#bt-deck").onchange = e => cdDeckSel = +e.target.value;
+  body.querySelectorAll("[data-mode]").forEach(b => b.onclick = async () => {
+    const deck = +$("#bt-deck").value; cdDeckSel = deck;
+    if (b.dataset.mode === "pvp") {
+      const box = $("#bt-pvp-pick"); box.hidden = false;
+      memberPicker(box, m => challengePlayer(m.id, deck), "Who do you want to battle?");
+      box.querySelector("input").focus(); return;
+    }
+    if (cdBusy) return; cdBusy = true; b.classList.add("busy");
+    const { data, error } = await sb.rpc(b.dataset.mode === "ai" ? "start_ai_battle" : "quick_battle", { p_deck: deck });
+    cdBusy = false; b.classList.remove("busy");
+    if (error) return toast(error.message.replace(/^.*?:\s*/, ""));
+    if (b.dataset.mode === "quick") return showQuickResult(data);
+    openBattle(data);
+  });
+  const [mb, lb] = await Promise.all([sb.rpc("my_battles"), sb.from("card_leaderboard").select("*").limit(10)]);
+  const L = mb.data || [];
+  const mode = { ai: "🤖 Bot", quick: "⚡ Quick", pvp: "🎯 Player" };
+  $("#bt-list").innerHTML = L.length ? `<ul class="wh-list">${L.map(b => {
+    const res = b.status === "over" ? (b.draw ? "Draw" : b.winner === b.me ? "<span class='amt-pos'>Won</span>" : "<span class='amt-neg'>Lost</span>") : "";
+    let act = "";
+    if (b.status === "pending" && b.me === 1) act = `<button class="btn sm" data-acc="${b.id}">Accept</button><button class="btn sm ghost" data-dec="${b.id}">Decline</button>`;
+    else if (b.status === "pending") act = `<span class="muted" style="font-size:.85rem">Waiting…</span><button class="btn sm ghost" data-cancel="${b.id}">Cancel</button>`;
+    else if (b.status === "active") act = `<button class="btn sm" data-open="${b.id}">${b.mode === "pvp" ? (b.my_turn ? "Your turn!" : "Watch") : "Resume"}</button>`;
+    else if (b.mode !== "quick") act = `<button class="btn sm ghost" data-open="${b.id}">Log</button>`;
+    return `<li><div><b>${mode[b.mode]} vs ${esc(b.opponent || "Bot")}</b><small>${b.status === "pending" ? (b.me === 1 ? "challenged you" : "challenge sent") : b.status === "active" ? "in progress" : esc(b.status)} · ${ago(b.created_at)}${b.rewards && b.rewards[b.me] ? ` · +${b.rewards[b.me]} XP` : ""}</small></div><span class="row" style="gap:6px;flex-wrap:nowrap">${res}${act}</span></li>`;
+  }).join("")}</ul>` : `<p class="muted" style="margin:0">No battles yet. Pick a mode above!</p>`;
+  const LB = lb.data || [];
+  $("#bt-lb").innerHTML = LB.length ? `<ol class="bt-lb">${LB.map(p => `<li data-profile="${esc(p.user_id)}">${avatar({ name: p.name, avatar_url: p.avatar_url }, 30)}<span class="lb-nm"><b>${esc(p.name)}</b><small>Lv ${p.level} ${esc(p.title)} · ${p.wins}W ${p.losses}L</small></span><em>${p.xp.toLocaleString()} XP</em></li>`).join("")}</ol>` : `<p class="muted" style="margin:0">No one yet.</p>`;
+  body.querySelectorAll("[data-open]").forEach(b => b.onclick = async () => { const { data, error } = await sb.rpc("get_battle", { p_battle: +b.dataset.open }); if (error) return toast(error.message); data.status === "over" ? showBattleLog(data) : openBattle(data); });
+  body.querySelectorAll("[data-acc]").forEach(b => b.onclick = () => acceptChallenge(+b.dataset.acc));
+  body.querySelectorAll("[data-dec]").forEach(b => b.onclick = async () => { await sb.rpc("respond_challenge", { p_battle: +b.dataset.dec, p_accept: false }); toast("Declined"); renderCardsPage(); });
+  body.querySelectorAll("[data-cancel]").forEach(b => b.onclick = async () => { await sb.rpc("cancel_challenge", { p_battle: +b.dataset.cancel }); renderCardsPage(); });
+}
+async function challengePlayer(targetId, deckId){
+  if (!deckId) {
+    await loadCardDefs(); await loadCardState();
+    if (!cdState.decks.length) { toast("Build a deck first in Arcade → Cards"); location.hash = "#cards"; return; }
+    openModal(`<h3>Challenge to a card battle</h3><p class="muted">Pick the deck you'll use.</p>${deckPicker("ch-deck")}<div class="row" style="margin-top:14px"><button class="btn" id="ch-go">Send challenge</button><button class="btn ghost" id="ch-x">Cancel</button></div>`);
+    $("#ch-x").onclick = closeModal;
+    $("#ch-go").onclick = () => { const d = +$("#ch-deck").value; closeModal(); challengePlayer(targetId, d); };
+    return;
+  }
+  const { error } = await sb.rpc("challenge_player", { p_target: targetId, p_deck: deckId });
+  if (error) return toast(error.message.replace(/^.*?:\s*/, ""));
+  toast("Challenge sent! You'll get a notification when they answer.");
+  if (location.hash === "#cards") renderCardsPage();
+}
+async function acceptChallenge(id){
+  openModal(`<h3>Accept the challenge</h3><p class="muted">Pick the deck you'll use.</p>${deckPicker("ac-deck")}<div class="row" style="margin-top:14px"><button class="btn" id="ac-go">Battle!</button><button class="btn ghost" id="ac-x">Cancel</button></div><div id="ac-msg"></div>`);
+  $("#ac-x").onclick = closeModal;
+  $("#ac-go").onclick = async () => {
+    const { data, error } = await sb.rpc("respond_challenge", { p_battle: id, p_accept: true, p_deck: +$("#ac-deck").value });
+    if (error) { $("#ac-msg").innerHTML = `<p class="msg err">${esc(error.message.replace(/^.*?:\s*/, ""))}</p>`; return; }
+    closeModal(); openBattle(data);
+  };
+}
+function showQuickResult(v){
+  const won = v.winner === v.me, s = v.state, me = s.p[v.me], op = s.p[1 - v.me];
+  openModal(`<div class="wh-win"><div style="font-size:2.6rem">${v.draw ? "🤝" : won ? "🏆" : "💀"}</div>
+    <div class="big">${v.draw ? "Draw" : won ? "Victory!" : "Defeat"}</div>
+    <p class="muted">vs ${esc(op.name)} · ${me.kos}–${op.kos} knock-outs · ${s.turn} turns${v.rewards?.[v.me] ? ` · <b style="color:var(--ok)">+${v.rewards[v.me]} XP</b>` : ""}</p>
+    <div class="bt-log modal-log">${s.log.map(l => `<div>${esc(l.m)}</div>`).join("")}</div>
+    <div class="row" style="justify-content:center;margin-top:12px"><button class="btn" id="qr-again">Again</button><button class="btn ghost" id="qr-x">Close</button></div></div>`);
+  $("#qr-x").onclick = () => { closeModal(); renderCardsPage(); };
+  $("#qr-again").onclick = async () => { closeModal(); const { data, error } = await sb.rpc("quick_battle", { p_deck: cdDeckSel }); if (error) return toast(error.message); showQuickResult(data); };
+}
+function showBattleLog(v){
+  openModal(`<h3>Battle log</h3><div class="bt-log modal-log">${(v.state?.log || []).map(l => `<div>${esc(l.m)}</div>`).join("")}</div><button class="btn" id="bl-x" style="margin-top:12px">Close</button>`);
+  $("#bl-x").onclick = closeModal;
+}
+
+/* ---------- live battle board ---------- */
+function openBattle(v){
+  cdBattle = v; cdSel = null; cdTab = "battle";
+  if (location.hash !== "#cards") location.hash = "#cards"; else renderBattleBoard();
+  setTimeout(() => { const r = $("#cards-root"); if (r) window.scrollTo(0, r.getBoundingClientRect().top + window.scrollY - 76); }, 50);
+  if (cdChan) { sb.removeChannel(cdChan); cdChan = null; }
+  if (v.mode === "pvp") {
+    cdChan = sb.channel("battle-" + v.id)
+      .on("postgres_changes", { event: "*", schema: "public", table: "battle_pings", filter: `battle_id=eq.${v.id}` }, async () => {
+        const { data } = await sb.rpc("get_battle", { p_battle: v.id });
+        if (data && cdBattle && cdBattle.id === data.id) { cdBattle = data; if (location.hash === "#cards") renderBattleBoard(); }
+      }).subscribe();
+  }
+}
+function closeBattle(){
+  if (cdChan) { sb.removeChannel(cdChan); cdChan = null; }
+  clearInterval(cdTimer); cdBattle = null; cdSel = null; renderCardsPage();
+}
+function fighterView(f, s, side){
+  const horde = (f.abil || []).includes("horde") ? s.p[side].board.filter(x => x.id !== f.id && x.t === "infected").length : 0;
+  return { ...f, atkNow: f.atk + (f.tmp || 0) + horde };
+}
+const canAttack = f => !f.sick && f.att < 1 + ((f.abil || []).includes("double") ? 1 : 0);
+function renderBattleBoard(){
+  const box = $("#cards-root"), v = cdBattle; if (!box || !v) return;
+  const s = v.state, me = v.me, op = 1 - me, P = s.p[me], O = s.p[op], myTurn = s.active === me && !s.over && v.status === "active";
+  const needs = cdSel?.need;
+  const kos = n => `<span class="bt-kos">${[0, 1, 2].map(i => `<i class="${i < n ? "on" : ""}">☠</i>`).join("")}</span>`;
+  const fcard = (f, side) => {
+    const c = cdById[f.card], fv = fighterView(f, s, side);
+    const tags = [f.veh ? (cdById[f.veh]?.emoji || "🚙") : "", f.dodge ? "💨" : "", (f.abil || []).includes("guard") ? "🛡️" : "", f.sick && side === me && myTurn ? "💤" : ""].filter(Boolean).join(" ");
+    let cls = "";
+    if (side === me && myTurn && canAttack(f) && !needs) cls = "ready";
+    if (cdSel?.attacker === f.id) cls = "sel";
+    if (needs === "enemy" && side === op) cls = "target";
+    if (needs === "ally" && side === me) cls = "target";
+    if (cdSel?.attacker && side === op) {
+      const guards = O.board.some(x => (x.abil || []).includes("guard"));
+      if (!guards || (f.abil || []).includes("guard")) cls = "target";
+    }
+    return `<div class="bt-f" data-f="${f.id}" data-side="${side}">${cardHTML(c, { size: "sm", fighter: fv, cls })}${tags ? `<div class="bt-tags">${tags}</div>` : ""}</div>`;
+  };
+  const hand = P.hand.map((id, i) => {
+    const c = cdById[id], ab = (c.abilities || []).join(",");
+    const playable = myTurn && c.cost <= P.sup && (isFighter(c) ? P.board.length < 3
+      : c.type === "vehicle" ? P.board.some(f => !f.veh)
+      : /(^|,)(heal|maxhp|atk_turn|refresh)/.test(ab) ? P.board.length > 0
+      : /revive/.test(ab) ? P.grave.some(g => isFighter(cdById[g])) : true);
+    return `<div class="bt-h${cdSel?.hand === i ? " sel" : ""}${playable ? "" : " dim"}" data-h="${i}">${cardHTML(c, { size: "sm", rules: true })}</div>`;
+  }).join("");
+  const title = v.mode === "ai" ? "vs the bot" : v.mode === "pvp" ? "Player battle" : "Quick battle";
+  box.innerHTML = `<div class="bt-board">
+    <div class="bt-bar"><button class="btn ghost sm" id="bt-back">← Leave</button><b>${title}</b><span class="bt-turn">${s.over ? "Battle over" : myTurn ? "Your turn" : `${esc(O.name)}'s turn`} · turn ${s.turn}</span><span id="bt-clock"></span><button class="btn ghost sm" id="bt-help">?</button></div>
+    <div class="bt-side op">
+      <div class="bt-who"><b>${esc(O.name)}</b>${kos(O.kos)}<span>⚡ ${O.sup}/${O.maxsup}</span><span>✋ ${O.hand_n ?? O.hand.length}</span><span>🂠 ${O.deck_n}</span></div>
+      <div class="bt-row">${O.board.map(f => fcard(f, op)).join("") || `<div class="bt-empty${cdSel?.attacker ? " target" : ""}" id="bt-camp">${cdSel?.attacker ? "🏕️ Raid their camp!" : "No fighters"}</div>`}</div>
+    </div>
+    <div class="bt-mid"><div class="bt-log" id="bt-log">${s.log.slice(-6).map(l => `<div>${esc(l.m)}</div>`).join("")}</div>
+      <div class="bt-hint">${s.over ? "" : !myTurn ? "Waiting for the other side…" : needs === "enemy" ? "Pick an enemy fighter to target" : needs === "ally" ? "Pick one of your fighters" : cdSel?.attacker ? "Pick a target to attack (Guard 🛡️ first)" : "Play cards from your hand, tap a glowing fighter to attack, then end your turn."}</div></div>
+    <div class="bt-side me">
+      <div class="bt-row">${P.board.map(f => fcard(f, me)).join("") || `<div class="bt-empty">Play a fighter</div>`}</div>
+      <div class="bt-who"><b>${esc(P.name)} (you)</b>${kos(P.kos)}<span class="bt-sup">⚡ ${P.sup}/${P.maxsup} Supply</span><span>🂠 ${P.deck_n}</span>
+        ${myTurn ? `${cdSel ? `<button class="btn ghost sm" id="bt-cancel">Cancel</button>` : ""}<button class="btn sm" id="bt-end">End turn</button>` : ""}
+        ${!s.over && v.status === "active" ? `<button class="btn ghost sm" id="bt-ff">Surrender</button>` : ""}</div>
+      <div class="bt-hand">${hand || `<span class="muted">No cards in hand</span>`}</div>
+    </div></div>`;
+  $("#bt-log").scrollTop = 1e6;
+  $("#bt-back").onclick = closeBattle;
+  $("#bt-help").onclick = cardsHowTo;
+  if ($("#bt-cancel")) $("#bt-cancel").onclick = () => { cdSel = null; renderBattleBoard(); };
+  if ($("#bt-end")) $("#bt-end").onclick = () => battleAct({ type: "end" });
+  if ($("#bt-ff")) $("#bt-ff").onclick = async () => {
+    if (!(await confirmModal("Surrender?", "This counts as a loss.", "Surrender"))) return;
+    const { data, error } = await sb.rpc("forfeit_battle", { p_battle: v.id });
+    if (error) return toast(error.message); cdBattle = data; renderBattleBoard();
+  };
+  box.querySelectorAll("[data-h]").forEach(el => el.onclick = () => {
+    if (!myTurn) return;
+    const i = +el.dataset.h, c = cdById[P.hand[i]], ab = (c.abilities || []).join(",");
+    if (c.cost > P.sup) return toast(`Needs ${c.cost} Supply`);
+    if (isFighter(c)) {
+      if (P.board.length >= 3) return toast("You already have 3 fighters out");
+      if (/onplay_dmg/.test(ab) && O.board.length > 1) { cdSel = { hand: i, need: "enemy" }; return renderBattleBoard(); }
+      return battleAct({ type: "play", hand: i });
+    }
+    const needAlly = c.type === "vehicle" || /(^|,)(heal|maxhp|atk_turn|refresh)/.test(ab);
+    const pool = c.type === "vehicle" ? P.board.filter(f => !f.veh) : P.board;
+    if (needAlly) {
+      if (!pool.length) return toast(c.type === "vehicle" ? "You need a fighter without a vehicle" : "You need a fighter on the board");
+      if (pool.length === 1) return battleAct({ type: "play", hand: i, target: pool[0].id });
+      cdSel = { hand: i, need: "ally" }; return renderBattleBoard();
+    }
+    battleAct({ type: "play", hand: i });
+  });
+  box.querySelectorAll("[data-f]").forEach(el => el.onclick = () => {
+    if (!myTurn) return openCardModal(([...P.board, ...O.board].find(x => x.id === el.dataset.f) || {}).card);
+    const id = el.dataset.f, side = +el.dataset.side;
+    if (cdSel?.need === "enemy" && side === op) return battleAct({ type: "play", hand: cdSel.hand, target: id });
+    if (cdSel?.need === "ally" && side === me) return battleAct({ type: "play", hand: cdSel.hand, target: id });
+    if (cdSel?.attacker && side === op) return battleAct({ type: "attack", from: cdSel.attacker, to: id });
+    if (side === op) return openCardModal((O.board.find(x => x.id === id) || {}).card);
+    if (side === me) {
+      const f = P.board.find(x => x.id === id);
+      if (!canAttack(f)) return toast(f.sick ? "Just arrived — it can attack next turn" : "Already attacked this turn");
+      cdSel = cdSel?.attacker === id ? null : { attacker: id }; renderBattleBoard();
+    }
+  });
+  if ($("#bt-camp")) $("#bt-camp").onclick = () => { if (cdSel?.attacker) battleAct({ type: "attack", from: cdSel.attacker, to: "camp" }); };
+  // PvP clock
+  clearInterval(cdTimer);
+  if (v.mode === "pvp" && v.status === "active" && v.deadline) {
+    const skew = Date.now() - new Date(v.now).getTime();
+    const tickClock = () => {
+      const el = $("#bt-clock"); if (!el || cdBattle !== v) return clearInterval(cdTimer);
+      const left = Math.round((new Date(v.deadline).getTime() + skew - Date.now()) / 1000);
+      if (left > 0) el.innerHTML = `⏱ ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+      else el.innerHTML = myTurn ? `<span class="amt-neg">Time's up</span>` : `<button class="btn sm" id="bt-claim">Claim win (time out)</button>`;
+      if ($("#bt-claim")) $("#bt-claim").onclick = async () => { const { data, error } = await sb.rpc("claim_timeout", { p_battle: v.id }); if (error) return toast(error.message.replace(/^.*?:\s*/, "")); cdBattle = data; renderBattleBoard(); };
+    };
+    tickClock(); cdTimer = setInterval(tickClock, 1000);
+  }
+  if (s.over || v.status === "over") showBattleOver(v);
+}
+async function battleAct(act){
+  if (cdBusy || !cdBattle) return; cdBusy = true;
+  const { data, error } = await sb.rpc("battle_action", { p_battle: cdBattle.id, p_act: act });
+  cdBusy = false; cdSel = null;
+  if (error) { toast(error.message.replace(/^.*?:\s*/, "")); renderBattleBoard(); return; }
+  cdBattle = data; tick(1.1); renderBattleBoard();
+}
+function showBattleOver(v){
+  if ($("#ui-modal").classList.contains("open")) return;
+  const won = v.winner === v.me, xp = v.rewards?.[v.me];
+  openModal(`<div class="wh-win"><div style="font-size:2.8rem">${v.draw ? "🤝" : won ? "🏆" : "💀"}</div><div class="big">${v.draw ? "Draw" : won ? "Victory!" : "Defeat"}</div>
+    <p class="muted">${xp ? `<b style="color:var(--ok)">+${xp} XP</b>` : "No XP this time (daily bot limit reached)"}</p>
+    <div class="row" style="justify-content:center">${v.mode === "ai" ? `<button class="btn" id="bo-again">Play again</button>` : ""}<button class="btn ghost" id="bo-x">Back to Cards</button></div></div>`);
+  $("#bo-x").onclick = () => { closeModal(); closeBattle(); };
+  if ($("#bo-again")) $("#bo-again").onclick = async () => { closeModal(); const { data, error } = await sb.rpc("start_ai_battle", { p_deck: cdDeckSel }); if (error) return toast(error.message.replace(/^.*?:\s*/, "")); openBattle(data); };
+}
+
+/* ---------- levels everywhere (Members list, profile cards) ---------- */
+const levelCache = new Map();
+async function loadLevels(ids){
+  if (!sb) return;
+  const need = ids ? [...new Set(ids.filter(id => id && !levelCache.has(id)))] : null;
+  if (need && !need.length) return;
+  let q = sb.from("player_levels").select("user_id,level,title,wins,losses");
+  if (need) q = q.in("user_id", need); else q = q.limit(2000);
+  const { data } = await q;
+  (data || []).forEach(l => levelCache.set(l.user_id, l));
+  (need || []).forEach(id => { if (!levelCache.has(id)) levelCache.set(id, null); });
+}
+
 /* ---------- home hero: server status panel ---------- */
 function renderHeroPanel(){
   const box = $("#hero-servers"); if (!box) return;
@@ -3391,11 +3991,13 @@ async function loadAllMembers(force = false){
   const { data, error } = await sb.from("members").select("*").order("created_at", { ascending: true }).limit(2000);
   if (error) throw error;
   allMembers = data || []; allMembersAt = Date.now();
+  try { await loadLevels(); } catch {}
   allMembers.forEach(m => memberCache.set(m.id, m));
   return allMembers;
 }
 async function getMember(id){
   if (!memberCache.has(id) || memberCache.get(id).discord_username === undefined) { memberCache.delete(id); await loadMembers([id]); }
+  try { levelCache.delete(id); await loadLevels([id]); } catch {}
   return mem(id);
 }
 
@@ -3426,7 +4028,7 @@ function memberRow(m){
   const col = nameColor(m), sub = m.status_text || m.status_emoji ? `${esc(m.status_emoji || "")} ${esc(m.status_text || "")}` : m.faction_name ? `${esc(m.faction_name)}${m.faction_rank ? " · " + esc(m.faction_rank) : ""}` : "";
   return `<button type="button" class="mrow${isOnline(m.id) ? "" : " off"}${memSelected === m.id ? " sel" : ""}" data-mid="${esc(m.id)}">
     ${avatarDot(m, 34)}
-    <span class="mrow-txt"><span class="mrow-name"${col ? ` style="color:${col}"` : ""}>${esc(m.name)}${m.is_legend && !m.is_admin ? ` <span title="AF Legend">★</span>` : ""}</span>${sub ? `<small>${sub}</small>` : ""}</span>
+    <span class="mrow-txt"><span class="mrow-name"${col ? ` style="color:${col}"` : ""}>${levelCache.get(m.id) ? `<em class="lv">${levelCache.get(m.id).level}</em>` : ""}${esc(m.name)}${m.is_legend && !m.is_admin ? ` <span title="AF Legend">★</span>` : ""}</span>${sub ? `<small>${sub}</small>` : ""}</span>
   </button>`;
 }
 async function renderMemberSide(sel, compact = false){
@@ -3475,7 +4077,8 @@ function profileCardHTML(m, opts = {}){
   const badges = [
     m.is_admin ? `<span class="pbadge staff">🛡️ AF Staff</span>` : "",
     m.is_legend ? `<span class="pbadge legend">★ AF Legend</span>` : "",
-    m.faction_name ? `<span class="pbadge" style="--fc:${hexOk(m.faction_color) || "#a1a1aa"}"><i></i>${esc(m.faction_name)}${m.faction_rank ? ` · ${esc(m.faction_rank)}` : ""}</span>` : ""
+    m.faction_name ? `<span class="pbadge" style="--fc:${hexOk(m.faction_color) || "#a1a1aa"}"><i></i>${esc(m.faction_name)}${m.faction_rank ? ` · ${esc(m.faction_rank)}` : ""}</span>` : "",
+    !opts.preview && levelCache.get(m.id) ? `<span class="pbadge lvb">⭐ Lv ${levelCache.get(m.id).level} · ${esc(levelCache.get(m.id).title)}</span>` : ""
   ].join("");
   const links = [
     m.twitch ? `<a class="plinkbtn tw" href="https://twitch.tv/${esc(m.twitch)}" target="_blank" rel="noopener nofollow">Twitch</a>` : "",
@@ -3503,7 +4106,7 @@ function profileCardHTML(m, opts = {}){
       ${facts.length ? `<div class="pc-facts">${facts.map(([k, v]) => `<div><small>${k}</small><b>${v}</b></div>`).join("")}</div>` : ""}
       ${links ? `<div class="pc-links">${links}</div>` : ""}
       ${opts.preview ? "" : `<div class="row pc-actions">
-        ${mine ? `<a class="btn sm" href="#account" data-close>Edit profile</a>` : user ? `<button class="btn sm" data-msg="${esc(m.id)}">Message</button>` : `<a class="btn sm" href="#account" data-close>Sign in to message</a>`}
+        ${mine ? `<a class="btn sm" href="#account" data-close>Edit profile</a>` : user ? `<button class="btn sm" data-msg="${esc(m.id)}">Message</button><button class="btn ghost sm" data-duel="${esc(m.id)}">🃏 Card battle</button>` : `<a class="btn sm" href="#account" data-close>Sign in to message</a>`}
         ${m.faction_id ? `<a class="btn ghost sm" href="factions.html">View faction</a>` : ""}
       </div>`}
     </div>
@@ -3511,6 +4114,7 @@ function profileCardHTML(m, opts = {}){
 }
 function bindCard(root){
   root.querySelectorAll("[data-msg]").forEach(b => b.onclick = () => { closeModal(); startDm(b.dataset.msg); });
+  root.querySelectorAll("[data-duel]").forEach(b => b.onclick = () => { closeModal(); challengePlayer(b.dataset.duel); });
   root.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", closeModal));
 }
 async function openProfile(id){
@@ -3721,10 +4325,10 @@ async function mountProfileEditor(p){
 
 startPresence();
 
-const views = ["crates","members","home","servers","rules","legends","wheel","feed","inbox","support","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id), ...CONFIG.servers.map(s => "server-" + s.key)];
+const views = ["cards","crates","members","home","servers","rules","legends","wheel","feed","inbox","support","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id), ...CONFIG.servers.map(s => "server-" + s.key)];
 function route(){
   const v = views.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
-  const section = v.startsWith("live-") ? "live" : v.startsWith("server-") ? "servers" : v === "crates" ? "wheel" : v;
+  const section = v.startsWith("live-") ? "live" : v.startsWith("server-") ? "servers" : v === "crates" || v === "cards" ? "wheel" : v;
   $$(".view").forEach(el => el.classList.toggle("active", el.id === "v-"+section));
   $$(".nav a[data-v]").forEach(a => a.classList.toggle("active", a.dataset.v === section));
   $$(".subview").forEach(el => el.classList.toggle("active", el.id === "sv-"+v));
@@ -3738,6 +4342,7 @@ function route(){
   if (v === "inbox") renderInbox();
   if (v === "wheel") { renderWheel(); startDrops(); }
   if (v === "crates") { renderCrates(); startDrops(); }
+  if (v === "cards") { renderCardsPage(); startDrops(); }
   if (v === "live-killfeed") startKillfeed();
   if (v === "live-wipes") startWipes();
   if (v === "live-leaderboard") startLeaderboard();
