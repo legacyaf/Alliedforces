@@ -1082,7 +1082,7 @@
         <div class="card hl" style="grid-column:span 2">
           <span class="tag ok">Early access</span>
           <h3>AF Weapons Pack</h3>
-          <div class="price">$25 <span class="muted" style="font-size:1rem">per server · one-time</span></div>
+          <div class="price">Free <span class="muted" style="font-size:1rem">during early access · one licence per server</span></div>
           <p class="muted">Original Allied Forces weapons for DayZ. The pack currently has one rifle, with more planned.</p>
           <ul class="clean">
             <li><b>AF-7 "Vanguard"</b> — an original 5.56×45mm assault rifle with its own model and textures.</li>
@@ -1091,7 +1091,7 @@
             <li>Uses the vanilla M4 animations and sounds, with slightly easier handling.</li>
             <li>Loot table entries included, so it can spawn on your map.</li>
           </ul>
-          <p class="muted" style="font-size:.9rem"><b style="color:var(--text)">Early access means:</b> hand positions, sights and attachment placement are still being tuned, there is only one weapon so far, and updates may change things. Buy it to support development and get every update to the pack, not because it's finished.</p>
+          <p class="muted" style="font-size:.9rem"><b style="color:var(--text)">Early access means:</b> hand positions, sights and attachment placement are still being tuned, there is only one weapon so far, and updates may change things. Licences are free while the pack is in early access; you still need one for the mod to work on your server.</p>
           <div id="ms-buy" style="margin-top:14px"></div>
         </div>
         <div class="card">
@@ -1099,8 +1099,8 @@
           <ol class="clean" style="padding-left:18px">
             <li>Sign in with Discord.</li>
             <li>Send a licence request with your server's name, IP and game port.</li>
-            <li>Staff contact you on Discord to arrange the $25 payment.</li>
-            <li>Once it's confirmed, your server is whitelisted and the mod works on it.</li>
+            <li>Staff review the request. It's free during early access.</li>
+            <li>Once it's approved, your server is whitelisted and the mod works on it.</li>
           </ol>
           <p class="muted" style="font-size:.9rem">Moving host or changing port? Ask staff and we'll update your whitelist entry. The licence is for running the mod on your server; repacking, editing or re-uploading it is not allowed.</p>
         </div>
@@ -4527,7 +4527,7 @@ async function renderModShop(){
   mine.innerHTML = ""; staff.innerHTML = "";
   if (!sb) { buy.innerHTML = `<p class="muted">Licence requests open once accounts are switched on.</p>`; return; }
   if (!user) { buy.innerHTML = `<a class="btn" href="#account">Sign in to request a licence</a>`; return; }
-  buy.innerHTML = `<button class="btn" id="ms-request">Request a licence — $25</button>`;
+  buy.innerHTML = `<button class="btn" id="ms-request">Request a free licence</button>`;
   $("#ms-request").onclick = () => openLicenseRequest();
 
   const [reqs, servers] = await Promise.all([
@@ -4554,7 +4554,7 @@ async function renderModShop(){
 }
 function openLicenseRequest(){
   openModal(`<h3>Request a licence — AF Weapons Pack</h3>
-    <p class="muted" style="font-size:.9rem">$25 per server, one-time. Staff will message you on Discord to arrange payment, then whitelist the server below. This is an early-access mod: expect rough edges.</p>
+    <p class="muted" style="font-size:.9rem">Free during early access. Staff review the request, then whitelist the server below. This is an early-access mod: expect rough edges.</p>
     <div class="field"><label for="lr-name">Server name</label><input id="lr-name" maxlength="60" placeholder="e.g. My DayZ Server"></div>
     <div class="two"><div class="field"><label for="lr-ip">Server IP</label><input id="lr-ip" maxlength="15" placeholder="e.g. 203.0.113.10" inputmode="decimal"></div>
       <div class="field"><label for="lr-port">Game port</label><input id="lr-port" type="number" min="1" max="65535" placeholder="2302"></div></div>
@@ -4590,7 +4590,7 @@ async function renderModShopStaff(){
   const denied = ck.data.filter(c => !c.allowed);
   box.innerHTML = `<div class="card staff-card">
     <h3>Mod licences <span class="adm">Staff</span></h3>
-    <p class="muted" style="font-size:.9rem">A server can run the AF Weapons Pack only while it is in the whitelist and switched on. Approve a request after the buyer has paid.</p>
+    <p class="muted" style="font-size:.9rem">A server can run the AF Weapons Pack only while it is in the whitelist and switched on. Licences are free during early access; approve the requests you want to allow.</p>
 
     <h4 style="margin-top:14px">Requests waiting (${pending.length})</h4>
     ${pending.length ? `<div style="overflow-x:auto"><table class="pz"><thead><tr><th>Server</th><th>Address</th><th>From</th><th>Sent</th><th>Note</th><th></th></tr></thead><tbody>
@@ -4612,7 +4612,7 @@ async function renderModShopStaff(){
   const reload = () => renderModShop();
   box.querySelectorAll("[data-ms-ok]").forEach(b => b.onclick = async () => {
     const r = rq.data.find(x => x.id === +b.dataset.msOk); if (!r) return;
-    if (!(await confirmModal("Approve this licence?", `${r.server_name} (${r.ip}:${r.port}) will be whitelisted straight away. Only approve once payment is confirmed.`, "Approve"))) return;
+    if (!(await confirmModal("Approve this licence?", `${r.server_name} (${r.ip}:${r.port}) will be whitelisted straight away.`, "Approve"))) return;
     const ins = await sb.from("af_server_whitelist").upsert({ name: r.server_name, ip: r.ip, port: r.port, owner_id: r.user_id, product: r.product, enabled: true }, { onConflict: "ip,port" });
     if (ins.error) return toast(ins.error.message);
     const up = await sb.from("af_license_requests").update({ status: "approved", decided_at: new Date().toISOString() }).eq("id", r.id);
@@ -4620,7 +4620,7 @@ async function renderModShopStaff(){
     toast("Server whitelisted"); reload();
   });
   box.querySelectorAll("[data-ms-no]").forEach(b => b.onclick = async () => {
-    if (!(await confirmModal("Decline this request?", "The buyer sees it as declined. Their server is not whitelisted.", "Decline"))) return;
+    if (!(await confirmModal("Decline this request?", "The requester sees it as declined. Their server is not whitelisted.", "Decline"))) return;
     const { error } = await sb.from("af_license_requests").update({ status: "rejected", decided_at: new Date().toISOString() }).eq("id", +b.dataset.msNo);
     if (error) return toast(error.message);
     toast("Request declined"); reload();
