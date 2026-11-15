@@ -1704,7 +1704,49 @@ async function fetchKills(since){
   }
   return out;
 }
+let lbMode = "ingame";
+function renderLbMode(){
+  let m = document.getElementById("lb-mode");
+  if (!m) { m = document.createElement("div"); m.id = "lb-mode"; m.className = "subnav"; $("#lb-body").before(m); }
+  m.innerHTML = [["ingame", "In-game"], ["killfeed", "Killfeed (Discord)"]].map(([k, v]) => `<button class="chip${k === lbMode ? " active" : ""}" data-lbm="${k}">${v}</button>`).join("");
+  m.querySelectorAll("[data-lbm]").forEach(b => b.onclick = () => { lbMode = b.dataset.lbm; loadLeaderboard(); });
+}
+let igServer = null;
+const LB_SERVERS = ["Nasdara", "Chernarus"]; // test server is hidden from the website
 async function loadLeaderboard(){
+  renderLbMode();
+  if (lbMode === "killfeed") { renderLbFilters(); return loadKillfeedBoard(); }
+  const body = $("#lb-body");
+  $("#lb-periods").innerHTML = "";
+  if (!sb) { $("#lb-servers").innerHTML = ""; body.innerHTML = `<div class="kf-empty">Leaderboards are coming soon.</div>`; return; }
+  body.innerHTML = `<div class="kf-empty">Loading the in-game leaderboard…</div>`;
+  const { data, error } = await sb.from("af_leaderboard").select("*").order("kills", { ascending: false }).limit(1000);
+  if (error) { body.innerHTML = `<div class="kf-empty">Couldn't load the leaderboard: ${esc(error.message)}</div>`; return; }
+  const all = (data || []).filter(r => LB_SERVERS.includes(r.server_id));
+  const servers = [...new Set(all.map(r => r.server_id))].sort();
+  if (!servers.length) { $("#lb-servers").innerHTML = ""; body.innerHTML = `<div class="kf-empty">No in-game stats yet. Play on the server and check back.</div>`; return; }
+  if (!igServer || !servers.includes(igServer)) igServer = servers[0];
+  $("#lb-servers").innerHTML = servers.map(s => `<button class="chip${s === igServer ? " active" : ""}" data-igs="${esc(s)}">${esc(s)}</button>`).join("");
+  $$("[data-igs]").forEach(b => b.onclick = () => { igServer = b.dataset.igs; loadLeaderboard(); });
+  const rows = all.filter(r => r.server_id === igServer);
+  const kd = p => Number(p.kd || 0).toFixed(2);
+  const hm = s => `${Math.floor((s || 0) / 3600)}h ${Math.floor(((s || 0) % 3600) / 60)}m`;
+  const me = n => myIgn && n.toLowerCase() === myIgn.toLowerCase();
+  const rowCls = (i, n) => [i < 3 ? "top" + (i + 1) : "", me(n) ? "me" : ""].join(" ").trim();
+  const far = Math.round(Math.max(0, ...rows.map(r => Number(r.longest_kill) || 0)));
+  body.innerHTML = `
+    <div class="lb-hero">
+      <div class="card"><span>Players</span><b>${rows.length}</b><small>${esc(igServer)}</small></div>
+      <div class="card"><span>Top killer</span><b>${esc(rows[0].name)}</b><small>${rows[0].kills} kills · ${kd(rows[0])} K/D</small></div>
+      <div class="card"><span>Longest shot</span><b>${far}m</b><small>${esc(igServer)}</small></div>
+    </div>
+    <div class="card">
+      <h3>${esc(igServer)} leaderboard</h3>
+      <table class="lb"><thead><tr><th>#</th><th>Player</th><th>Kills</th><th>Deaths</th><th>K/D</th><th>AI</th><th>Zombies</th><th>Longest</th><th>Playtime</th></tr></thead><tbody>
+      ${rows.map((p, i) => `<tr class="${rowCls(i, p.name)}"><td>${i + 1}</td><td class="name">${esc(p.name)}${me(p.name) ? `<span class="lb-you">YOU</span>` : ""}</td><td><b>${p.kills}</b></td><td>${p.deaths}</td><td>${kd(p)}</td><td>${p.ai_kills || 0}</td><td>${p.zombie_kills || 0}</td><td>${p.longest_kill ? Math.round(p.longest_kill) + "m" : "—"}</td><td>${hm(p.playtime_seconds)}</td></tr>`).join("")}
+      </tbody></table>
+    </div>`;
+}async function loadKillfeedBoard(){
   const body = $("#lb-body");
   if (!sb) { body.innerHTML = `<div class="kf-empty">Leaderboards are coming soon.</div>`; return; }
   body.innerHTML = `<div class="kf-empty">Counting bodies…</div>`;
