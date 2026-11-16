@@ -857,6 +857,7 @@
       <a href="#wheel" data-v="wheel">Arcade</a>
       <a href="#live-wipes" data-v="live">Live</a>
       <a href="#support" data-v="support">Support Us</a>
+      <a href="#modshop" data-v="modshop">Mod Shop</a>
       <a href="#feed" data-v="feed">Community</a>
       <a href="#members" data-v="members">Members</a>
       <a href="#inbox" data-v="inbox" id="nav-inbox" hidden>Inbox<span class="badge" id="inbox-badge" hidden></span></a>
@@ -1064,6 +1065,61 @@
         <li>If Bohemia's rules change, these packages change with them.</li>
       </ul>
       <p class="muted">Think something we offer breaks these rules? Tell us in a Discord ticket, or report it to Bohemia Interactive directly.</p>
+    </div>
+  </section>
+</div>
+
+<!-- MOD SHOP -->
+<div class="view" id="v-modshop">
+  <section>
+    <div class="wrap">
+      <h2>Mod Shop</h2>
+      <p class="muted" style="max-width:760px">Mods built by Allied Forces, licensed to other DayZ server owners. A licence covers one server (one IP and game port). The mod checks that licence when the server starts, so it only works on servers we've whitelisted.</p>
+
+      <div class="notice">🚧 <b>Very early stages.</b> The Mod Shop and the mods in it are brand new and still being tested. Expect rough edges, missing features and frequent updates.</div>
+
+      <div class="grid g3" style="margin-top:22px">
+        <div class="card hl" style="grid-column:span 2">
+          <span class="tag ok">Early access</span>
+          <h3>AF Weapons Pack</h3>
+          <div class="price">Free <span class="muted" style="font-size:1rem">during early access · one licence per server</span></div>
+          <p class="muted">Original Allied Forces weapons for DayZ. The pack currently has one rifle, with more planned.</p>
+          <ul class="clean">
+            <li><b>AF-7 "Vanguard"</b> — an original 5.56×45mm assault rifle with its own model and textures.</li>
+            <li>Two finishes: standard (dark receiver, tan furniture) and gold floral on black.</li>
+            <li>Takes STANAG and CMAG magazines, and mounts an optic, a flashlight and a suppressor.</li>
+            <li>Uses the vanilla M4 animations and sounds, with slightly easier handling.</li>
+            <li>Loot table entries included, so it can spawn on your map.</li>
+          </ul>
+          <p class="muted" style="font-size:.9rem"><b style="color:var(--text)">Early access means:</b> hand positions, sights and attachment placement are still being tuned, there is only one weapon so far, and updates may change things. Licences are free while the pack is in early access; you still need one for the mod to work on your server.</p>
+          <div id="ms-buy" style="margin-top:14px"></div>
+        </div>
+        <div class="card hl">
+          <span class="tag ok">Free</span>
+          <h3>AF LeaderBoard</h3>
+          <div class="price">Free <span class="muted" style="font-size:1rem">public · no licence needed</span></div>
+          <p class="muted">Leaderboard, token shop and bounties for DayZ servers. Kills, playtime and bounties earn AFTokens you can spend in game.</p>
+          <ul class="clean">
+            <li>Leaderboard with kills, K/D, longest shot and playtime.</li>
+            <li>Token shop and player bounties, set up by each server owner.</li>
+            <li>Get it on <a href="https://steamcommunity.com/sharedfiles/filedetails/?id=3839355004" target="_blank" rel="noopener">Steam Workshop</a>.</li>
+          </ul>
+          <p class="muted" style="font-size:.9rem">Free for any server to use. Repacking or re-uploading it is not allowed without our permission.</p>
+        </div>
+        <div class="card">
+          <h3>How it works</h3>
+          <ol class="clean" style="padding-left:18px">
+            <li>Sign in with Discord.</li>
+            <li>Send a licence request with your server's name, IP and game port.</li>
+            <li>Staff review the request. It's free during early access.</li>
+            <li>Once it's approved, your server is whitelisted and the mod works on it.</li>
+          </ol>
+          <p class="muted" style="font-size:.9rem">Moving host or changing port? Ask staff and we'll update your whitelist entry. The licence is for running the mod on your server; repacking, editing or re-uploading it is not allowed.</p>
+        </div>
+      </div>
+
+      <div id="ms-mine" style="margin-top:22px"></div>
+      <div id="ms-staff" style="margin-top:22px"></div>
     </div>
   </section>
 </div>
@@ -1715,7 +1771,8 @@ let igServer = null;
 const LB_SERVERS = ["Nasdara", "Chernarus"]; // test server is hidden from the website
 async function loadLeaderboard(){
   renderLbMode();
-  if (lbMode === "killfeed") { renderLbFilters(); return loadKillfeedBoard(); }
+  if (lbMode === "killfeed") { document.getElementById("lb-bounties")?.remove(); renderLbFilters(); return loadKillfeedBoard(); }
+  loadBounties();
   const body = $("#lb-body");
   $("#lb-periods").innerHTML = "";
   if (!sb) { $("#lb-servers").innerHTML = ""; body.innerHTML = `<div class="kf-empty">Leaderboards are coming soon.</div>`; return; }
@@ -1746,7 +1803,28 @@ async function loadLeaderboard(){
       ${rows.map((p, i) => `<tr class="${rowCls(i, p.name)}"><td>${i + 1}</td><td class="name">${esc(p.name)}${me(p.name) ? `<span class="lb-you">YOU</span>` : ""}</td><td><b>${p.kills}</b></td><td>${p.deaths}</td><td>${kd(p)}</td><td>${p.ai_kills || 0}</td><td>${p.zombie_kills || 0}</td><td>${p.longest_kill ? Math.round(p.longest_kill) + "m" : "—"}</td><td>${hm(p.playtime_seconds)}</td></tr>`).join("")}
       </tbody></table>
     </div>`;
-}async function loadKillfeedBoard(){
+}
+
+/* Open bounties (pushed by the game servers every minute). Shown above the in-game leaderboard. */
+async function loadBounties(){
+  if (!sb) return;
+  let box = document.getElementById("lb-bounties");
+  if (!box) { box = document.createElement("div"); box.id = "lb-bounties"; $("#lb-body").before(box); }
+  const { data, error } = await sb.from("af_open_bounties").select("*").in("server_id", LB_SERVERS).order("pot", { ascending: false }).limit(50);
+  if (error) { box.innerHTML = ""; return; }
+  const rows = data || [];
+  const mins = s => Math.max(1, Math.ceil((s || 0) / 60)) + " min";
+  const timing = b => b.start_left > 0 ? "starts in " + mins(b.start_left) : mins(b.remaining_left) + " left";
+  box.innerHTML = `
+    <div class="card">
+      <h3>Open bounties</h3>
+      <p class="lb-note">Bounties pay AFTokens to whoever gets the kill. Turn Bounty on in the game menu (Home key) to take part.</p>
+      ${rows.length ? `<table class="lb"><thead><tr><th>Server</th><th>Target</th><th>Posted by</th><th>Pot</th><th>Time</th></tr></thead><tbody>
+        ${rows.map(b => `<tr><td>${esc(b.server_id)}</td><td class="name">${esc(b.target_name)}</td><td>${esc(b.poster_name)}</td><td><b>${b.pot}</b> AFTokens</td><td>${esc(timing(b))}</td></tr>`).join("")}
+      </tbody></table>` : `<p class="lb-note">No open bounties right now.</p>`}
+    </div>`;
+}
+async function loadKillfeedBoard(){
   const body = $("#lb-body");
   if (!sb) { body.innerHTML = `<div class="kf-empty">Leaderboards are coming soon.</div>`; return; }
   body.innerHTML = `<div class="kf-empty">Counting bodies…</div>`;
@@ -2325,9 +2403,10 @@ async function onUserChanged(){
   amAdmin = false;
   if (inboxChannel) { sb.removeChannel(inboxChannel); inboxChannel = null; }
   if (sb) { allMembersAt = 0; startPresence(); }
-  if (!sb || !user) { setBadge(); refreshEventViews(); if (location.hash === "#wheel") renderWheel(); if (location.hash === "#crates") renderCrates(); if (location.hash === "#cards") { cdState = null; cdBattle = null; renderCardsPage(); } return; }
+  if (!sb || !user) { setBadge(); refreshEventViews(); if (location.hash === "#wheel") renderWheel(); if (location.hash === "#crates") renderCrates(); if (location.hash === "#cards") { cdState = null; cdBattle = null; renderCardsPage(); } if (location.hash === "#modshop") renderModShop(); return; }
   const { data } = await sb.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
   amAdmin = !!data;
+  if (location.hash === "#modshop") renderModShop();
   refreshBadge();
   autoSyncDiscord();
   inboxChannel = sb.channel("inbox-" + user.id)
@@ -4471,7 +4550,153 @@ async function mountProfileEditor(p){
 
 startPresence();
 
-const views = ["cards","crates","members","home","servers","rules","legends","wheel","feed","inbox","support","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id), ...CONFIG.servers.map(s => "server-" + s.key)];
+/* ---------- MOD SHOP: licence requests + server whitelist (tables af_license_requests, af_server_whitelist, af_license_checks) ---------- */
+const MS_PRODUCT = "af_weapons_pack";
+const msIp = s => /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.test(s) && s.split(".").every(n => +n <= 255);
+const msWhen = t => t ? new Date(t).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "";
+const msStatus = s => s === "approved" ? `<span class="tag ok">Approved</span>` : s === "rejected" ? `<span class="tag">Declined</span>` : `<span class="tag">Waiting for staff</span>`;
+async function renderModShop(){
+  const buy = $("#ms-buy"), mine = $("#ms-mine"), staff = $("#ms-staff");
+  if (!buy) return;
+  mine.innerHTML = ""; staff.innerHTML = "";
+  if (!sb) { buy.innerHTML = `<p class="muted">Licence requests open once accounts are switched on.</p>`; return; }
+  if (!user) { buy.innerHTML = `<a class="btn" href="#account">Sign in to request a licence</a>`; return; }
+  buy.innerHTML = `<button class="btn" id="ms-request">Request a free licence</button>`;
+  $("#ms-request").onclick = () => openLicenseRequest();
+
+  const [reqs, servers] = await Promise.all([
+    sb.from("af_license_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+    sb.from("af_server_whitelist").select("*").eq("owner_id", user.id).order("created_at", { ascending: false })
+  ]);
+  if (reqs.error || servers.error) { mine.innerHTML = `<p class="msg err">${esc((reqs.error || servers.error).message)}</p>`; }
+  else if (reqs.data.length || servers.data.length) {
+    mine.innerHTML = `<div class="card"><h3>Your servers</h3>
+      ${servers.data.length ? `<div style="overflow-x:auto"><table class="pz"><thead><tr><th>Licensed server</th><th>Address</th><th>Status</th></tr></thead><tbody>
+        ${servers.data.map(s => `<tr><td>${esc(s.name)}</td><td>${esc(s.ip)}:${s.port}</td><td>${s.enabled ? `<span class="tag ok">Active</span>` : `<span class="tag">Paused</span>`}</td></tr>`).join("")}</tbody></table></div>` : ""}
+      ${reqs.data.length ? `<div style="overflow-x:auto;margin-top:10px"><table class="pz"><thead><tr><th>Request</th><th>Address</th><th>Sent</th><th>Status</th><th></th></tr></thead><tbody>
+        ${reqs.data.map(r => `<tr><td>${esc(r.server_name)}</td><td>${esc(r.ip)}:${r.port}</td><td>${esc(msWhen(r.created_at))}</td><td>${msStatus(r.status)}${r.staff_note ? `<div class="muted" style="font-size:.85rem">${esc(r.staff_note)}</div>` : ""}</td>
+          <td>${r.status === "pending" ? `<button class="btn sm ghost" data-ms-cancel="${r.id}">Cancel</button>` : ""}</td></tr>`).join("")}</tbody></table></div>` : ""}
+    </div>`;
+    mine.querySelectorAll("[data-ms-cancel]").forEach(b => b.onclick = async () => {
+      if (!(await confirmModal("Cancel this request?", "The request is removed. You can send a new one any time.", "Cancel request"))) return;
+      const { error } = await sb.from("af_license_requests").delete().eq("id", +b.dataset.msCancel);
+      if (error) return toast(error.message);
+      toast("Request cancelled"); renderModShop();
+    });
+  }
+  if (amAdmin) renderModShopStaff();
+}
+function openLicenseRequest(){
+  openModal(`<h3>Request a licence — AF Weapons Pack</h3>
+    <p class="muted" style="font-size:.9rem">Free during early access. Staff review the request, then whitelist the server below. This is an early-access mod: expect rough edges.</p>
+    <div class="field"><label for="lr-name">Server name</label><input id="lr-name" maxlength="60" placeholder="e.g. My DayZ Server"></div>
+    <div class="two"><div class="field"><label for="lr-ip">Server IP</label><input id="lr-ip" maxlength="15" placeholder="e.g. 203.0.113.10" inputmode="decimal"></div>
+      <div class="field"><label for="lr-port">Game port</label><input id="lr-port" type="number" min="1" max="65535" placeholder="2302"></div></div>
+    <div class="field"><label for="lr-note">Anything staff should know (optional)</label><input id="lr-note" maxlength="500" placeholder="Host, Discord name if different, etc."></div>
+    <p class="muted" style="font-size:.85rem">Use the public IP your server runs on and the game port from its <code>-port=</code> launch setting (2302 if you never set one). Not the query or RCON port.</p>
+    <div class="row"><button class="btn" id="lr-send">Send request</button><button class="btn ghost" id="lr-x">Cancel</button></div><div id="lr-msg"></div>`);
+  $("#lr-x").onclick = closeModal;
+  $("#lr-send").onclick = async () => {
+    const bad = t => { $("#lr-msg").innerHTML = `<p class="msg err">${esc(t)}</p>`; };
+    const server_name = $("#lr-name").value.trim(), ip = $("#lr-ip").value.trim(), port = parseInt($("#lr-port").value, 10);
+    if (server_name.length < 2) return bad("Give your server a name.");
+    if (!msIp(ip)) return bad("That doesn't look like an IP address. Use numbers like 203.0.113.10.");
+    if (!(port >= 1 && port <= 65535)) return bad("Enter the game port, a number from 1 to 65535.");
+    $("#lr-send").disabled = true;
+    const { error } = await sb.from("af_license_requests").insert({ product: MS_PRODUCT, server_name, ip, port, note: $("#lr-note").value.trim() || null });
+    if (error) { $("#lr-send").disabled = false; return bad(/one_pending|duplicate key/i.test(error.message) ? "You already have a request waiting for that server." : error.message); }
+    closeModal(); toast("Request sent"); renderModShop();
+  };
+}
+async function renderModShopStaff(){
+  const box = $("#ms-staff"); if (!box || !amAdmin) return;
+  const [wl, rq, ck] = await Promise.all([
+    sb.from("af_server_whitelist").select("*").order("created_at", { ascending: false }),
+    sb.from("af_license_requests").select("*").order("created_at", { ascending: false }).limit(100),
+    sb.from("af_license_checks").select("*").order("checked_at", { ascending: false }).limit(40)
+  ]);
+  const err = wl.error || rq.error || ck.error;
+  if (err) { box.innerHTML = `<div class="card staff-card"><h3>Mod licences <span class="adm">Staff</span></h3><p class="msg err">${esc(err.message)}</p></div>`; return; }
+  const ids = [...new Set([...wl.data.map(s => s.owner_id), ...rq.data.map(r => r.user_id)].filter(Boolean))];
+  if (ids.length) await loadMembers(ids);
+  const who = id => id ? `<a href="javascript:void 0" data-profile="${esc(id)}">${esc(mem(id).name || "Member")}</a>` : `<span class="muted">—</span>`;
+  const pending = rq.data.filter(r => r.status === "pending"), listed = new Set(wl.data.map(s => s.ip + ":" + s.port));
+  const denied = ck.data.filter(c => !c.allowed);
+  box.innerHTML = `<div class="card staff-card">
+    <h3>Mod licences <span class="adm">Staff</span></h3>
+    <p class="muted" style="font-size:.9rem">A server can run the AF Weapons Pack only while it is in the whitelist and switched on. Licences are free during early access; approve the requests you want to allow.</p>
+
+    <h4 style="margin-top:14px">Requests waiting (${pending.length})</h4>
+    ${pending.length ? `<div style="overflow-x:auto"><table class="pz"><thead><tr><th>Server</th><th>Address</th><th>From</th><th>Sent</th><th>Note</th><th></th></tr></thead><tbody>
+      ${pending.map(r => `<tr><td>${esc(r.server_name)}</td><td>${esc(r.ip)}:${r.port}</td><td>${who(r.user_id)}</td><td>${esc(msWhen(r.created_at))}</td><td>${esc(r.note || "")}</td>
+        <td style="white-space:nowrap"><button class="btn sm" data-ms-ok="${r.id}">Approve</button> <button class="btn sm ghost" data-ms-no="${r.id}">Decline</button></td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">No requests waiting.</p>`}
+
+    <h4 style="margin-top:18px">Whitelisted servers (${wl.data.length})</h4>
+    ${wl.data.length ? `<div style="overflow-x:auto"><table class="pz"><thead><tr><th>Server</th><th>Address</th><th>Owner</th><th>Added</th><th>Status</th><th></th></tr></thead><tbody>
+      ${wl.data.map(s => `<tr class="${s.enabled ? "" : "off"}"><td>${esc(s.name)}</td><td>${esc(s.ip)}:${s.port}</td><td>${who(s.owner_id)}</td><td>${esc(msWhen(s.created_at))}</td>
+        <td>${s.enabled ? `<span class="tag ok">Active</span>` : `<span class="tag">Paused</span>`}</td>
+        <td style="white-space:nowrap"><button class="btn sm ghost" data-ms-toggle="${s.id}">${s.enabled ? "Pause" : "Turn on"}</button> <button class="icon-btn" data-ms-edit="${s.id}" title="Edit">✏️</button><button class="icon-btn" data-ms-del="${s.id}" title="Remove">🗑</button></td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">No servers whitelisted yet.</p>`}
+    <button class="btn sm" id="ms-add" style="margin-top:12px">+ Add server</button>
+
+    <h4 style="margin-top:18px">Recent denied checks</h4>
+    <p class="muted" style="font-size:.9rem">Servers that started the mod without a licence. If one of these is a paying server, its IP or port doesn't match its whitelist entry.</p>
+    ${denied.length ? `<div style="overflow-x:auto"><table class="pz"><thead><tr><th>Address</th><th>When</th><th></th></tr></thead><tbody>
+      ${denied.slice(0, 15).map(c => `<tr><td>${esc(c.ip)}:${c.port}</td><td>${esc(msWhen(c.checked_at))}</td><td>${listed.has(c.ip + ":" + c.port) ? `<span class="muted">now whitelisted</span>` : `<button class="btn sm ghost" data-ms-allow="${esc(c.ip)}|${c.port}">Whitelist…</button>`}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">None recently.</p>`}
+  </div>`;
+  const reload = () => renderModShop();
+  box.querySelectorAll("[data-ms-ok]").forEach(b => b.onclick = async () => {
+    const r = rq.data.find(x => x.id === +b.dataset.msOk); if (!r) return;
+    if (!(await confirmModal("Approve this licence?", `${r.server_name} (${r.ip}:${r.port}) will be whitelisted straight away.`, "Approve"))) return;
+    const ins = await sb.from("af_server_whitelist").upsert({ name: r.server_name, ip: r.ip, port: r.port, owner_id: r.user_id, product: r.product, enabled: true }, { onConflict: "ip,port" });
+    if (ins.error) return toast(ins.error.message);
+    const up = await sb.from("af_license_requests").update({ status: "approved", decided_at: new Date().toISOString() }).eq("id", r.id);
+    if (up.error) return toast(up.error.message);
+    toast("Server whitelisted"); reload();
+  });
+  box.querySelectorAll("[data-ms-no]").forEach(b => b.onclick = async () => {
+    if (!(await confirmModal("Decline this request?", "The requester sees it as declined. Their server is not whitelisted.", "Decline"))) return;
+    const { error } = await sb.from("af_license_requests").update({ status: "rejected", decided_at: new Date().toISOString() }).eq("id", +b.dataset.msNo);
+    if (error) return toast(error.message);
+    toast("Request declined"); reload();
+  });
+  box.querySelectorAll("[data-ms-toggle]").forEach(b => b.onclick = async () => {
+    const s = wl.data.find(x => x.id === +b.dataset.msToggle); if (!s) return;
+    const { error } = await sb.from("af_server_whitelist").update({ enabled: !s.enabled }).eq("id", s.id);
+    if (error) return toast(error.message);
+    toast(s.enabled ? "Server paused" : "Server turned on"); reload();
+  });
+  box.querySelectorAll("[data-ms-del]").forEach(b => b.onclick = async () => {
+    if (!(await confirmModal("Remove this server?", "The mod stops working on it the next time it restarts."))) return;
+    const { error } = await sb.from("af_server_whitelist").delete().eq("id", +b.dataset.msDel);
+    if (error) return toast(error.message);
+    toast("Server removed"); reload();
+  });
+  box.querySelectorAll("[data-ms-edit]").forEach(b => b.onclick = () => openWhitelistEditor(wl.data.find(x => x.id === +b.dataset.msEdit)));
+  box.querySelectorAll("[data-ms-allow]").forEach(b => b.onclick = () => { const [ip, port] = b.dataset.msAllow.split("|"); openWhitelistEditor(null, { ip, port: +port }); });
+  $("#ms-add").onclick = () => openWhitelistEditor(null);
+}
+function openWhitelistEditor(s, preset = {}){
+  openModal(`<h3>${s ? "Edit server" : "Whitelist a server"}</h3>
+    <div class="field"><label for="we-name">Server name</label><input id="we-name" maxlength="60" value="${esc(s?.name || "")}" placeholder="e.g. AF Chernarus"></div>
+    <div class="two"><div class="field"><label for="we-ip">Server IP</label><input id="we-ip" maxlength="15" value="${esc(s?.ip || preset.ip || "")}" placeholder="203.0.113.10"></div>
+      <div class="field"><label for="we-port">Game port</label><input id="we-port" type="number" min="1" max="65535" value="${s?.port ?? preset.port ?? ""}" placeholder="2302"></div></div>
+    <label style="display:flex;gap:8px;align-items:center;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="we-on" ${s?.enabled === false ? "" : "checked"}> Licence active</label>
+    <div class="row"><button class="btn" id="we-save">Save</button><button class="btn ghost" id="we-x">Cancel</button></div><div id="we-msg"></div>`);
+  $("#we-x").onclick = closeModal;
+  $("#we-save").onclick = async () => {
+    const bad = t => { $("#we-msg").innerHTML = `<p class="msg err">${esc(t)}</p>`; };
+    const name = $("#we-name").value.trim(), ip = $("#we-ip").value.trim(), port = parseInt($("#we-port").value, 10);
+    if (name.length < 2) return bad("Give the server a name.");
+    if (!msIp(ip)) return bad("That doesn't look like an IP address.");
+    if (!(port >= 1 && port <= 65535)) return bad("Enter the game port, a number from 1 to 65535.");
+    const row = { name, ip, port, enabled: $("#we-on").checked };
+    const { error } = s ? await sb.from("af_server_whitelist").update(row).eq("id", s.id) : await sb.from("af_server_whitelist").insert({ ...row, product: MS_PRODUCT });
+    if (error) return bad(/duplicate key/i.test(error.message) ? "That IP and port are already whitelisted." : error.message);
+    closeModal(); toast("Saved"); renderModShop();
+  };
+}
+
+const views = ["cards","crates","members","home","servers","rules","legends","wheel","feed","inbox","support","modshop","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id), ...CONFIG.servers.map(s => "server-" + s.key)];
 function route(){
   const v = views.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
   const section = v.startsWith("live-") ? "live" : v.startsWith("server-") ? "servers" : v === "crates" || v === "cards" ? "wheel" : v;
@@ -4483,6 +4708,7 @@ function route(){
   if (v.startsWith("server-")) { $("#sv-server-detail").classList.add("active"); renderServerDetail(v.slice(7)); }
   if (v === "servers") fillNextEventLines();
   if (v === "account") renderAccount();
+  if (v === "modshop") renderModShop();
   if (v === "feed") { renderFeed(); renderMemberSide("#feed-side", true); }
   if (v === "members") renderMembers();
   if (v === "inbox") renderInbox();
