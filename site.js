@@ -1061,14 +1061,11 @@ function setBadge(){
 }
 async function refreshBadge(){
   if (!sb || !user) { unreadMsgs = unreadNotifs = 0; setBadge(); return; }
-  const [m, prof] = await Promise.all([
-    sb.from("messages").select("id", { count: "exact", head: true }).eq("recipient_id", user.id).is("read_at", null),
-    sb.from("profiles").select("inbox_seen_at").eq("id", user.id).maybeSingle()
-  ]);
-  unreadMsgs = m.count || 0;
-  inboxSeenAt = prof.data?.inbox_seen_at || user.created_at;
-  const n = await sb.from("notifications").select("id", { count: "exact", head: true }).gt("created_at", inboxSeenAt);
-  unreadNotifs = n.count || 0;
+  const { data, error } = await sb.rpc("my_badge");
+  if (error || !data) { setBadge(); return; }
+  unreadMsgs = data.messages || 0;
+  inboxSeenAt = data.inbox_seen_at || user.created_at;
+  unreadNotifs = data.notifications || 0;
   setBadge();
 }
 async function onUserChanged(){
@@ -3444,20 +3441,20 @@ async function renderDashboard(){
   if (!el) return;
   if (!user) { el.innerHTML = `<div class="card"><p class="muted" style="margin:0"><a href="#account">Sign in</a> to see your dashboard.</p></div>`; return; }
   el.innerHTML = `<p class="muted">Loading…</p>`;
-  const [wal, stats, bounties, fac, led, pend, prof, ref, chal] = await Promise.all([
-    sb.from("token_wallets").select("balance").eq("user_id", user.id).maybeSingle(),
-    sb.rpc("my_game_stats"),
-    sb.from("af_open_bounties").select("*").order("pot", { ascending: false }).limit(8),
-    sb.rpc("my_faction"),
-    sb.from("token_ledger").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8),
-    sb.from("prize_claims").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "pending"),
-    sb.from("profiles").select("steam_id,ingame_name").eq("id", user.id).maybeSingle(),
-    sb.rpc("my_referral"),
-    sb.rpc("my_challenges")
+  const [dashRes, bounties] = await Promise.all([
+    sb.rpc("my_dashboard"),
+    sb.from("af_open_bounties").select("*").order("pot", { ascending: false }).limit(8)
   ]);
-  const challenges = chal.data || [];
+  const d = dashRes.data || {};
+  const wal = { data: { balance: d.wallet || 0 } };
+  const stats = { data: d.stats || [] };
+  const fac = { data: d.faction || null };
+  const led = { data: d.ledger || [] };
+  const pend = { count: d.prizes_pending || 0 };
+  const prof = { data: { steam_id: d.steam_id || null } };
+  const myRef = d.referral || null;
+  const challenges = d.challenges || [];
   const fmtProgress = c => c.metric === "playtime_seconds" ? `${(c.progress / 3600).toFixed(1)} / ${(c.target / 3600).toFixed(0)} h` : `${c.progress} / ${c.target}`;
-  const myRef = ref.data;
   const inviteLink = `${location.origin}${location.pathname}?ref=${myRef?.code || ""}`;
   const rows = stats.data || [];
   const kills = rows.reduce((a, r) => a + (r.kills || 0), 0);
