@@ -3097,7 +3097,8 @@ function pickClaimServer(claimId, itemName, justWon = false, onDone = null){
   });
   sb.rpc("claim_sale_price", { p_claim: claimId }).then(({ data: price }) => {
     const box = $("#wh-sellbox");
-    if (!price || !box) return;
+    if (!box) return;
+    if (!price) { box.innerHTML = `<p class="muted" style="margin:0">This prize can't be sold yet (no sale value set).</p>`; return; }
     box.innerHTML = `<p class="muted" style="margin:0 0 8px">Or sell it for <b>${price} AFtokens</b> (75% of the prize's value). Sales are final.</p><button class="btn ghost" id="wh-sell">Sell for ${price} AFtokens</button>`;
     $("#wh-sell").onclick = async () => {
       if (!(await confirmModal(`Sell ${itemName} for ${price} AFtokens?`, "Sales are final. Once sold, this prize can't be claimed for a server.", "Sell"))) return;
@@ -3188,6 +3189,18 @@ async function renderWheelStaff(){
     if (!error) { $("#aw-amt").value = ""; $("#aw-why").value = ""; }
   };
 }
+// Fills a shop dropdown from the Chernarus shop (prices pushed by the game server).
+async function loadShopOptions(sel, current){
+  const el = $(sel); if (!el) return;
+  const { data } = await sb.from("af_shop_items").select("class_name,display_name,price").eq("server_id", "Chernarus").order("display_name");
+  (data || []).forEach(s => {
+    const o = document.createElement("option");
+    o.value = s.class_name;
+    o.textContent = `${s.display_name} · buys ${s.price} · sells ${Math.floor(s.price * 0.75)}`;
+    if (s.class_name === current) o.selected = true;
+    el.appendChild(o);
+  });
+}
 function openPrizeEditor(id){
   const p = id ? whPrizes.find(x => x.id === id) : null;
   openModal(`<h3>${p ? "Edit prize" : "Add a prize"}</h3>
@@ -3200,6 +3213,7 @@ function openPrizeEditor(id){
     <div class="field" id="pz-item-f"><label for="pz-item">Item staff hand out</label><input id="pz-item" maxlength="100" value="${esc(p?.item_name || "")}" placeholder="e.g. M4-A1 with 3 mags"></div>
     <div class="field" id="pz-tok-f"><label for="pz-tok">AFtokens won</label><input id="pz-tok" type="number" min="0" value="${p?.token_amount ?? 10}"></div>
     <div class="field"><label for="pz-worth">Worth in AFtokens (players can sell for 75%; 0 = not sellable)</label><input id="pz-worth" type="number" min="0" value="${p?.worth ?? 0}"></div>
+    <div class="field"><label for="pz-shop">Shop item (sells for 75% of its shop price)</label><select id="pz-shop"><option value="">None: use the worth box</option></select></div>
     <div class="two"><div class="field"><label for="pz-color">Color</label><input id="pz-color" type="color" value="${esc(p?.color || "#8a5a22")}" style="height:44px;padding:4px"></div>
       <div class="field"><label for="pz-sort">Order on the wheel</label><input id="pz-sort" type="number" value="${p?.sort_order ?? whPrizes.length + 1}"></div></div>
     <label style="display:flex;gap:8px;align-items:center;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="pz-active" ${p?.active === false ? "" : "checked"}> On the wheel</label>
@@ -3207,13 +3221,14 @@ function openPrizeEditor(id){
   const sync = () => { const k = $("#pz-kind").value; $("#pz-item-f").hidden = k !== "item"; $("#pz-tok-f").hidden = k !== "tokens"; };
   $("#pz-kind").onchange = sync; sync();
   $("#pz-x").onclick = closeModal;
+  loadShopOptions("#pz-shop", p?.shop_class);
   $("#pz-save").onclick = async () => {
     const kind = $("#pz-kind").value, label = $("#pz-label").value.trim();
     if (!label) { $("#pz-msg").innerHTML = `<p class="msg err">Give it a label.</p>`; return; }
     const row = { label, kind, weight: Math.max(1, parseInt($("#pz-weight").value, 10) || 1),
       item_name: kind === "item" ? ($("#pz-item").value.trim() || label) : null,
       token_amount: kind === "tokens" ? Math.max(0, parseInt($("#pz-tok").value, 10) || 0) : 0,
-      worth: Math.max(0, parseInt($("#pz-worth").value, 10) || 0),
+      worth: Math.max(0, parseInt($("#pz-worth").value, 10) || 0), shop_class: $("#pz-shop").value || null,
       color: $("#pz-color").value, sort_order: parseInt($("#pz-sort").value, 10) || 100, active: $("#pz-active").checked };
     const { error } = p ? await sb.from("wheel_prizes").update(row).eq("id", p.id) : await sb.from("wheel_prizes").insert(row);
     if (error) { $("#pz-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
@@ -3538,12 +3553,14 @@ function openCrateItemEditor(id, crateId){
     <div class="field" id="ie-item-f"><label for="ie-item">Item staff hand out</label><input id="ie-item" maxlength="300" value="${esc(i?.item_name || "")}" placeholder="e.g. SVD with 2 mags and PSO scope"></div>
     <div class="field" id="ie-tok-f"><label for="ie-tok">AFtokens won</label><input id="ie-tok" type="number" min="0" value="${i?.token_amount ?? 10}"></div>
     <div class="field"><label for="ie-worth">Worth in AFtokens (players can sell for 75%; 0 = not sellable)</label><input id="ie-worth" type="number" min="0" value="${i?.worth ?? 0}"></div>
+    <div class="field"><label for="ie-shop">Shop item (sells for 75% of its shop price)</label><select id="ie-shop"><option value="">None: use the worth box</option></select></div>
     <div class="field"><label for="ie-w">Weight (odds)</label><input id="ie-w" type="number" min="1" max="1000000" value="${i?.weight ?? 10}"></div>
     <label style="display:flex;gap:8px;align-items:center;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="ie-active" ${i?.active === false ? "" : "checked"}> In the crate</label>
     <div class="row"><button class="btn" id="ie-save">Save item</button><button class="btn ghost" id="ie-x">Cancel</button></div><div id="ie-msg"></div>`);
   const sync = () => { const k = $("#ie-kind").value; $("#ie-item-f").hidden = k !== "item"; $("#ie-tok-f").hidden = k !== "tokens"; };
   $("#ie-kind").onchange = sync; sync();
   $("#ie-x").onclick = closeModal;
+  loadShopOptions("#ie-shop", i?.shop_class);
   $("#ie-save").onclick = async () => {
     const kind = $("#ie-kind").value, label = $("#ie-label").value.trim();
     if (!label) { $("#ie-msg").innerHTML = `<p class="msg err">Give it a name.</p>`; return; }
@@ -3551,7 +3568,7 @@ function openCrateItemEditor(id, crateId){
       weight: Math.max(1, parseInt($("#ie-w").value, 10) || 1),
       item_name: kind === "item" ? ($("#ie-item").value.trim() || label) : null,
       token_amount: kind === "tokens" ? Math.max(0, parseInt($("#ie-tok").value, 10) || 0) : 0,
-      worth: Math.max(0, parseInt($("#ie-worth").value, 10) || 0), active: $("#ie-active").checked };
+      worth: Math.max(0, parseInt($("#ie-worth").value, 10) || 0), shop_class: $("#ie-shop").value || null, active: $("#ie-active").checked };
     const { error } = i ? await sb.from("crate_items").update(row).eq("id", i.id) : await sb.from("crate_items").insert(row);
     if (error) { $("#ie-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
     closeModal(); toast("Item saved"); renderCrates();
