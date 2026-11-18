@@ -1805,26 +1805,31 @@ async function loadLeaderboard(){
     </div>`;
 }
 
-/* Open bounties (pushed by the game servers every minute). Shown above the in-game leaderboard. */
+/* Open bounties (pushed by the game servers every minute). Shown above the in-game leaderboard, with a per-server filter. */
+let bountyServer = "all";
 async function loadBounties(){
   if (!sb) return;
   let box = document.getElementById("lb-bounties");
   if (!box) { box = document.createElement("div"); box.id = "lb-bounties"; $("#lb-body").before(box); }
-  const { data, error } = await sb.from("af_open_bounties").select("*").in("server_id", LB_SERVERS).order("pot", { ascending: false }).limit(50);
+  let q = sb.from("af_open_bounties").select("*").in("server_id", LB_SERVERS).order("pot", { ascending: false }).limit(100);
+  if (bountyServer !== "all") q = q.eq("server_id", bountyServer);
+  const { data, error } = await q;
   if (error) { box.innerHTML = ""; return; }
   const rows = data || [];
   const mins = s => Math.max(1, Math.ceil((s || 0) / 60)) + " min";
   const timing = b => b.start_left > 0 ? "starts in " + mins(b.start_left) : mins(b.remaining_left) + " left";
+  const chips = ["all", ...LB_SERVERS].map(k => `<button class="chip${k === bountyServer ? " active" : ""}" data-bs="${esc(k)}">${k === "all" ? "All servers" : esc(k)}</button>`).join("");
   box.innerHTML = `
     <div class="card">
       <h3>Open bounties</h3>
+      <div class="subnav" style="margin-bottom:12px">${chips}</div>
       <p class="lb-note">Bounties pay AFTokens to whoever gets the kill. Turn Bounty on in the game menu (Home key) to take part.</p>
       ${rows.length ? `<table class="lb"><thead><tr><th>Server</th><th>Target</th><th>Posted by</th><th>Pot</th><th>Time</th></tr></thead><tbody>
         ${rows.map(b => `<tr><td>${esc(b.server_id)}</td><td class="name">${esc(b.target_name)}</td><td>${esc(b.poster_name)}</td><td><b>${b.pot}</b> AFTokens</td><td>${esc(timing(b))}</td></tr>`).join("")}
-      </tbody></table>` : `<p class="lb-note">No open bounties right now.</p>`}
+      </tbody></table>` : `<p class="lb-note">No open bounties on ${bountyServer === "all" ? "either server" : esc(bountyServer)} right now.</p>`}
     </div>`;
-}
-async function loadKillfeedBoard(){
+  box.querySelectorAll("[data-bs]").forEach(b => b.onclick = () => { bountyServer = b.dataset.bs; loadBounties(); });
+}async function loadKillfeedBoard(){
   const body = $("#lb-body");
   if (!sb) { body.innerHTML = `<div class="kf-empty">Leaderboards are coming soon.</div>`; return; }
   body.innerHTML = `<div class="kf-empty">Counting bodies…</div>`;
