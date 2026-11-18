@@ -860,6 +860,7 @@
       <a href="#modshop" data-v="modshop">Mod Shop</a>
       <a href="#feed" data-v="feed">Community</a>
       <a href="#members" data-v="members">Members</a>
+      <a href="#dashboard" data-v="dashboard" id="nav-dash" hidden>My Dashboard</a>
       <a href="#inbox" data-v="inbox" id="nav-inbox" hidden>Inbox<span class="badge" id="inbox-badge" hidden></span></a>
       <a href="#account" data-v="account" id="nav-account">Sign in</a>
       <a class="btn sm discord-link" href="#">Join Discord</a>
@@ -882,6 +883,7 @@
           <a class="btn ghost" href="#servers">View servers</a>
         </div>
         <a class="dc-strip" id="discord-stats" href="#" target="_blank" rel="noopener" hidden></a>
+        <div class="milestone card" id="milestone" hidden style="margin-top:18px;max-width:520px"></div>
         <ul class="hero-facts">
           <li><b>2</b> servers</li><li><b>PvE</b> with PvP zones</li><li><b>Monthly</b> staggered wipes</li><li><b>Ryzen 9</b> dedicated box</li>
         </ul>
@@ -1200,6 +1202,15 @@
 </div>
 
 <!-- ACCOUNT -->
+<div class="view" id="v-dashboard">
+  <section>
+    <div class="wrap">
+      <h2>My Dashboard</h2>
+      <div id="dash-body"></div>
+    </div>
+  </section>
+</div>
+
 <div class="view" id="v-account">
   <section>
     <div class="wrap acct" id="acct"></div>
@@ -2416,6 +2427,7 @@ async function refreshBadge(){
 }
 async function onUserChanged(){
   $("#nav-inbox").hidden = !user;
+  $("#nav-dash").hidden = !user;
   amAdmin = false;
   if (inboxChannel) { sb.removeChannel(inboxChannel); inboxChannel = null; }
   if (sb) { allMembersAt = 0; startPresence(); }
@@ -4745,7 +4757,67 @@ function openWhitelistEditor(s, preset = {}){
   };
 }
 
-const views = ["cards","crates","members","home","servers","rules","legends","wheel","feed","inbox","support","modshop","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id), ...CONFIG.servers.map(s => "server-" + s.key)];
+// Members milestone bar. Rewards are announced by staff when a milestone is reached.
+const MILESTONES = [
+  { at: 25, label: "Free wheel spin for everyone" },
+  { at: 50, label: "Free crate for everyone" },
+  { at: 100, label: "Mile marker bonus pack for everyone" }
+];
+async function loadMilestone(){
+  const box = $("#milestone");
+  if (!box) return;
+  const { data: count, error } = await sb.rpc("member_count");
+  if (error || typeof count !== "number") return;
+  const next = MILESTONES.find(m => count < m.at) || MILESTONES[MILESTONES.length - 1];
+  const prev = [...MILESTONES].reverse().find(m => count >= m.at);
+  const from = prev ? prev.at : 0;
+  const pct = next && count < next.at ? Math.min(100, Math.round((count - from) / (next.at - from) * 100)) : 100;
+  box.hidden = false;
+  box.innerHTML = count >= MILESTONES[MILESTONES.length - 1].at
+    ? `<p style="margin:0"><b>🏁 ${count} members. The 100 member mile marker is reached!</b></p>`
+    : `<p style="margin:0 0 8px"><b>${count} / ${next.at} members</b> · next: ${esc(next.label)}</p>
+       <div style="height:12px;border-radius:6px;background:var(--line,#2a2a2a);overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--accent,#e8772e)"></div></div>
+       <p class="muted" style="margin:8px 0 0;font-size:.85rem">Milestones: ${MILESTONES.map(m => `${m.at} · ${esc(m.label)}`).join(" · ")}</p>`;
+}
+
+async function renderDashboard(){
+  const el = $("#dash-body");
+  if (!el) return;
+  if (!user) { el.innerHTML = `<div class="card"><p class="muted" style="margin:0"><a href="#account">Sign in</a> to see your dashboard.</p></div>`; return; }
+  el.innerHTML = `<p class="muted">Loading…</p>`;
+  const [wal, stats, bounties, fac, led, pend, prof] = await Promise.all([
+    sb.from("token_wallets").select("balance").eq("user_id", user.id).maybeSingle(),
+    sb.rpc("my_game_stats"),
+    sb.from("af_open_bounties").select("*").order("pot", { ascending: false }).limit(8),
+    sb.rpc("my_faction"),
+    sb.from("token_ledger").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8),
+    sb.from("prize_claims").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "pending"),
+    sb.from("profiles").select("steam_id,ingame_name").eq("id", user.id).maybeSingle()
+  ]);
+  const rows = stats.data || [];
+  const kills = rows.reduce((a, r) => a + (r.kills || 0), 0);
+  const deaths = rows.reduce((a, r) => a + (r.deaths || 0), 0);
+  const playHrs = (rows.reduce((a, r) => a + (r.playtime || 0), 0) / 3600).toFixed(1);
+  const balance = wal.data?.balance ?? 0;
+  const f = fac.data;
+  const linked = !!prof.data?.steam_id;
+
+  el.innerHTML = `
+    ${!linked ? `<div class="card hl" style="margin-bottom:14px"><p style="margin:0">Link your Steam ID on your <a href="#account">Account</a> page to see your in-game stats here.</p></div>` : ""}
+    <div class="dash-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px">
+      <div class="card"><small class="muted">AFtokens</small><h3 style="margin:4px 0">🪙 ${balance}</h3></div>
+      <div class="card"><small class="muted">Kills / deaths</small><h3 style="margin:4px 0">${kills} / ${deaths}</h3></div>
+      <div class="card"><small class="muted">K/D</small><h3 style="margin:4px 0">${deaths ? (kills / deaths).toFixed(2) : kills}</h3></div>
+      <div class="card"><small class="muted">Playtime</small><h3 style="margin:4px 0">${playHrs} h</h3></div>
+      <div class="card"><small class="muted">Prizes waiting</small><h3 style="margin:4px 0">🎁 ${pend.count || 0}</h3><a href="#wheel" class="muted" style="font-size:.85rem">Open the Arcade</a></div>
+      <div class="card"><small class="muted">Faction</small><h3 style="margin:4px 0">${f ? esc(f.name) : "None"}</h3>${f ? `<small class="muted">War chest: ${f.chest} AFtokens</small>` : `<a href="factions.html" class="muted" style="font-size:.85rem">Join a faction</a>`}</div>
+    </div>
+    ${rows.length ? `<div class="card" style="margin-top:14px"><h3>My servers</h3><ul class="wh-list">${rows.map(r => `<li><span><b>${esc(SRV_LABEL[r.server] || r.server)}</b></span><small>${r.kills} kills · ${r.deaths} deaths · ${r.ai_kills} AI kills · longest ${Math.round(r.longest)} m</small></li>`).join("")}</ul></div>` : ""}
+    <div class="card" style="margin-top:14px"><h3>🎯 Open bounties</h3>${(bounties.data || []).length ? `<ul class="wh-list">${bounties.data.map(b => `<li><span><b>${esc(b.target_name)}</b> · ${esc(SRV_LABEL[b.server_id] || b.server_id)}</span><small>${b.pot} AFtokens · ${b.start_left > 0 ? "starts in " + Math.ceil(b.start_left / 60) + " min" : Math.ceil(b.remaining_left / 60) + " min left"}</small></li>`).join("")}</ul>` : `<p class="muted" style="margin:0">No open bounties right now.</p>`}</div>
+    <div class="card" style="margin-top:14px"><h3>📜 Recent AFtokens</h3>${(led.data || []).length ? `<ul class="wh-list">${led.data.map(l => `<li><div>${esc(l.reason)}<small>${new Date(l.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</small></div><span class="${l.amount >= 0 ? "amt-pos" : "amt-neg"}">${l.amount >= 0 ? "+" : ""}${l.amount}</span></li>`).join("")}</ul>` : `<p class="muted" style="margin:0">No AFtokens yet.</p>`}</div>`;
+}
+
+const views = ["dashboard","cards","crates","members","home","servers","rules","legends","wheel","feed","inbox","support","modshop","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id), ...CONFIG.servers.map(s => "server-" + s.key)];
 function route(){
   const v = views.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
   const section = v.startsWith("live-") ? "live" : v.startsWith("server-") ? "servers" : v === "crates" || v === "cards" ? "wheel" : v;
@@ -4757,6 +4829,7 @@ function route(){
   if (v.startsWith("server-")) { $("#sv-server-detail").classList.add("active"); renderServerDetail(v.slice(7)); }
   if (v === "servers") fillNextEventLines();
   if (v === "account") renderAccount();
+  if (v === "dashboard") renderDashboard();
   if (v === "modshop") renderModShop();
   if (v === "feed") { renderFeed(); renderMemberSide("#feed-side", true); }
   if (v === "members") renderMembers();
@@ -4770,6 +4843,7 @@ function route(){
   window.scrollTo(0,0);
 }
 window.addEventListener("hashchange", route); route();
+loadMilestone();
 </script>
 </body>
 </html>
