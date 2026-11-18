@@ -1,0 +1,3521 @@
+/* ====== EDIT THESE ====== */
+const CONFIG = {
+  /* ---- ACCOUNTS (Sign in with Discord) ----
+     Paste these from Supabase → Project Settings → API.
+     Leave blank and the Account page says "coming soon". */
+  supabaseUrl: "https://kbifstvpqputwqtalyxz.supabase.co",
+  discordBridge: "https://kbifstvpqputwqtalyxz.supabase.co/functions/v1/quick-service",  // Discord stats + role sync
+  supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiaWZzdHZwcXB1dHdxdGFseXh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQwNjU3MTMsImV4cCI6MjEwOTY0MTcxM30.N_4HKBInF7x9srawAkJkW8uEMPZddsCSJ1lQqKxcfBg", // anon public key (safe to be public)
+
+  discord: "https://discord.gg/W87ypFyNrp",
+  donateUrl: "",               // e.g. your PayPal / Ko-fi / Tebex donation link
+  contactEmail: "alliedforces@example.com", // replace with a real contact email
+  bohemiaApproved: false,      // set true once you're on Bohemia's approved DayZ list
+  storeUrl: "",                // your store link once approved
+  prices: { supporter: 5, slot: 10 },
+  updated: "November 6, 2026",
+  servers: [
+    {
+      key: "nasdara",
+      name: "Nasdara | Scorched Earth",
+      tags: ["PvE + PvP zones", "DayZ Expansion", "PC"],
+      ip: "",                  // paste current IP:port
+      wipe: "15th of every month",
+      features: [
+        "BS Base Building + RaG base items",
+        "LBmaster Advanced Groups for factions",
+        "The Watering Hole — black market PvP zone",
+        "The Underground trader, AI convoys, airdrops",
+        "Snafu weapons, Windstrides clothing, Infinite Stamina"
+      ]
+    },
+    {
+      key: "chernarus",
+      name: "Chernarus Badlands",
+      tags: ["PvE + PvP zones", "DayZ Expansion", "PC"],
+      ip: "154.16.200.253:2869",
+      wipe: "30th of every month",
+      features: [
+        "LBmaster Advanced Groups",
+        "Drugs Plus farming and The Underground trader",
+        "Rare finds at the nuclear facility",
+        "Monthly raid weeks",
+        "Expansion traders and AI"
+      ]
+    }
+  ],
+
+  /* ---- AF LEGENDS (Hall of Fame) ----
+     Legends now live in Supabase → Table Editor → legends.
+     The list below is only a backup shown if the database can't be reached
+     or the legends table is empty. */
+  legendsIntro: "The players who made Allied Forces what it is. Earned, not bought.",
+  legends: [
+    { name: "Legacy",  joined: "2019", role: "Co-founder", photo: "", quip: "Built it from the ground up." },
+    { name: "V2 Mojo", joined: "2019", role: "Co-founder", photo: "", quip: "Ten years deep and still running it back." },
+    { name: "Player Name", joined: "2024", role: "Faction leader", photo: "", quip: "Your custom quip goes here." }
+  ],
+  /* ---- LIVE → KILLFEED ----
+     Keys must match the ?server=... value in each server's killfeed webhook URL. */
+  killfeedServers: { nasdara: "Nasdara", chernarus: "Chernarus" },
+
+  /* ---- LIVE → WIPE COUNTDOWN ----
+     wipeDay:      day of the month this server wipes (30 = last day in February)
+     raidStartDay: day raid week opens here (= the other server's wipe day)
+     zoneDays:     how many days raiding is PvP-zones-only before the whole map opens
+     nextWipeOverride: one-off date change, e.g. "2026-12-20 18:00" (Eastern). Leave "" normally. */
+  wipeTime: "12:00",               // time of day wipes happen, Eastern Time (24h)
+  wipeTimeZone: "America/New_York",
+  wipes: [
+    { key: "nasdara",   name: "Nasdara | Scorched Earth", wipeDay: 15, raidStartDay: 30, zoneDays: 7, nextWipeOverride: "" },
+    { key: "chernarus", name: "Chernarus Badlands",       wipeDay: 30, raidStartDay: 15, zoneDays: 7, nextWipeOverride: "" }
+  ],
+
+  legendsQuip: "Legends never log off."     // the line at the bottom of the page
+};
+/* ======================== */
+
+const $ = s => document.querySelector(s), $$ = s => document.querySelectorAll(s);
+$$(".discord-link").forEach(a => { a.href = CONFIG.discord; a.target = "_blank"; a.rel = "noopener"; });
+$$(".contact-email").forEach(e => e.textContent = CONFIG.contactEmail);
+$$(".updated").forEach(e => e.textContent = CONFIG.updated);
+$(".year").textContent = new Date().getFullYear();
+$(".p-supporter").textContent = CONFIG.prices.supporter;
+$(".p-slot").textContent = CONFIG.prices.slot;
+
+const donate = $(".donate-link");
+if (CONFIG.donateUrl) { donate.href = CONFIG.donateUrl; donate.target = "_blank"; donate.rel = "noopener"; }
+else { donate.href = CONFIG.discord; donate.target = "_blank"; donate.textContent = "Donate via Discord"; }
+
+$("#store-status").innerHTML = CONFIG.bohemiaApproved
+  ? `<b>We're approved and listed by Bohemia Interactive.</b> ${CONFIG.storeUrl ? `<a href="${CONFIG.storeUrl}" target="_blank" rel="noopener">Open the store →</a>` : ""}`
+  : `<b>Supporter packages are coming soon.</b> We've applied for Bohemia Interactive's monetization approval. Until we're approved and listed, only no-strings donations are accepted.`;
+
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1600); }
+
+
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const initials = n => n.split(/\s+/).filter(Boolean).map(w => w[0]).join("").slice(0,2).toUpperCase();
+$("#legends-intro").textContent = CONFIG.legendsIntro;
+$("#legends-quip").textContent = CONFIG.legendsQuip;
+let legendsData = CONFIG.legends.map(l => ({ ...l, photo_url: l.photo }));
+
+/* ===== ACCOUNTS ===== */
+const DISCORD_SVG = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.6 0L8.6 3a19.6 19.6 0 0 0-4.9 1.4C.6 9 0 13.6.3 18.1a19.8 19.8 0 0 0 6 3l1.3-2a12.7 12.7 0 0 1-2-1l.5-.4a14 14 0 0 0 11.9 0l.5.4c-.6.4-1.3.7-2 1l1.3 2a19.7 19.7 0 0 0 6-3c.5-5.2-.8-9.8-3.5-13.7ZM8.5 15.3c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm7 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg>`;
+let sb = null, user = null;
+try {
+  if (CONFIG.supabaseUrl && CONFIG.supabaseAnonKey && window.supabase)
+    sb = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey, { auth: { flowType: "pkce", detectSessionInUrl: true, persistSession: true } });
+} catch (e) { console.error(e); }
+
+const meta = u => u?.user_metadata || {};
+const dName = u => { const m = meta(u); return m.custom_claims?.global_name || m.full_name || m.name || "Survivor"; };
+
+function setNav(){
+  const a = $("#nav-account");
+  if (!user) { a.textContent = "Sign in"; return; }
+  const av = meta(user).avatar_url;
+  a.innerHTML = `${av ? `<img class="nav-av" src="${esc(av)}" alt="">` : ""}${esc(dName(user))}`;
+}
+
+async function signIn(){
+  const { error } = await sb.auth.signInWithOAuth({ provider: "discord", options: { redirectTo: location.origin + location.pathname } });
+  if (error) $("#acct-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`;
+}
+
+async function renderAccount(){
+  const box = $("#acct");
+  if (!sb) {
+    box.innerHTML = `<h2>Your AF account</h2><div class="card"><h3>Accounts are coming soon</h3><p class="muted" style="margin:0">Soon you'll be able to sign in with Discord and link your Steam ID to your AF account.</p></div>`;
+    return;
+  }
+  if (!user) {
+    box.innerHTML = `
+      <h2>Your AF account</h2>
+      <p class="muted">Sign in with Discord to create your Allied Forces account. No password needed — your Discord is your login.</p>
+      <div class="card">
+        <ul class="clean" style="margin-bottom:18px">
+          <li>Link your Steam ID and in-game name to your Discord</li>
+          <li>Faster tickets — staff already know who you are</li>
+          <li>Needed for supporter perks once the store opens</li>
+        </ul>
+        <button class="btn discord-btn" id="signin">${DISCORD_SVG} Sign in with Discord</button>
+        <div id="acct-msg"></div>
+        <p class="muted" style="font-size:.88rem;margin:14px 0 0">By signing in you agree to our <a href="#terms">Terms</a> and <a href="#privacy">Privacy Policy</a>.</p>
+      </div>`;
+    $("#signin").onclick = signIn;
+    return;
+  }
+  box.innerHTML = `<h2>Your AF account</h2><div class="card"><p class="muted" style="margin:0">Loading your profile…</p></div>`;
+  const { data: p, error } = await sb.from("profiles").select("*").eq("id", user.id).maybeSingle();
+  const m = meta(user);
+  const since = new Date(p?.created_at || user.created_at).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  box.innerHTML = `
+    <h2>Your AF account</h2>
+    <div class="card">
+      <div class="acct-head">
+        ${m.avatar_url ? `<img src="${esc(m.avatar_url)}" alt="">` : `<div class="ph">${esc(initials(dName(user)))}</div>`}
+        <div><h3>${esc(dName(user))}</h3><div class="muted">Discord connected · Member since ${esc(since)}</div></div>
+      </div>
+      ${error ? `<p class="msg err">Couldn't load your profile: ${esc(error.message)}</p>` : ""}
+      <form id="pform">
+        <div class="field">
+          <label for="steam">Steam64 ID</label>
+          <input id="steam" inputmode="numeric" maxlength="17" placeholder="7656119xxxxxxxxxx" value="${esc(p?.steam_id)}">
+          <small>17 digits starting with 7656119. Find it on your Steam profile page or at steamid.io.</small>
+        </div>
+        <div class="field">
+          <label for="ign">In-game name</label>
+          <input id="ign" maxlength="32" placeholder="Your DayZ name" value="${esc(p?.ingame_name)}">
+        </div>
+        <div class="row">
+          <button class="btn" type="submit">Save details</button>
+          <button class="btn ghost" type="button" id="signout">Sign out</button>
+        </div>
+        <div id="acct-msg"></div>
+      </form>
+    </div>
+    <div id="pe-slot" style="margin-top:18px"></div>
+    ${myLegend() ? `
+    <div class="card hl" style="margin-top:18px">
+      <span class="tag ok">AF Legend</span>
+      <h3>You're in the Hall of Fame</h3>
+      <p class="muted">Change your card's photo, faction and quip anytime.</p>
+      <div class="row"><button class="btn" id="edit-legend">Edit my Legend card</button><a class="btn ghost" href="#legends">View Legends</a></div>
+    </div>` : ""}
+    <div class="card" style="margin-top:18px" id="dc-card"><h3>Discord roles</h3><div id="dc-roles"><p class="muted" style="margin:0">Checking your Discord roles…</p></div></div>
+    <p class="muted" style="font-size:.9rem;margin-top:14px">Want your account deleted? Open a ticket in Discord.</p>`;
+  if ($("#edit-legend")) $("#edit-legend").onclick = openLegendEditor;
+  if (!error) mountProfileEditor(p);
+  renderDiscordRoles();
+  $("#signout").onclick = async () => { await sb.auth.signOut(); };
+  $("#pform").onsubmit = async e => {
+    e.preventDefault();
+    const steam = $("#steam").value.trim(), ign = $("#ign").value.trim();
+    const msg = $("#acct-msg");
+    if (steam && !/^7656119\d{10}$/.test(steam)) { msg.innerHTML = `<p class="msg err">That doesn't look like a Steam64 ID (17 digits starting with 7656119).</p>`; return; }
+    const { error } = await sb.from("profiles").update({ steam_id: steam || null, ingame_name: ign || null, updated_at: new Date().toISOString() }).eq("id", user.id);
+    msg.innerHTML = error ? `<p class="msg err">${esc(error.message)}</p>` : `<p class="msg ok">Saved!</p>`;
+  };
+}
+
+async function syncProfile(){
+  const m = meta(user);
+  await sb.from("profiles").upsert({
+    id: user.id, discord_id: myDiscordIds().find(x => /^\d{15,21}$/.test(x)) || m.provider_id || null, discord_username: dName(user),
+    avatar_url: m.avatar_url || null, updated_at: new Date().toISOString()
+  });
+}
+
+if (sb) {
+  sb.auth.onAuthStateChange((event, session) => {
+    const prevId = user?.id;
+    user = session?.user || null;
+    setNav();
+    renderLegends();
+    if (prevId !== user?.id) setTimeout(onUserChanged, 0);
+    if (event === "SIGNED_IN" && user) {
+      setTimeout(async () => {
+        await syncProfile();
+        if (location.search.includes("code=")) { history.replaceState(null, "", location.pathname + "#account"); route(); }
+        else if (location.hash === "#account") renderAccount();
+      }, 0);
+    } else if (location.hash === "#account") setTimeout(renderAccount, 0);
+  });
+}
+
+/* ===== LEGENDS (from Supabase, editable by the legend) ===== */
+/* Every place Supabase may put the Discord user id (it varies between versions) */
+function myDiscordIds(){
+  if (!user) return [];
+  const m = meta(user), ids = [m.provider_id, m.sub, m.custom_claims?.id];
+  (user.identities || []).filter(i => i.provider === "discord").forEach(i => ids.push(i.provider_id, i.identity_data?.provider_id, i.identity_data?.sub, i.id));
+  return [...new Set(ids.filter(Boolean).map(x => String(x).trim()))];
+}
+const isMyDiscord = id => !!id && myDiscordIds().includes(String(id).trim());
+function myDiscordId(){ return myDiscordIds()[0] || null; }
+function myLegend(){ return legendsData.find(l => isMyDiscord(l.discord_id)) || null; }
+
+function renderLegends(){
+
+  $("#legend-list").innerHTML = legendsData.map((l, i) => {
+    const isMine = isMyDiscord(l.discord_id);
+    return `
+    <div class="legend${isMine ? " mine" : ""}">
+      <div class="photo">
+        <div class="initials">${esc(initials(l.name || "?"))}</div>
+        ${l.photo_url ? `<img src="${esc(l.photo_url)}" alt="${esc(l.name)}" onerror="this.remove()">` : ""}
+        ${l.joined ? `<span class="year">Since ${esc(l.joined)}</span>` : ""}
+      </div>
+      <div class="body">
+        <h3>${esc(l.name)}</h3>
+        ${l.faction ? `<div class="faction">${esc(l.faction)}</div>` : ""}
+        ${l.role ? `<div class="role">${esc(l.role)}</div>` : ""}
+        ${l.quip ? `<p class="quip">${esc(l.quip)}</p>` : ""}
+        ${isMine ? `<button class="btn sm" style="margin-top:14px" data-edit-legend="${i}">Edit my card</button>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+  $$("[data-edit-legend]").forEach(b => b.onclick = () => openLegendEditor());
+}
+
+async function loadLegends(){
+  if (!sb) { renderLegends(); return; }
+  const { data, error } = await sb.from("legends").select("*").order("sort_order").order("id");
+  if (!error && data && data.length) legendsData = data;
+  renderLegends();
+}
+
+/* resize + square-crop an image file to a 512px JPEG */
+function squareJpeg(file, size = 512){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const s = Math.min(img.width, img.height), c = document.createElement("canvas");
+      c.width = c.height = size;
+      c.getContext("2d").drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => b ? res(b) : rej(new Error("Couldn't read that image")), "image/jpeg", 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("That file isn't an image we can use")); };
+    img.src = url;
+  });
+}
+
+function openLegendEditor(){
+  const l = myLegend(); if (!l || !sb) return;
+  let newPhoto = null, photoUrl = l.photo_url || "";
+  const m = $("#legend-modal");
+  m.innerHTML = `
+    <div class="modal-card" role="dialog" aria-modal="true" aria-label="Edit your Legend card">
+      <h3>Edit your Legend card</h3>
+      <p class="muted" style="font-size:.92rem">Your name, year and role are set by the AF admins.</p>
+      <div class="edit-photo">
+        <div class="legend-prev" id="lp">${photoUrl ? `<img src="${esc(photoUrl)}" alt="">` : `<span>${esc(initials(l.name))}</span>`}</div>
+        <div class="row" style="flex-direction:column;align-items:stretch">
+          <label class="btn ghost sm" style="text-align:center">Upload photo<input type="file" id="lfile" accept="image/jpeg,image/png,image/webp" hidden></label>
+          ${meta(user).avatar_url ? `<button class="btn ghost sm" type="button" id="lavatar">Use my Discord avatar</button>` : ""}
+          <button class="btn ghost sm" type="button" id="lclear">Remove photo</button>
+        </div>
+      </div>
+      <div class="field"><label for="lfac">Faction</label><input id="lfac" maxlength="40" value="${esc(l.faction)}" placeholder="Your faction's name"></div>
+      <div class="field"><label for="lquip">Quip</label><input id="lquip" maxlength="140" value="${esc(l.quip)}" placeholder="Your line at the bottom of the card"><small><span id="lcount">0</span>/140</small></div>
+      <div class="row"><button class="btn" id="lsave">Save card</button><button class="btn ghost" id="lcancel">Cancel</button></div>
+      <div id="lmsg"></div>
+    </div>`;
+  m.classList.add("open");
+  const prev = src => $("#lp").innerHTML = src ? `<img src="${esc(src)}" alt="">` : `<span>${esc(initials(l.name))}</span>`;
+  const count = () => $("#lcount").textContent = $("#lquip").value.length;
+  count(); $("#lquip").oninput = count;
+  $("#lcancel").onclick = () => m.classList.remove("open");
+  m.onclick = e => { if (e.target === m) m.classList.remove("open"); };
+  $("#lclear").onclick = () => { newPhoto = null; photoUrl = ""; prev(""); };
+  if ($("#lavatar")) $("#lavatar").onclick = () => { newPhoto = null; photoUrl = meta(user).avatar_url; prev(photoUrl); };
+  $("#lfile").onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { newPhoto = await squareJpeg(f); prev(URL.createObjectURL(newPhoto)); }
+    catch (err) { $("#lmsg").innerHTML = `<p class="msg err">${esc(err.message)}</p>`; }
+  };
+  $("#lsave").onclick = async () => {
+    const btn = $("#lsave"), msg = $("#lmsg");
+    btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      if (newPhoto) {
+        const path = `${user.id}/${Date.now()}.jpg`;
+        const up = await sb.storage.from("legend-photos").upload(path, newPhoto, { contentType: "image/jpeg" });
+        if (up.error) throw up.error;
+        photoUrl = sb.storage.from("legend-photos").getPublicUrl(path).data.publicUrl;
+      }
+      const changes = { faction: $("#lfac").value.trim() || null, quip: $("#lquip").value.trim() || null, photo_url: photoUrl || null };
+      const { error } = await sb.from("legends").update(changes).eq("id", l.id);
+      if (error) throw error;
+      Object.assign(l, changes);
+      renderLegends();
+      m.classList.remove("open");
+      toast("Legend card saved!");
+      if (location.hash === "#account") renderAccount();
+    } catch (err) {
+      msg.innerHTML = `<p class="msg err">${esc(err.message || "Couldn't save")}</p>`;
+      btn.disabled = false; btn.textContent = "Save card";
+    }
+  };
+}
+
+renderLegends();
+loadLegends();
+
+/* ===== LIVE SECTION (sub pages) =====
+   To add a sub page: add it here, and add <div class="subview" id="sv-live-NAME"> in the Live view. */
+const LIVE_TABS = [
+  { id: "live-wipes", label: "Wipe Countdown" },
+  { id: "live-leaderboard", label: "Leaderboard" },
+  { id: "live-killfeed", label: "Killfeed" }
+];
+
+/* ===== LEADERBOARD (built from the killfeed) ===== */
+const NOT_PLAYERS = /^(?:zombie|infected|zmb|animal|wolf|bear|environment|unknown|ai|bot|the server|server)$/i;
+const plain = t => String(t || "")
+  .replace(/<a?:(\w+):\d+>/g, "").replace(/<t:\d+(?::\w)?>/g, "")
+  .replace(/[*_`~|>]/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+  .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, "").replace(/[ \t]+/g, " ").trim();
+const num = t => { const m = /([\d]+(?:[.,]\d+)?)\s*(?:m\b|meters?|metres?)/i.exec(t || ""); return m ? parseFloat(m[1].replace(",", ".")) : null; };
+const cleanName = n => (n || "").replace(/^(?:player|survivor)\s+/i, "").replace(/^["'\s]+|["'\s.:,!]+$/g, "").replace(/\s*\((?:id|DEAD)[^)]*\)/gi, "").trim().slice(0, 40) || null;
+
+// Reads one killfeed message → { killer, victim, weapon, distance } or null
+function parseKill(r){
+  const e = Array.isArray(r.embeds) ? r.embeds[0] : null;
+  // 1) embed fields like "Killer" / "Victim" / "Weapon" / "Distance"
+  if (e?.fields?.length) {
+    const f = re => plain(e.fields.find(x => re.test(plain(x.name)))?.value);
+    const killer = f(/killer|attacker|murderer|shooter/i), victim = f(/victim|killed|dead|target/i);
+    if (killer && victim) return { killer: cleanName(killer), victim: cleanName(victim), weapon: f(/weapon|gun|item/i) || null, distance: num(f(/distance|range/i) + " m") };
+  }
+  const text = [r.content, e?.title, e?.description].map(plain).filter(Boolean).join("\n");
+  for (const line of text.split("\n")) {
+    let m;
+    // ADM log style: Player "Victim" (DEAD) ... killed by Player "Killer" ... with M4A1 from 120.3 meters
+    if ((m = /Player\s+"(.+?)".*?killed by\s+Player\s+"(.+?)"/i.exec(line))) {
+      const w = /\bwith\s+(.+?)(?:\s+from\s+[\d.]+\s*met\w*)?\s*$/i.exec(line.slice(m.index + m[0].length));
+      return { victim: cleanName(m[1]), killer: cleanName(m[2]), weapon: w ? w[1].trim() : null, distance: num(line) };
+    }
+    // "Victim was killed by Killer with Weapon from 120m"
+    if ((m = /^(.+?)\s+(?:was|got)\s+(?:killed|shot|murdered|eliminated)\s+by\s+(.+?)(?:\s+(?:with|using)\s+(?:an?\s+|the\s+|their\s+)?(.+?))?(?:\s+(?:from|at)\s+[\d.,]+\s*m.*|\s*\(.*\))?$/i.exec(line)))
+      return { victim: cleanName(m[1]), killer: cleanName(m[2]), weapon: m[3] ? m[3].trim() : null, distance: num(line) };
+    // "Killer killed Victim with Weapon from 120m"
+    if ((m = /^(.+?)\s+(?:killed|shot|murdered|eliminated|executed|took out)\s+(.+?)(?:\s+(?:with|using)\s+(?:an?\s+|the\s+|their\s+)?(.+?))?(?:\s+(?:from|at)\s+[\d.,]+\s*m.*|\s*\(.*\))?$/i.exec(line)))
+      return { killer: cleanName(m[1]), victim: cleanName(m[2]), weapon: m[3] ? m[3].trim() : null, distance: num(line) };
+  }
+  return null;
+}
+
+let lbServer = Object.keys(CONFIG.killfeedServers)[0], lbPeriod = "wipe", lbStarted = false, myIgn = null;
+const LB_PERIODS = { wipe: "This wipe", d7: "Last 7 days", d30: "Last 30 days" };
+
+function lbStart(){
+  if (lbServer === "all" || lbPeriod === "d30") return Date.now() - 30 * 864e5;
+  if (lbPeriod === "d7") return Date.now() - 7 * 864e5;
+  const w = CONFIG.wipes.find(x => x.key === lbServer);
+  return w ? wipeState(w).last : Date.now() - 30 * 864e5;
+}
+function renderLbFilters(){
+  const servers = [...Object.keys(CONFIG.killfeedServers), "all"];
+  $("#lb-servers").innerHTML = servers.map(k => `<button class="chip${k === lbServer ? " active" : ""}" data-lbs="${esc(k)}">${k === "all" ? "All servers" : esc(kfServerName(k))}</button>`).join("");
+  $("#lb-periods").innerHTML = Object.entries(LB_PERIODS).filter(([k]) => !(lbServer === "all" && k === "wipe"))
+    .map(([k, v]) => `<button class="chip${k === lbPeriod ? " active" : ""}" data-lbp="${k}">${v}</button>`).join("");
+  $$("[data-lbs]").forEach(b => b.onclick = () => { lbServer = b.dataset.lbs; if (lbServer === "all" && lbPeriod === "wipe") lbPeriod = "d30"; renderLbFilters(); loadLeaderboard(); });
+  $$("[data-lbp]").forEach(b => b.onclick = () => { lbPeriod = b.dataset.lbp; renderLbFilters(); loadLeaderboard(); });
+}
+async function fetchKills(since){
+  const out = [];
+  for (let from = 0; from < 10000; from += 1000) {
+    const { data, error } = await sb.from("killfeed").select("server,content,embeds,created_at").gte("created_at", new Date(since).toISOString()).order("created_at", { ascending: false }).range(from, from + 999);
+    if (error) throw error;
+    out.push(...data);
+    if (data.length < 1000) break;
+  }
+  return out;
+}
+// One download (all servers, back to the earliest period any filter needs) is reused for 60 seconds.
+let kfCache = { at: 0, since: Infinity, rows: null };
+function kfNeededSince(){
+  return Math.min(Date.now() - 30 * 864e5, ...CONFIG.wipes.map(w => wipeState(w).last));
+}
+async function fetchKillsCached(){
+  const need = kfNeededSince();
+  if (kfCache.rows && Date.now() - kfCache.at < 60000 && kfCache.since <= need) return kfCache.rows;
+  const rows = await fetchKills(need);
+  kfCache = { at: Date.now(), since: need, rows };
+  return rows;
+}let lbMode = "ingame";
+function renderLbMode(){
+  let m = document.getElementById("lb-mode");
+  if (!m) { m = document.createElement("div"); m.id = "lb-mode"; m.className = "subnav"; $("#lb-body").before(m); }
+  m.innerHTML = [["ingame", "In-game"], ["killfeed", "Killfeed (Discord)"]].map(([k, v]) => `<button class="chip${k === lbMode ? " active" : ""}" data-lbm="${k}">${v}</button>`).join("");
+  m.querySelectorAll("[data-lbm]").forEach(b => b.onclick = () => { lbMode = b.dataset.lbm; loadLeaderboard(); });
+}
+let igServer = null;
+const LB_SERVERS = ["Nasdara", "Chernarus"]; // test server is hidden from the website
+async function loadLeaderboard(){
+  renderLbMode();
+  if (lbMode === "killfeed") { document.getElementById("lb-bounties")?.remove(); renderLbFilters(); return loadKillfeedBoard(); }
+  loadBounties();
+  const body = $("#lb-body");
+  $("#lb-periods").innerHTML = "";
+  if (!sb) { $("#lb-servers").innerHTML = ""; body.innerHTML = `<div class="kf-empty">Leaderboards are coming soon.</div>`; return; }
+  if (!igServer || !LB_SERVERS.includes(igServer)) igServer = LB_SERVERS[0];
+  $("#lb-servers").innerHTML = LB_SERVERS.map(s => `<button class="chip${s === igServer ? " active" : ""}" data-igs="${esc(s)}">${esc(s)}</button>`).join("");
+  $$("[data-igs]").forEach(b => b.onclick = () => { igServer = b.dataset.igs; loadLeaderboard(); });
+  body.innerHTML = `<div class="kf-empty">Loading the in-game leaderboard…</div>`;
+  const { data, error } = await sb.from("af_leaderboard").select("*").eq("server_id", igServer).order("kills", { ascending: false }).limit(100);
+  if (error) { body.innerHTML = `<div class="kf-empty">Couldn't load the leaderboard: ${esc(error.message)}</div>`; return; }
+  const rows = data || [];
+  if (!rows.length) { body.innerHTML = `<div class="kf-empty">No in-game stats yet on ${esc(igServer)}. Play on the server and check back.</div>`; return; }
+  const kd = p => Number(p.kd || 0).toFixed(2);
+  const hm = s => `${Math.floor((s || 0) / 3600)}h ${Math.floor(((s || 0) % 3600) / 60)}m`;
+  const me = n => myIgn && n.toLowerCase() === myIgn.toLowerCase();
+  const rowCls = (i, n) => [i < 3 ? "top" + (i + 1) : "", me(n) ? "me" : ""].join(" ").trim();
+  const far = Math.round(Math.max(0, ...rows.map(r => Number(r.longest_kill) || 0)));
+  body.innerHTML = `
+    <div class="lb-hero">
+      <div class="card"><span>Players</span><b>${rows.length}</b><small>${esc(igServer)}</small></div>
+      <div class="card"><span>Top killer</span><b>${esc(rows[0].name)}</b><small>${rows[0].kills} kills · ${kd(rows[0])} K/D</small></div>
+      <div class="card"><span>Longest shot</span><b>${far}m</b><small>${esc(igServer)}</small></div>
+    </div>
+    <div class="card">
+      <h3>${esc(igServer)} leaderboard</h3>
+      <table class="lb"><thead><tr><th>#</th><th>Player</th><th>Kills</th><th>Deaths</th><th>K/D</th><th>AI</th><th>Zombies</th><th>Longest</th><th>Playtime</th></tr></thead><tbody>
+      ${rows.map((p, i) => `<tr class="${rowCls(i, p.name)}"><td>${i + 1}</td><td class="name">${esc(p.name)}${me(p.name) ? `<span class="lb-you">YOU</span>` : ""}</td><td><b>${p.kills}</b></td><td>${p.deaths}</td><td>${kd(p)}</td><td>${p.ai_kills || 0}</td><td>${p.zombie_kills || 0}</td><td>${p.longest_kill ? Math.round(p.longest_kill) + "m" : "—"}</td><td>${hm(p.playtime_seconds)}</td></tr>`).join("")}
+      </tbody></table>
+    </div>`;
+}/* Open bounties (pushed by the game servers when they change). Shown above the in-game leaderboard, with a per-server filter. */
+let bountyServer = "all";
+let bountyCache = { at: 0, rows: null };
+async function loadBounties(){
+  if (!sb) return;
+  let box = document.getElementById("lb-bounties");
+  if (!box) { box = document.createElement("div"); box.id = "lb-bounties"; $("#lb-body").before(box); }
+  if (!bountyCache.rows || Date.now() - bountyCache.at > 60000) {
+    const { data, error } = await sb.from("af_open_bounties").select("*").in("server_id", LB_SERVERS).order("pot", { ascending: false }).limit(100);
+    if (error) { box.innerHTML = ""; return; }
+    bountyCache = { at: Date.now(), rows: data || [] };
+  }
+  const rows = bountyCache.rows.filter(b => bountyServer === "all" || b.server_id === bountyServer);
+  const mins = s => Math.max(1, Math.ceil((s || 0) / 60)) + " min";
+  const timing = b => b.start_left > 0 ? "starts in " + mins(b.start_left) : mins(b.remaining_left) + " left";
+  const chips = ["all", ...LB_SERVERS].map(k => `<button class="chip${k === bountyServer ? " active" : ""}" data-bs="${esc(k)}">${k === "all" ? "All servers" : esc(k)}</button>`).join("");
+  box.innerHTML = `
+    <div class="card">
+      <h3>Open bounties</h3>
+      <div class="subnav" style="margin-bottom:12px">${chips}</div>
+      <p class="lb-note">Bounties pay AFTokens to whoever gets the kill. Turn Bounty on in the game menu (Home key) to take part.</p>
+      ${rows.length ? `<table class="lb"><thead><tr><th>Server</th><th>Target</th><th>Posted by</th><th>Pot</th><th>Time</th></tr></thead><tbody>
+        ${rows.map(b => `<tr><td>${esc(b.server_id)}</td><td class="name">${esc(b.target_name)}</td><td>${esc(b.poster_name)}</td><td><b>${b.pot}</b> AFTokens</td><td>${esc(timing(b))}</td></tr>`).join("")}
+      </tbody></table>` : `<p class="lb-note">No open bounties on ${bountyServer === "all" ? "either server" : esc(bountyServer)} right now.</p>`}
+    </div>`;
+  box.querySelectorAll("[data-bs]").forEach(b => b.onclick = () => { bountyServer = b.dataset.bs; loadBounties(); });
+}
+async function loadKillfeedBoard(){
+  const body = $("#lb-body");
+  if (!sb) { body.innerHTML = `<div class="kf-empty">Leaderboards are coming soon.</div>`; return; }
+  body.innerHTML = `<div class="kf-empty">Counting bodies…</div>`;
+  let rows;
+  try {
+    const since = lbStart();
+    rows = (await fetchKillsCached()).filter(r => new Date(r.created_at).getTime() >= since && (lbServer === "all" || r.server === lbServer));
+  }
+  catch (err) { body.innerHTML = `<div class="kf-empty">Couldn't load the leaderboard: ${esc(err.message)}</div>`; return; }
+
+  const players = new Map(), weapons = new Map(), shots = [];
+  const P = n => { const k = n.toLowerCase(); if (!players.has(k)) players.set(k, { name: n, kills: 0, deaths: 0, longest: 0 }); return players.get(k); };
+  let unread = 0, kills = 0;
+  for (const r of rows) {
+    const k = parseKill(r);
+    if (!k || !k.victim) { unread++; continue; }
+    const pvp = k.killer && !NOT_PLAYERS.test(k.killer) && k.killer.toLowerCase() !== k.victim.toLowerCase();
+    if (!NOT_PLAYERS.test(k.victim)) P(k.victim).deaths++;
+    if (!pvp) continue;
+    kills++;
+    const p = P(k.killer); p.kills++;
+    if (k.distance) { p.longest = Math.max(p.longest, k.distance); shots.push({ ...k, at: r.created_at }); }
+    if (k.weapon) weapons.set(k.weapon, (weapons.get(k.weapon) || 0) + 1);
+  }
+  const list = [...players.values()].filter(p => p.kills > 0)
+    .sort((a, b) => b.kills - a.kills || (b.kills / Math.max(1, b.deaths)) - (a.kills / Math.max(1, a.deaths)) || b.longest - a.longest);
+  shots.sort((a, b) => b.distance - a.distance);
+  const wl = [...weapons.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const me = n => myIgn && n.toLowerCase() === myIgn.toLowerCase();
+  const kd = p => (p.kills / Math.max(1, p.deaths)).toFixed(2);
+  const rowCls = (i, n) => [i < 3 ? "top" + (i + 1) : "", me(n) ? "me" : ""].join(" ").trim();
+
+  if (!kills) {
+    body.innerHTML = `<div class="kf-empty">No player kills ${lbPeriod === "wipe" ? "this wipe" : "in this period"} yet. Someone has to start it.</div>
+      ${unread ? `<p class="lb-note">${unread} killfeed message${unread > 1 ? "s" : ""} couldn't be read as a kill.</p>` : ""}`;
+    return;
+  }
+  const top = list[0], far = shots[0];
+  body.innerHTML = `
+    <div class="lb-hero">
+      <div class="card"><span>Player kills</span><b>${kills}</b><small>${esc(LB_PERIODS[lbPeriod])}</small></div>
+      <div class="card"><span>Top killer</span><b>${esc(top.name)}</b><small>${top.kills} kills · ${kd(top)} K/D</small></div>
+      ${far ? `<div class="card"><span>Longest shot</span><b>${Math.round(far.distance)}m</b><small>${esc(far.killer)}${far.weapon ? " · " + esc(far.weapon) : ""}</small></div>` : ""}
+      ${wl.length ? `<div class="card"><span>Deadliest weapon</span><b>${esc(wl[0][0])}</b><small>${wl[0][1]} kills</small></div>` : ""}
+    </div>
+    <div class="lb-grid">
+      <div class="card">
+        <h3>Top killers</h3>
+        <table class="lb"><thead><tr><th>#</th><th>Player</th><th>Kills</th><th>Deaths</th><th>K/D</th><th>Longest</th></tr></thead><tbody>
+        ${list.slice(0, 25).map((p, i) => `<tr class="${rowCls(i, p.name)}"><td>${i + 1}</td><td class="name">${esc(p.name)}${me(p.name) ? `<span class="lb-you">YOU</span>` : ""}</td><td><b>${p.kills}</b></td><td>${p.deaths}</td><td>${kd(p)}</td><td>${p.longest ? Math.round(p.longest) + "m" : "—"}</td></tr>`).join("")}
+        </tbody></table>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:18px">
+        ${shots.length ? `<div class="card"><h3>Longest shots</h3>
+          <table class="lb"><thead><tr><th>#</th><th>Shooter</th><th>Dist.</th></tr></thead><tbody>
+          ${shots.slice(0, 5).map((s, i) => `<tr class="${rowCls(i, s.killer)}"><td>${i + 1}</td><td class="name">${esc(s.killer)}<div class="muted" style="font-size:.82rem;font-weight:400">${s.weapon ? esc(s.weapon) + " · " : ""}on ${esc(s.victim)}</div></td><td><b>${Math.round(s.distance)}m</b></td></tr>`).join("")}
+          </tbody></table></div>` : ""}
+        ${wl.length ? `<div class="card"><h3>Top weapons</h3>
+          <table class="lb"><thead><tr><th>#</th><th>Weapon</th><th>Kills</th></tr></thead><tbody>
+          ${wl.map(([w, n], i) => `<tr><td>${i + 1}</td><td class="name">${esc(w)}</td><td>${n}</td></tr>`).join("")}
+          </tbody></table></div>` : ""}
+      </div>
+    </div>
+    <p class="lb-note">Built from the live killfeed. Only player-vs-player kills count; deaths to zombies and the environment count as deaths only.${unread ? ` ${unread} message${unread > 1 ? "s" : ""} couldn't be read as a kill.` : ""}${user && !myIgn ? ` <a href="#account">Add your in-game name</a> to get highlighted.` : ""}</p>`;
+}
+async function startLeaderboard(){
+  if (!lbStarted) { lbStarted = true; renderLbFilters(); }
+  if (sb && user) {
+    const { data } = await sb.from("profiles").select("ingame_name").eq("id", user.id).maybeSingle();
+    myIgn = data?.ingame_name || null;
+  }
+  loadLeaderboard();
+}
+
+/* ===== WIPE COUNTDOWN ===== */
+// UTC timestamp for a wall-clock time in a time zone (handles daylight saving)
+function zonedTs(y, mo, d, h, mi, tz){
+  const want = Date.UTC(y, mo, d, h, mi);
+  let t = want;
+  const fmt = new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  for (let i = 0; i < 3; i++) {
+    const p = Object.fromEntries(fmt.formatToParts(new Date(t)).map(x => [x.type, x.value]));
+    const shown = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute);
+    t += want - shown;
+  }
+  return t;
+}
+function zonedParts(ts, tz){
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, year: "numeric", month: "numeric" }).formatToParts(new Date(ts)).map(x => [x.type, x.value]));
+  return { y: +p.year, m: +p.month - 1 };
+}
+// all occurrences of "day N of the month" from 2 months back to 3 months ahead
+function monthlyTimes(day, now = Date.now()){
+  const tz = CONFIG.wipeTimeZone, [h, mi] = CONFIG.wipeTime.split(":").map(Number);
+  const { y, m } = zonedParts(now, tz), out = [];
+  for (let k = -2; k <= 3; k++) {
+    const yy = y + Math.floor((m + k) / 12), mm = ((m + k) % 12 + 12) % 12;
+    const dim = new Date(Date.UTC(yy, mm + 1, 0)).getUTCDate();
+    out.push(zonedTs(yy, mm, Math.min(day, dim), h, mi, tz));
+  }
+  return out;
+}
+function parseOverride(str){
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{1,2}):(\d{2}))?$/.exec((str || "").trim());
+  if (!m) return null;
+  const [h, mi] = m[4] ? [+m[4], +m[5]] : CONFIG.wipeTime.split(":").map(Number);
+  return zonedTs(+m[1], +m[2] - 1, +m[3], h, mi, CONFIG.wipeTimeZone);
+}
+function wipeState(w, now = Date.now()){
+  const wipes = monthlyTimes(w.wipeDay, now);
+  const last = wipes.filter(t => t <= now).pop();
+  let next = wipes.find(t => t > now);
+  const ov = parseOverride(w.nextWipeOverride);
+  if (ov && ov > now) next = ov;
+  const raidStart = monthlyTimes(w.raidStartDay, now).find(t => t > last && t < next) ?? next;
+  const fullStart = Math.min(raidStart + w.zoneDays * 864e5, next);
+  const phase = now < raidStart ? "build" : now < fullStart ? "zones" : "full";
+  return { last, next, raidStart, fullStart, phase };
+}
+const PHASES = {
+  build: { cls: "ph-build", label: "Building — no raiding" },
+  zones: { cls: "ph-zones", label: "Raid week — PvP zones only" },
+  full:  { cls: "ph-full",  label: "Full-map raids" }
+};
+function fmtWhen(ts){
+  return new Date(ts).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+function fmtLeft(ms){
+  const d = Math.floor(ms / 864e5), h = Math.floor(ms / 36e5) % 24, m = Math.floor(ms / 6e4) % 60;
+  return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
+}
+function renderWipes(){
+  const now = Date.now();
+  $("#wipe-cards").innerHTML = CONFIG.wipes.map(w => {
+    const st = wipeState(w, now), ph = PHASES[st.phase], span = st.next - st.last;
+    const pct = t => Math.max(0, Math.min(100, (t - st.last) / span * 100));
+    const step = st.phase === "build" ? `Raid week opens in <b>${fmtLeft(st.raidStart - now)}</b> · ${fmtWhen(st.raidStart)}`
+              : st.phase === "zones" ? `Whole map opens for raiding in <b>${fmtLeft(st.fullStart - now)}</b> · ${fmtWhen(st.fullStart)}`
+              : `Last chance to raid — wipe in <b>${fmtLeft(st.next - now)}</b>`;
+    return `
+    <div class="card wipe-card" data-wipe="${esc(w.key)}">
+      <div class="phase ${ph.cls}"><i></i>${ph.label}</div>
+      <h3>${esc(w.name)}</h3>
+      <div class="cd" aria-label="Time until wipe">
+        <div><b data-u="d">0</b><span>Days</span></div><div><b data-u="h">0</b><span>Hours</span></div>
+        <div><b data-u="m">0</b><span>Min</span></div><div><b data-u="s">0</b><span>Sec</span></div>
+      </div>
+      <div class="wipe-when">Next wipe: <b style="color:var(--text)">${fmtWhen(st.next)}</b></div>
+      <div class="tl-wrap">
+        <div class="tl">
+          <div class="s1" style="width:${pct(st.raidStart)}%"></div>
+          <div class="s2" style="width:${pct(st.fullStart) - pct(st.raidStart)}%"></div>
+          <div class="s3" style="flex:1"></div>
+        </div>
+        <div class="tl-now" style="left:${pct(now)}%"></div>
+      </div>
+      <div class="tl-legend"><span>Wiped ${new Date(st.last).toLocaleDateString(undefined,{month:"short",day:"numeric"})}</span><span>Raids open</span><span>Full map</span><span>Wipe</span></div>
+      <div class="next-step">${step}</div>
+    </div>`;
+  }).join("");
+  tickWipes();
+}
+let wipeTimer = null, wipeNextRender = 0;
+function tickWipes(){
+  const now = Date.now();
+  let rerender = false;
+  CONFIG.wipes.forEach(w => {
+    const st = wipeState(w, now), card = document.querySelector(`[data-wipe="${w.key}"]`);
+    if (!card) return;
+    if (!card.querySelector(".phase").classList.contains(PHASES[st.phase].cls)) rerender = true;
+    const left = Math.max(0, st.next - now);
+    const v = { d: Math.floor(left / 864e5), h: Math.floor(left / 36e5) % 24, m: Math.floor(left / 6e4) % 60, s: Math.floor(left / 1e3) % 60 };
+    for (const k in v) card.querySelector(`[data-u="${k}"]`).textContent = k === "d" ? v[k] : String(v[k]).padStart(2, "0");
+  });
+  if (rerender || now > wipeNextRender) { wipeNextRender = now + 60000; if (rerender) renderWipes(); else setTimeout(renderWipes, 0); }
+}
+function startWipes(){
+  renderWipes();
+  if (!wipeTimer) wipeTimer = setInterval(() => { if (location.hash === "#live-wipes") tickWipes(); }, 1000);
+}
+$("#live-tabs").innerHTML = LIVE_TABS.map(t => `<a href="#${t.id}" data-sub="${t.id}">${t.label}</a>`).join("");
+
+/* ===== KILLFEED ===== */
+const KF_PAGE = 40;
+let kfRows = [], kfFilter = "all", kfStarted = false, kfOldest = null;
+const kfServerName = k => CONFIG.killfeedServers[k] || k || "";
+
+function discordMd(text){
+  let t = esc(text);
+  t = t.replace(/&lt;t:(\d+)(?::\w)?&gt;/g, (_, n) => new Date(n * 1000).toLocaleString());
+  t = t.replace(/&lt;a?:(\w+):\d+&gt;/g, ":$1:");
+  t = t.replace(/`([^`]+)`/g, "<code>$1</code>");
+  t = t.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+  t = t.replace(/__(.+?)__/g, "<u>$1</u>");
+  t = t.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<i>$2</i>");
+  t = t.replace(/\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  return t;
+}
+function ago(d){
+  const s = Math.max(0, (Date.now() - new Date(d)) / 1000);
+  if (s < 60) return "just now"; if (s < 3600) return Math.floor(s/60) + "m ago";
+  if (s < 86400) return Math.floor(s/3600) + "h ago"; return new Date(d).toLocaleDateString();
+}
+function kfItem(r, isNew){
+  const embeds = Array.isArray(r.embeds) && r.embeds.length ? r.embeds : [null];
+  return embeds.map((e, i) => {
+    const color = e && Number.isInteger(e.color) ? "#" + e.color.toString(16).padStart(6, "0") : "";
+    const thumb = e?.thumbnail?.url || e?.image?.url || "";
+    const text = [i === 0 ? r.content : "", e?.description].filter(Boolean).join("\n");
+    return `<div class="kf${isNew ? " new" : ""}"${color ? ` style="border-left-color:${esc(color)}"` : ""}>
+      <div class="kf-main">
+        <div class="kf-meta">${r.server ? `<span class="kf-server">${esc(kfServerName(r.server))}</span>` : ""}<span title="${esc(new Date(r.created_at).toLocaleString())}" data-ts="${esc(r.created_at)}">${ago(r.created_at)}</span>${e?.author?.name ? `<span>${esc(e.author.name)}</span>` : ""}</div>
+        ${e?.title ? `<div class="kf-title">${discordMd(e.title)}</div>` : ""}
+        ${text ? `<div class="kf-text">${discordMd(text)}</div>` : ""}
+        ${e?.fields?.length ? `<div class="kf-fields">${e.fields.map(f => `<div><b>${discordMd(f.name)}</b>${discordMd(f.value)}</div>`).join("")}</div>` : ""}
+        ${e?.footer?.text ? `<div class="kf-meta" style="margin:6px 0 0">${discordMd(e.footer.text)}</div>` : ""}
+      </div>
+      ${/^https:\/\//.test(thumb) ? `<img class="kf-thumb" src="${esc(thumb)}" alt="" loading="lazy" onerror="this.remove()">` : ""}
+    </div>`;
+  }).join("");
+}
+function renderKfFilters(){
+  const keys = ["all", ...Object.keys(CONFIG.killfeedServers)];
+  $("#kf-filters").innerHTML = keys.map(k => `<button class="chip${k === kfFilter ? " active" : ""}" data-kf="${esc(k)}">${k === "all" ? "All servers" : esc(kfServerName(k))}</button>`).join("");
+  $$("[data-kf]").forEach(b => b.onclick = () => { kfFilter = b.dataset.kf; kfRows = []; kfOldest = null; renderKfFilters(); loadKillfeed(); });
+}
+function renderKf(){
+  const list = $("#kf-list");
+  list.innerHTML = kfRows.length ? kfRows.map(r => kfItem(r, false)).join("")
+    : `<div class="kf-empty">No kills yet${kfFilter !== "all" ? " on " + esc(kfServerName(kfFilter)) : ""}. Get out there.</div>`;
+}
+async function loadKillfeed(older = false){
+  if (!sb) { $("#kf-list").innerHTML = `<div class="kf-empty">The live killfeed is coming soon. For now, check the killfeed channel in our Discord.</div>`; $("#kf-status").innerHTML = "<i></i>Offline"; return; }
+  let q = sb.from("killfeed").select("*").order("created_at", { ascending: false }).limit(KF_PAGE);
+  if (kfFilter !== "all") q = q.eq("server", kfFilter);
+  if (older && kfOldest) q = q.lt("created_at", kfOldest);
+  const { data, error } = await q;
+  if (error) { $("#kf-list").innerHTML = `<div class="kf-empty">Couldn't load the killfeed: ${esc(error.message)}</div>`; return; }
+  kfRows = older ? kfRows.concat(data) : data;
+  kfOldest = kfRows.length ? kfRows[kfRows.length - 1].created_at : null;
+  $("#kf-more").hidden = data.length < KF_PAGE;
+  renderKf();
+}
+function startKillfeed(){
+  if (kfStarted) return; kfStarted = true;
+  renderKfFilters(); loadKillfeed();
+  $("#kf-more").onclick = () => loadKillfeed(true);
+  setInterval(() => $$("[data-ts]").forEach(el => el.textContent = ago(el.dataset.ts)), 30000);
+  if (!sb) return;
+  sb.channel("killfeed-live")
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "killfeed" }, ({ new: r }) => {
+      if (kfFilter !== "all" && r.server !== kfFilter) return;
+      kfRows.unshift(r);
+      const list = $("#kf-list");
+      if (list.querySelector(".kf-empty")) list.innerHTML = "";
+      list.insertAdjacentHTML("afterbegin", kfItem(r, true));
+    })
+    .subscribe(status => {
+      const on = status === "SUBSCRIBED", el = $("#kf-status");
+      el.classList.toggle("on", on); el.innerHTML = `<i></i>${on ? "Live" : "Reconnecting…"}`;
+    });
+}
+
+/* ===================== COMMUNITY FEED + INBOX ===================== */
+let amAdmin = false, inboxChannel = null;
+const memberCache = new Map();
+async function loadMembers(ids){
+  const need = [...new Set(ids.filter(id => id && !memberCache.has(id)))];
+  if (!need.length || !sb) return;
+  const { data } = await sb.from("members").select("*").in("id", need);
+  (data || []).forEach(m => memberCache.set(m.id, m));
+  need.forEach(id => { if (!memberCache.has(id)) memberCache.set(id, { id, name: "Former member", avatar_url: null }); });
+}
+const mem = id => memberCache.get(id) || { id, name: "Member", avatar_url: null };
+const meCard = () => user ? (memberCache.get(user.id) || { id: user.id, name: dName(user), avatar_url: meta(user).avatar_url, is_admin: amAdmin }) : null;
+function avatar(m, size = 40){
+  const st = `width:${size}px;height:${size}px;font-size:${Math.round(size * (initials(m?.name || "?").length > 1 ? .34 : .42))}px`;
+  return m?.avatar_url
+    ? `<img class="av" style="${st}" src="${esc(m.avatar_url)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+    : `<span class="av" style="${st}">${esc(initials(m?.name || "?"))}</span>`;
+}
+const nameTag = m => `${esc(m.name)}${m.is_admin ? `<span class="adm">AF Staff</span>` : ""}`;
+const linkify = t => t.replace(/(https:\/\/[^\s<]+[^\s<.,!?)])/g, '<a href="$1" target="_blank" rel="noopener nofollow">$1</a>');
+
+/* resize any image to a JPEG no bigger than max px on its long side */
+function resizeJpeg(file, max = 1280){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const r = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement("canvas");
+      c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => b ? res(b) : rej(new Error("Couldn't read that image")), "image/jpeg", 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("That file isn't an image we can use")); };
+    img.src = url;
+  });
+}
+
+/* small modal helper (uses the same modal styles as the Legend editor) */
+function openModal(html){
+  const m = $("#ui-modal");
+  m.innerHTML = `<div class="modal-card" role="dialog" aria-modal="true">${html}</div>`;
+  m.classList.add("open");
+  m.onclick = e => { if (e.target === m) closeModal(); };
+  return m;
+}
+const closeModal = () => $("#ui-modal").classList.remove("open");
+function confirmModal(title, text, okLabel = "Delete"){
+  return new Promise(res => {
+    openModal(`<h3>${esc(title)}</h3><p class="muted">${esc(text)}</p><div class="row"><button class="btn" id="m-ok">${esc(okLabel)}</button><button class="btn ghost" id="m-no">Cancel</button></div>`);
+    $("#m-ok").onclick = () => { closeModal(); res(true); };
+    $("#m-no").onclick = () => { closeModal(); res(false); };
+  });
+}
+function reportModal(type, id, content, authorId){
+  if (!user) return;
+  openModal(`<h3>Report this ${type}</h3><p class="muted">AF staff will review it. Reports are private.</p>
+    <div class="field"><label for="r-why">What's wrong?</label><textarea id="r-why" maxlength="500" rows="3" placeholder="Harassment, cheating, spam, doxxing…"></textarea></div>
+    <div class="row"><button class="btn" id="r-send">Send report</button><button class="btn ghost" id="r-no">Cancel</button></div><div id="r-msg"></div>`);
+  $("#r-no").onclick = closeModal;
+  $("#r-send").onclick = async () => {
+    const { error } = await sb.from("reports").insert({ target_type: type, target_id: id, target_author: authorId || null, content: (content || "").slice(0, 2000), reason: $("#r-why").value.trim() || null });
+    if (error) { $("#r-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+    closeModal(); toast("Report sent. Thanks.");
+  };
+}
+function lightbox(src){
+  const l = $("#lightbox"); l.innerHTML = `<img src="${esc(src)}" alt="">`; l.classList.add("open");
+  l.onclick = () => l.classList.remove("open");
+}
+
+/* ---------------- FEED ---------------- */
+const FEED_PAGE = 20;
+let feedPosts = [], feedOldest = null, feedLikes = new Map(), feedCcount = new Map(), feedBound = false;
+let cKind = "post", cRating = 5, cPhoto = null;
+
+function composerHTML(){
+  const me = meCard();
+  return `<div class="card composer">
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      ${avatar(me, 44)}
+      <div style="flex:1;min-width:0">
+        <div class="kf-filters" id="c-kinds">${[["post","Post"],["quote","Quote"],["review","Review"]].map(([k,l]) => `<button class="chip${k === cKind ? " active" : ""}" data-ck="${k}">${l}</button>`).join("")}</div>
+        <div class="star-pick" id="c-stars" ${cKind === "review" ? "" : "hidden"}>${[1,2,3,4,5].map(n => `<button type="button" data-star="${n}" class="${n <= cRating ? "on" : ""}" aria-label="${n} stars">★</button>`).join("")}</div>
+        <textarea id="c-body" maxlength="2000" rows="3" placeholder="${cKind === "quote" ? "Drop a quote…" : cKind === "review" ? "How's your experience on Allied Forces?" : "What's happening on the servers?"}"></textarea>
+        <div id="c-photo"></div>
+        <div class="row" style="justify-content:space-between;margin-top:10px">
+          <label class="btn ghost sm" style="cursor:pointer">📷 Photo<input type="file" id="c-file" accept="image/jpeg,image/png,image/webp" hidden></label>
+          <button class="btn sm" id="c-post">Post</button>
+        </div>
+        <div id="c-msg"></div>
+      </div>
+    </div>
+  </div>`;
+}
+function bindComposer(){
+  $$("[data-ck]").forEach(b => b.onclick = () => {
+    cKind = b.dataset.ck;
+    $$("[data-ck]").forEach(x => x.classList.toggle("active", x === b));
+    $("#c-stars").hidden = cKind !== "review";
+    $("#c-body").placeholder = cKind === "quote" ? "Drop a quote…" : cKind === "review" ? "How's your experience on Allied Forces?" : "What's happening on the servers?";
+  });
+  $$("[data-star]").forEach(b => b.onclick = () => { cRating = +b.dataset.star; $$("[data-star]").forEach(x => x.classList.toggle("on", +x.dataset.star <= cRating)); });
+  $("#c-file").onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      cPhoto = await resizeJpeg(f);
+      $("#c-photo").innerHTML = `<div class="c-photo"><img src="${URL.createObjectURL(cPhoto)}" alt=""><button type="button" id="c-rm" aria-label="Remove photo">✕</button></div>`;
+      $("#c-rm").onclick = () => { cPhoto = null; $("#c-photo").innerHTML = ""; $("#c-file").value = ""; };
+    } catch (err) { $("#c-msg").innerHTML = `<p class="msg err">${esc(err.message)}</p>`; }
+  };
+  $("#c-post").onclick = async () => {
+    const btn = $("#c-post"), body = $("#c-body").value.trim(), msg = $("#c-msg");
+    if (!body && !cPhoto) { msg.innerHTML = `<p class="msg err">Write something or add a photo.</p>`; return; }
+    btn.disabled = true; btn.textContent = "Posting…"; msg.innerHTML = "";
+    try {
+      let photo_url = null;
+      if (cPhoto) {
+        const path = `${user.id}/${Date.now()}.jpg`;
+        const up = await sb.storage.from("post-photos").upload(path, cPhoto, { contentType: "image/jpeg" });
+        if (up.error) throw up.error;
+        photo_url = sb.storage.from("post-photos").getPublicUrl(path).data.publicUrl;
+      }
+      const { data, error } = await sb.from("posts").insert({ kind: cKind, body, rating: cKind === "review" ? cRating : null, photo_url }).select().single();
+      if (error) throw error;
+      feedPosts.unshift(data); feedLikes.set(data.id, { count: 0, mine: false }); feedCcount.set(data.id, 0);
+      memberCache.set(user.id, meCard());
+      $("#c-body").value = ""; cPhoto = null; $("#c-photo").innerHTML = ""; $("#c-file").value = "";
+      renderFeedList(); toast("Posted!");
+    } catch (err) {
+      msg.innerHTML = `<p class="msg err">${esc(/banned|row-level/i.test(err.message) ? "You can't post right now. Contact AF staff in Discord." : err.message)}</p>`;
+    }
+    btn.disabled = false; btn.textContent = "Post";
+  };
+}
+function postHTML(p){
+  const a = mem(p.author_id), L = feedLikes.get(p.id) || { count: 0, mine: false }, c = feedCcount.get(p.id) || 0;
+  const mine = user && p.author_id === user.id;
+  return `<article class="card post" data-post="${p.id}">
+    <header class="post-head">
+      <span class="plink" data-profile="${esc(p.author_id)}">${avatar(a, 44)}</span>
+      <div class="post-who"><div class="post-name"><span class="plink" data-profile="${esc(p.author_id)}">${nameTag(a)}</span></div>
+        <div class="muted post-time"><span data-ts="${esc(p.created_at)}">${ago(p.created_at)}</span>${p.kind !== "post" ? ` · <span class="pk">${p.kind === "quote" ? "Quote" : "Review"}</span>` : ""}</div></div>
+      ${user ? `<div class="post-menu">
+        ${!mine ? `<button class="icon-btn" data-dm="${esc(p.author_id)}" title="Send a message">✉</button><button class="icon-btn" data-rp="${p.id}" title="Report">⚑</button>` : ""}
+        ${mine || amAdmin ? `<button class="icon-btn" data-delp="${p.id}" title="Delete post">🗑</button>` : ""}
+      </div>` : ""}
+    </header>
+    ${p.kind === "review" && p.rating ? `<div class="stars" aria-label="${p.rating} out of 5 stars">${"★".repeat(p.rating)}<span>${"★".repeat(5 - p.rating)}</span></div>` : ""}
+    ${p.body ? `<div class="post-body${p.kind === "quote" ? " quote" : ""}">${linkify(esc(p.body))}</div>` : ""}
+    ${p.photo_url ? `<img class="post-photo" src="${esc(p.photo_url)}" alt="" loading="lazy" data-zoom="${esc(p.photo_url)}">` : ""}
+    <div class="post-actions">
+      <button class="act${L.mine ? " on" : ""}" data-like="${p.id}">♥ ${L.count ? `<b>${L.count}</b> ` : ""}${L.mine ? "Liked" : "Like"}</button>
+      <button class="act" data-cm="${p.id}">💬 ${c ? `<b>${c}</b> ` : ""}Comment${c === 1 ? "" : "s"}</button>
+    </div>
+    <div class="comments" id="cm-${p.id}" hidden></div>
+  </article>`;
+}
+function renderFeedList(){
+  const list = $("#feed-list");
+  list.innerHTML = feedPosts.length ? feedPosts.map(postHTML).join("")
+    : `<div class="kf-empty" style="margin-top:16px">No posts yet. Be the first to say something.</div>`;
+}
+async function loadFeed(more = false){
+  const list = $("#feed-list");
+  if (!more) list.innerHTML = `<div class="kf-empty" style="margin-top:16px">Loading the feed…</div>`;
+  let q = sb.from("posts").select("*").order("created_at", { ascending: false }).limit(FEED_PAGE);
+  if (more && feedOldest) q = q.lt("created_at", feedOldest);
+  const { data, error } = await q;
+  if (error) { list.innerHTML = `<div class="kf-empty" style="margin-top:16px">Couldn't load the feed: ${esc(error.message)}</div>`; return; }
+  feedPosts = more ? feedPosts.concat(data) : data;
+  feedOldest = feedPosts.length ? feedPosts[feedPosts.length - 1].created_at : null;
+  $("#feed-more").hidden = data.length < FEED_PAGE;
+  const ids = data.map(p => p.id);
+  if (ids.length) {
+    const [lk, cm] = await Promise.all([
+      sb.from("post_likes").select("post_id,user_id").in("post_id", ids),
+      sb.from("comments").select("post_id").in("post_id", ids)
+    ]);
+    ids.forEach(id => { feedLikes.set(id, { count: 0, mine: false }); feedCcount.set(id, 0); });
+    (lk.data || []).forEach(r => { const L = feedLikes.get(r.post_id); L.count++; if (user && r.user_id === user.id) L.mine = true; });
+    (cm.data || []).forEach(r => feedCcount.set(r.post_id, (feedCcount.get(r.post_id) || 0) + 1));
+  }
+  await loadMembers(data.map(p => p.author_id));
+  renderFeedList();
+}
+async function toggleLike(id){
+  if (!user) { location.hash = "#account"; return; }
+  const L = feedLikes.get(id) || { count: 0, mine: false }; feedLikes.set(id, L);
+  const was = L.mine; L.mine = !was; L.count += was ? -1 : 1; rerenderPost(id);
+  const { error } = was
+    ? await sb.from("post_likes").delete().eq("post_id", id).eq("user_id", user.id)
+    : await sb.from("post_likes").insert({ post_id: id });
+  if (error) { L.mine = was; L.count += was ? 1 : -1; rerenderPost(id); toast("Couldn't update like"); }
+}
+function rerenderPost(id){
+  const el = document.querySelector(`[data-post="${id}"]`), p = feedPosts.find(x => x.id === id);
+  if (!el || !p) return;
+  const open = !$(`#cm-${id}`).hidden, cmHTML = $(`#cm-${id}`).innerHTML;
+  el.outerHTML = postHTML(p);
+  if (open) { const c = $(`#cm-${id}`); c.hidden = false; c.innerHTML = cmHTML; bindCommentForm(id); }
+}
+function commentHTML(c){
+  const a = mem(c.author_id), mine = user && c.author_id === user.id;
+  return `<div class="cm" data-cmid="${c.id}"><span class="plink" data-profile="${esc(c.author_id)}">${avatar(a, 32)}</span>
+    <div style="flex:1;min-width:0"><div class="cm-bubble"><div class="who"><span class="plink" data-profile="${esc(c.author_id)}">${nameTag(a)}</span></div><div class="txt">${linkify(esc(c.body))}</div></div>
+    <div class="cm-meta"><span>${ago(c.created_at)}</span>
+      ${user && !mine ? `<button data-rc="${c.id}">Report</button>` : ""}
+      ${mine || amAdmin ? `<button data-delc="${c.id}">Delete</button>` : ""}</div></div></div>`;
+}
+const openComments = new Map();
+async function toggleComments(id){
+  const box = $(`#cm-${id}`);
+  if (!box.hidden) { box.hidden = true; return; }
+  box.hidden = false; box.innerHTML = `<p class="muted">Loading comments…</p>`;
+  const { data, error } = await sb.from("comments").select("*").eq("post_id", id).order("created_at").limit(200);
+  if (error) { box.innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+  openComments.set(id, data);
+  await loadMembers(data.map(c => c.author_id));
+  box.innerHTML = `<div class="cm-list">${data.map(commentHTML).join("")}</div>
+    ${user ? `<form class="cm-form" data-cf="${id}">${avatar(meCard(), 32)}<textarea maxlength="1000" rows="1" placeholder="Write a comment…"></textarea><button class="btn sm">Send</button></form>`
+           : `<p class="muted" style="margin:0"><a href="#account">Sign in</a> to comment.</p>`}`;
+  bindCommentForm(id);
+}
+function bindCommentForm(id){
+  const f = document.querySelector(`[data-cf="${id}"]`); if (!f) return;
+  const ta = f.querySelector("textarea");
+  ta.onkeydown = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); f.requestSubmit(); } };
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const body = ta.value.trim(); if (!body) return;
+    const btn = f.querySelector("button"); btn.disabled = true;
+    const { data, error } = await sb.from("comments").insert({ post_id: id, body }).select().single();
+    btn.disabled = false;
+    if (error) { toast(/row-level/i.test(error.message) ? "You can't comment right now" : error.message); return; }
+    ta.value = "";
+    memberCache.set(user.id, meCard());
+    (openComments.get(id) || []).push(data);
+    $(`#cm-${id} .cm-list`).insertAdjacentHTML("beforeend", commentHTML(data));
+    feedCcount.set(id, (feedCcount.get(id) || 0) + 1);
+    const btnC = document.querySelector(`[data-cm="${id}"]`);
+    if (btnC) { const c = feedCcount.get(id); btnC.innerHTML = `💬 <b>${c}</b> Comment${c === 1 ? "" : "s"}`; }
+  };
+}
+function bindFeedClicks(){
+  if (feedBound) return; feedBound = true;
+  $("#feed-list").addEventListener("click", async e => {
+    const t = e.target.closest("button,[data-zoom]"); if (!t) return;
+    const d = t.dataset;
+    if (d.like) return toggleLike(+d.like);
+    if (d.cm) return toggleComments(+d.cm);
+    if (d.zoom) return lightbox(d.zoom);
+    if (d.dm) return startDm(d.dm);
+    if (d.rp) { const p = feedPosts.find(x => x.id === +d.rp); return reportModal("post", +d.rp, p?.body, p?.author_id); }
+    if (d.delp) {
+      if (!(await confirmModal("Delete this post?", "This can't be undone."))) return;
+      const { error } = await sb.from("posts").delete().eq("id", +d.delp);
+      if (error) return toast(error.message);
+      feedPosts = feedPosts.filter(x => x.id !== +d.delp); renderFeedList(); toast("Post deleted");
+    }
+    if (d.rc) {
+      const postId = +t.closest(".comments").id.slice(3), c = (openComments.get(postId) || []).find(x => x.id === +d.rc);
+      return reportModal("comment", +d.rc, c?.body, c?.author_id);
+    }
+    if (d.delc) {
+      if (!(await confirmModal("Delete this comment?", "This can't be undone."))) return;
+      const { error } = await sb.from("comments").delete().eq("id", +d.delc);
+      if (error) return toast(error.message);
+      const postId = +t.closest(".comments").id.slice(3);
+      t.closest(".cm").remove();
+      feedCcount.set(postId, Math.max(0, (feedCcount.get(postId) || 1) - 1));
+      const btnC = document.querySelector(`[data-cm="${postId}"]`);
+      if (btnC) { const c = feedCcount.get(postId); btnC.innerHTML = `💬 ${c ? `<b>${c}</b> ` : ""}Comment${c === 1 ? "" : "s"}`; }
+    }
+  });
+  $("#feed-more").onclick = () => loadFeed(true);
+}
+async function renderFeed(){
+  const comp = $("#feed-composer");
+  if (!sb) { comp.innerHTML = ""; $("#feed-list").innerHTML = `<div class="kf-empty">The community feed is coming soon.</div>`; return; }
+  if (user) { await loadMembers([user.id]); comp.innerHTML = composerHTML(); bindComposer(); }
+  else {
+    comp.innerHTML = `<div class="card"><h3>Join the conversation</h3><p class="muted">Sign in with Discord to post, like, comment and message other survivors.</p><button class="btn discord-btn" id="feed-signin">${DISCORD_SVG} Sign in with Discord</button></div>`;
+    $("#feed-signin").onclick = signIn;
+  }
+  bindFeedClicks();
+  loadFeed();
+}
+
+/* ---------------- INBOX ---------------- */
+let inboxTab = "messages", dmWith = null, unreadMsgs = 0, unreadNotifs = 0, inboxSeenAt = null, dmCache = [];
+
+function setBadge(){
+  const n = unreadMsgs + unreadNotifs, b = $("#inbox-badge");
+  if (!b) return;
+  b.hidden = !n; b.textContent = n > 99 ? "99+" : n;
+  const t = $$("[data-ibtab]");
+  t.forEach(el => {
+    const c = el.dataset.ibtab === "messages" ? unreadMsgs : el.dataset.ibtab === "notifications" ? unreadNotifs : 0;
+    const s = el.querySelector(".badge"); if (s) { s.hidden = !c; s.textContent = c; }
+  });
+}
+async function refreshBadge(){
+  if (!sb || !user) { unreadMsgs = unreadNotifs = 0; setBadge(); return; }
+  const [m, prof] = await Promise.all([
+    sb.from("messages").select("id", { count: "exact", head: true }).eq("recipient_id", user.id).is("read_at", null),
+    sb.from("profiles").select("inbox_seen_at").eq("id", user.id).maybeSingle()
+  ]);
+  unreadMsgs = m.count || 0;
+  inboxSeenAt = prof.data?.inbox_seen_at || user.created_at;
+  const n = await sb.from("notifications").select("id", { count: "exact", head: true }).gt("created_at", inboxSeenAt);
+  unreadNotifs = n.count || 0;
+  setBadge();
+}
+async function onUserChanged(){
+  $("#nav-inbox").hidden = !user;
+  $("#nav-dash").hidden = !user;
+  if (user) applyPendingReferral();
+  amAdmin = false;
+  if (inboxChannel) { sb.removeChannel(inboxChannel); inboxChannel = null; }
+  if (sb) { allMembersAt = 0; startPresence(); }
+  if (!sb || !user) { setBadge(); refreshEventViews(); if (location.hash === "#wheel") renderWheel(); if (location.hash === "#crates") renderCrates(); if (location.hash === "#cards") { cdState = null; cdBattle = null; renderCardsPage(); } if (location.hash === "#modshop") renderModShop(); return; }
+  const { data } = await sb.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  amAdmin = !!data;
+  if (location.hash === "#modshop") renderModShop();
+  refreshBadge();
+  autoSyncDiscord();
+  inboxChannel = sb.channel("inbox-" + user.id)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${user.id}` }, async ({ new: m }) => {
+      await loadMembers([m.sender_id]);
+      if (location.hash === "#inbox" && inboxTab === "messages" && dmWith === m.sender_id) {
+        appendBubble(m); markRead(m.sender_id);
+      } else { unreadMsgs++; setBadge(); toast(`New message from ${mem(m.sender_id).name}`); }
+      if (location.hash === "#inbox" && inboxTab === "messages") loadConvos();
+    })
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications" }, ({ new: n }) => {
+      if (n.user_id && n.user_id !== user.id) return;
+      if (n.actor_id === user.id) return;
+      unreadNotifs++; setBadge();
+      if (location.hash === "#inbox" && inboxTab === "notifications") renderNotifications();
+      else toast(n.kind === "admin" ? "New notice from AF staff" : n.kind === "game" ? (n.title || "Card battle update") : "New notification");
+      if (n.kind === "game" && location.hash === "#cards" && !cdBattle) renderCardsPage();
+    })
+    .subscribe();
+  if (location.hash === "#feed") renderFeed();
+  if (location.hash === "#inbox") renderInbox();
+  if (location.hash === "#wheel") renderWheel();
+  if (location.hash === "#crates") renderCrates();
+  if (location.hash === "#cards") { cdState = null; cdBattle = null; renderCardsPage(); }
+  refreshEventViews();
+}
+function startDm(otherId){
+  if (!user) { location.hash = "#account"; return; }
+  dmWith = otherId; inboxTab = "messages";
+  if (location.hash === "#inbox") renderInbox(); else location.hash = "#inbox";
+}
+function renderInbox(){
+  const box = $("#inbox-root");
+  if (!sb) { box.innerHTML = `<div class="kf-empty">The inbox is coming soon.</div>`; return; }
+  if (!user) {
+    box.innerHTML = `<div class="card" style="max-width:560px"><h3>Sign in to see your inbox</h3><p class="muted">Messages from other players and notices from AF staff show up here.</p><button class="btn discord-btn" id="ib-signin">${DISCORD_SVG} Sign in with Discord</button></div>`;
+    $("#ib-signin").onclick = signIn; return;
+  }
+  const tabs = [["messages", "Messages"], ["notifications", "Notifications"], ...(amAdmin ? [["reports", "Reports"]] : [])];
+  box.innerHTML = `<nav class="subnav">${tabs.map(([k, l]) => `<a href="javascript:void 0" data-ibtab="${k}" class="${k === inboxTab ? "active" : ""}">${l}<span class="badge" hidden></span></a>`).join("")}</nav><div id="ib-body"></div>`;
+  $$("[data-ibtab]").forEach(a => a.onclick = e => { e.preventDefault(); inboxTab = a.dataset.ibtab; renderInbox(); });
+  setBadge();
+  if (inboxTab === "messages") renderMessages();
+  else if (inboxTab === "notifications") renderNotifications();
+  else renderReports();
+}
+
+/* member search box: calls onPick(member) */
+function memberPicker(el, onPick, placeholder = "Search players by Discord name…"){
+  el.innerHTML = `<div class="picker"><input type="search" placeholder="${esc(placeholder)}" autocomplete="off"><div class="picker-res" hidden></div></div>`;
+  const input = el.querySelector("input"), res = el.querySelector(".picker-res");
+  let t = null;
+  input.oninput = () => {
+    clearTimeout(t);
+    const q = input.value.trim().replace(/[%_,()]/g, "");
+    if (q.length < 2) { res.hidden = true; return; }
+    t = setTimeout(async () => {
+      const { data } = await sb.from("members").select("*").ilike("name", `%${q}%`).neq("id", user.id).limit(8);
+      (data || []).forEach(m => memberCache.set(m.id, m));
+      res.hidden = false;
+      res.innerHTML = (data || []).length ? data.map(m => `<button type="button" data-pick="${esc(m.id)}">${avatar(m, 28)}<span>${nameTag(m)}</span></button>`).join("")
+        : `<div class="muted" style="padding:10px">No members found. They need to sign in on the site once.</div>`;
+      res.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => { res.hidden = true; input.value = mem(b.dataset.pick).name; onPick(mem(b.dataset.pick)); });
+    }, 250);
+  };
+  input.focus();
+}
+
+async function renderMessages(){
+  $("#ib-body").innerHTML = `<div class="dm${dmWith ? " open" : ""}" id="dm">
+    <aside class="dm-list"><div class="top"><button class="btn sm" id="dm-new" style="width:100%">+ New message</button><div id="dm-pick" style="margin-top:10px" hidden></div></div><div class="dm-convos" id="dm-convos"><p class="muted" style="padding:12px">Loading…</p></div></aside>
+    <section class="dm-thread" id="dm-thread"><div class="kf-empty" style="margin:auto;border:0">Pick a conversation or start a new one.</div></section>
+  </div>`;
+  $("#dm-new").onclick = () => {
+    const p = $("#dm-pick"); p.hidden = !p.hidden;
+    if (!p.hidden) memberPicker(p, m => { p.hidden = true; openThread(m.id); });
+  };
+  await loadConvos();
+  if (dmWith) openThread(dmWith);
+}
+async function loadConvos(){
+  const { data, error } = await sb.from("messages").select("*")
+    .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+    .order("created_at", { ascending: false }).limit(500);
+  const el = $("#dm-convos"); if (!el) return;
+  if (error) { el.innerHTML = `<p class="msg err" style="padding:12px">${esc(error.message)}</p>`; return; }
+  dmCache = data;
+  const convos = new Map();
+  for (const m of data) {
+    const other = m.sender_id === user.id ? m.recipient_id : m.sender_id;
+    if (!convos.has(other)) convos.set(other, { other, last: m, unread: 0 });
+    if (m.recipient_id === user.id && !m.read_at) convos.get(other).unread++;
+  }
+  await loadMembers([...convos.keys()]);
+  el.innerHTML = convos.size ? [...convos.values()].map(c => {
+    const o = mem(c.other);
+    return `<button class="convo${c.unread ? " unread" : ""}${c.other === dmWith ? " active" : ""}" data-convo="${esc(c.other)}">${avatar(o, 40)}
+      <div class="c-main"><div class="c-name"><span>${nameTag(o)}</span><small>${ago(c.last.created_at)}</small></div>
+      <div class="c-last">${c.last.sender_id === user.id ? "You: " : ""}${esc(c.last.body)}</div></div>
+      ${c.unread ? `<span class="badge" style="background:#e5484d;color:#fff;border-radius:999px;padding:1px 7px;font-size:.75rem;font-weight:700">${c.unread}</span>` : ""}</button>`;
+  }).join("") : `<p class="muted" style="padding:12px">No messages yet. Start one, or hit ✉ on someone's post.</p>`;
+  el.querySelectorAll("[data-convo]").forEach(b => b.onclick = () => openThread(b.dataset.convo));
+}
+function bubble(m){
+  const mine = m.sender_id === user.id;
+  return `<div class="bub${mine ? " mine" : ""}" data-msg="${m.id}">${linkify(esc(m.body))}<small>${new Date(m.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</small>${mine ? "" : `<button class="rep" title="Report message" data-rm="${m.id}">⚑</button>`}</div>`;
+}
+function appendBubble(m){
+  const box = $("#dm-msgs"); if (!box) return;
+  dmCache.unshift(m);
+  box.insertAdjacentHTML("beforeend", bubble(m)); box.scrollTop = box.scrollHeight;
+}
+async function markRead(otherId){
+  await sb.from("messages").update({ read_at: new Date().toISOString() }).eq("recipient_id", user.id).eq("sender_id", otherId).is("read_at", null);
+  refreshBadge();
+}
+async function openThread(otherId){
+  dmWith = otherId;
+  $("#dm")?.classList.add("open");
+  $$(".convo").forEach(c => c.classList.toggle("active", c.dataset.convo === otherId));
+  await loadMembers([otherId]);
+  const o = mem(otherId), th = $("#dm-thread");
+  th.innerHTML = `<div class="dm-head"><button class="icon-btn back" id="dm-back" aria-label="Back">←</button><span class="plink" data-profile="${esc(o.id)}">${avatar(o, 36)}</span><div style="font-weight:700"><span class="plink" data-profile="${esc(o.id)}">${nameTag(o)}</span></div></div>
+    <div class="dm-msgs" id="dm-msgs"><p class="muted">Loading…</p></div>
+    <form class="dm-send" id="dm-send"><textarea maxlength="2000" rows="1" placeholder="Message ${esc(o.name)}…"></textarea><button class="btn sm">Send</button></form>`;
+  $("#dm-back").onclick = () => { dmWith = null; $("#dm").classList.remove("open"); };
+  const { data, error } = await sb.from("messages").select("*")
+    .or(`and(sender_id.eq.${user.id},recipient_id.eq.${otherId}),and(sender_id.eq.${otherId},recipient_id.eq.${user.id})`)
+    .order("created_at", { ascending: true }).limit(300);
+  const box = $("#dm-msgs");
+  if (error) { box.innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+  box.innerHTML = data.length ? data.map(bubble).join("") : `<p class="muted" style="margin:auto">Say hi to ${esc(o.name)}.</p>`;
+  box.scrollTop = box.scrollHeight;
+  box.onclick = e => {
+    const b = e.target.closest("[data-rm]"); if (!b) return;
+    const m = data.find(x => x.id === +b.dataset.rm);
+    reportModal("message", +b.dataset.rm, m?.body, m?.sender_id);
+  };
+  if (data.some(m => m.recipient_id === user.id && !m.read_at)) { await markRead(otherId); loadConvos(); }
+  const f = $("#dm-send"), ta = f.querySelector("textarea");
+  ta.onkeydown = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); f.requestSubmit(); } };
+  ta.focus();
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const body = ta.value.trim(); if (!body) return;
+    const btn = f.querySelector("button"); btn.disabled = true;
+    const { data: m, error } = await sb.from("messages").insert({ recipient_id: otherId, body }).select().single();
+    btn.disabled = false;
+    if (error) { toast(/row-level/i.test(error.message) ? "You can't send messages right now" : error.message); return; }
+    ta.value = "";
+    if (box.querySelector("p.muted")) box.innerHTML = "";
+    appendBubble(m); loadConvos();
+  };
+}
+
+async function renderNotifications(){
+  const body = $("#ib-body");
+  body.innerHTML = `${amAdmin ? `<div class="card" style="margin-bottom:16px" id="admin-send">
+      <h3>Send a notice <span class="adm">Staff</span></h3>
+      <div class="field"><label>To</label><div class="kf-filters" style="margin-bottom:8px"><button class="chip active" data-to="all">Everyone</button><button class="chip" data-to="one">One player</button></div><div id="n-pick" hidden></div></div>
+      <div class="field"><label for="n-title">Title</label><input id="n-title" maxlength="120" placeholder="e.g. Nasdara wipe moved to Saturday"></div>
+      <div class="field"><label for="n-body">Message</label><textarea id="n-body" maxlength="2000" rows="3"></textarea></div>
+      <button class="btn" id="n-send">Send notice</button><div id="n-msg"></div></div>` : ""}
+    <div class="card" style="padding:0" id="n-list"><p class="muted" style="padding:16px">Loading…</p></div>`;
+  if (amAdmin) {
+    let target = null;
+    $$("[data-to]").forEach(b => b.onclick = () => {
+      $$("[data-to]").forEach(x => x.classList.toggle("active", x === b));
+      const one = b.dataset.to === "one"; $("#n-pick").hidden = !one; target = null;
+      if (one) memberPicker($("#n-pick"), m => { target = m.id; });
+    });
+    $("#n-send").onclick = async () => {
+      const title = $("#n-title").value.trim(), text = $("#n-body").value.trim(), msg = $("#n-msg");
+      if (!title && !text) { msg.innerHTML = `<p class="msg err">Add a title or message.</p>`; return; }
+      if (!$("#n-pick").hidden && !target) { msg.innerHTML = `<p class="msg err">Pick a player first.</p>`; return; }
+      const { error } = await sb.from("notifications").insert({ user_id: target, kind: "admin", actor_id: user.id, title: title || null, body: text || null });
+      if (error) { msg.innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+      $("#n-title").value = ""; $("#n-body").value = "";
+      msg.innerHTML = `<p class="msg ok">Sent to ${target ? esc(mem(target).name) : "everyone"}.</p>`;
+      loadNotifList();
+    };
+  }
+  loadNotifList();
+}
+async function loadNotifList(){
+  const { data, error } = await sb.from("notifications").select("*").order("created_at", { ascending: false }).limit(60);
+  const list = $("#n-list"); if (!list) return;
+  if (error) { list.innerHTML = `<p class="msg err" style="padding:16px">${esc(error.message)}</p>`; return; }
+  await loadMembers(data.map(n => n.actor_id));
+  const seen = inboxSeenAt ? new Date(inboxSeenAt) : new Date(0);
+  list.innerHTML = data.length ? data.map(n => {
+    const a = mem(n.actor_id), isNew = new Date(n.created_at) > seen && n.actor_id !== user.id;
+    const ico = n.kind === "like" ? "♥" : n.kind === "comment" ? "💬" : n.kind === "game" ? "🃏" : "📢";
+    const title = n.kind === "like" ? `${esc(a.name)} liked your post`
+                : n.kind === "comment" ? `${esc(a.name)} commented on your post`
+                : n.kind === "game" ? esc(n.title || "Card battle")
+                : `${esc(n.title || "Notice from AF staff")}${n.user_id ? "" : ` <span class="muted" style="font-weight:400;font-size:.85rem">· to everyone</span>`}`;
+    const body = n.kind === "comment" ? `“${esc(n.body || "")}”` : n.kind === "admin" || n.kind === "game" ? linkify(esc(n.body || "")) : "";
+    return `<div class="notif${isNew ? " new" : ""}">
+      ${n.kind === "admin" ? `<div class="n-ico">${ico}</div>` : `<div style="position:relative">${avatar(a, 40)}<span style="position:absolute;right:-4px;bottom:-4px;font-size:.9rem">${ico}</span></div>`}
+      <div class="n-main"><div class="n-title">${title}</div>${body ? `<div class="n-body">${body}</div>` : ""}
+        <div class="n-time">${n.kind === "admin" ? `From ${esc(a.name)} · ` : ""}${ago(n.created_at)}${n.post_id ? ` · <a href="#feed">View in Community</a>` : ""}${n.kind === "game" ? ` · <a href="#cards">Open Cards</a>` : ""}</div></div>
+      ${amAdmin && n.kind === "admin" ? `<button class="icon-btn" data-deln="${n.id}" title="Delete notice">🗑</button>` : ""}
+    </div>`;
+  }).join("") : `<p class="muted" style="padding:16px;margin:0">No notifications yet.</p>`;
+  list.querySelectorAll("[data-deln]").forEach(b => b.onclick = async () => {
+    if (!(await confirmModal("Delete this notice?", "It will disappear from everyone's inbox."))) return;
+    const { error } = await sb.from("notifications").delete().eq("id", +b.dataset.deln);
+    if (error) return toast(error.message);
+    loadNotifList();
+  });
+  const now = new Date().toISOString();
+  await sb.from("profiles").update({ inbox_seen_at: now }).eq("id", user.id);
+  unreadNotifs = 0; setBadge();
+  setTimeout(() => { inboxSeenAt = now; }, 0);
+}
+
+async function renderReports(){
+  const body = $("#ib-body");
+  body.innerHTML = `<div class="card" style="padding:0" id="r-list"><p class="muted" style="padding:16px">Loading…</p></div>`;
+  const { data, error } = await sb.from("reports").select("*").order("created_at", { ascending: false }).limit(100);
+  const list = $("#r-list");
+  if (error) { list.innerHTML = `<p class="msg err" style="padding:16px">${esc(error.message)}</p>`; return; }
+  await loadMembers(data.flatMap(r => [r.reporter_id, r.target_author]));
+  list.innerHTML = data.length ? data.map(r => `<div class="notif">
+      <div class="n-ico">⚑</div>
+      <div class="n-main"><div class="n-title">${esc(r.target_type[0].toUpperCase() + r.target_type.slice(1))} by ${esc(mem(r.target_author).name)}</div>
+        <div class="n-body" style="background:var(--bg);border-radius:6px;padding:8px 10px;margin:6px 0">${esc(r.content || "(no text)")}</div>
+        ${r.reason ? `<div class="n-body"><b>Reason:</b> ${esc(r.reason)}</div>` : ""}
+        <div class="n-time">Reported by ${esc(mem(r.reporter_id).name)} · ${ago(r.created_at)}</div>
+        <div class="row" style="margin-top:8px">
+          ${r.target_type !== "message" ? `<button class="btn sm" data-rdel="${r.id}">Delete ${r.target_type}</button>` : ""}
+          ${r.target_author ? `<button class="btn sm ghost" data-rdm="${esc(r.target_author)}">Message author</button>` : ""}
+          <button class="btn sm ghost" data-rdis="${r.id}">Dismiss</button>
+        </div></div></div>`).join("")
+    : `<p class="muted" style="padding:16px;margin:0">No reports. Quiet day.</p>`;
+  list.onclick = async e => {
+    const b = e.target.closest("button"); if (!b) return;
+    const r = data.find(x => x.id === +(b.dataset.rdel || b.dataset.rdis));
+    if (b.dataset.rdm) return startDm(b.dataset.rdm);
+    if (b.dataset.rdel && r) {
+      if (!(await confirmModal(`Delete this ${r.target_type}?`, "This removes it for everyone."))) return;
+      const { error } = await sb.from(r.target_type === "post" ? "posts" : "comments").delete().eq("id", r.target_id);
+      if (error) return toast(error.message);
+    }
+    if (r) { await sb.from("reports").delete().eq("id", r.id); toast(b.dataset.rdel ? "Removed" : "Dismissed"); renderReports(); }
+  };
+}
+
+/* ===================== SERVER TABS + EVENTS ===================== */
+const EV_KINDS = { territory_war: "Territory War", pvp: "PvP Event", pve: "PvE Event", raid: "Raid", convoy: "Convoy", community: "Community", giveaway: "Giveaway", other: "Event" };
+const srvName = k => k === "both" ? "Both servers" : (CONFIG.servers.find(s => s.key === k)?.name || k);
+const srvShort = k => k === "both" ? "Both servers" : (CONFIG.killfeedServers[k] || srvName(k));
+let evAll = [], evRsvps = new Map(), evLoaded = false, evTimer = null;
+
+$("#srv-tabs").innerHTML = [`<a href="#servers" data-sub="servers">All servers</a>`,
+  ...CONFIG.servers.map(s => `<a href="#server-${s.key}" data-sub="server-${s.key}">${esc(srvShort(s.key))}</a>`)].join("");
+
+function serverCard(s, i, compact = false){
+  return `<div class="card">
+    <div class="server-head"><h3>${s.name}</h3></div>
+    <div>${s.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
+    <div class="ip"><span>${s.ip || "IP posted in Discord #server-info"}</span>
+      ${s.ip ? `<button class="btn sm ghost" data-ip="${i}">Copy IP</button>` : `<a class="btn sm ghost" href="${CONFIG.discord}" target="_blank" rel="noopener">Get IP</a>`}</div>
+    <p class="muted" style="margin-bottom:6px"><b style="color:var(--text)">Wipes:</b> ${s.wipe}</p>
+    <ul class="clean">${s.features.map(f => `<li>${f}</li>`).join("")}</ul>
+    ${compact ? "" : `<div class="ev-mini" data-next-for="${esc(s.key)}"><span class="muted">Loading events…</span></div>`}
+  </div>`;
+}
+function bindIpButtons(root){
+  root.querySelectorAll("[data-ip]").forEach(b => b.onclick = async () => {
+    const ip = CONFIG.servers[b.dataset.ip].ip;
+    try { await navigator.clipboard.writeText(ip); toast("IP copied!"); } catch (e) { toast(ip); }
+  });
+}
+function renderServerOverview(){
+  $("#server-list").innerHTML = CONFIG.servers.map((s, i) => serverCard(s, i)).join("");
+  bindIpButtons($("#server-list"));
+  fillNextEventLines();
+}
+
+/* ---------- data ---------- */
+const evEnd = e => new Date(e.ends_at || new Date(e.starts_at).getTime() + 3 * 36e5);
+const evIsLive = e => !e.cancelled && new Date(e.starts_at) <= new Date() && evEnd(e) > new Date();
+const evIsUpcoming = e => evEnd(e) > new Date();
+const evFor = key => evAll.filter(e => e.server === key || e.server === "both");
+const nextEvent = key => (key ? evFor(key) : evAll).filter(e => !e.cancelled && evIsUpcoming(e)).sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at))[0];
+
+async function loadEvents(){
+  if (!sb) { evLoaded = true; return; }
+  const since = new Date(Date.now() - 120 * 864e5).toISOString();
+  const { data, error } = await sb.from("events").select("*").gte("starts_at", since).order("starts_at").limit(300);
+  if (error) { evAll = []; evLoaded = true; return; }
+  evAll = data;
+  evRsvps = new Map();
+  const ids = data.map(e => e.id);
+  if (ids.length) {
+    const r = await sb.from("event_rsvps").select("event_id,user_id,status").in("event_id", ids);
+    (r.data || []).forEach(x => { if (!evRsvps.has(x.event_id)) evRsvps.set(x.event_id, []); evRsvps.get(x.event_id).push(x); });
+    await loadMembers((r.data || []).map(x => x.user_id));
+  }
+  evLoaded = true;
+}
+
+/* ---------- formatting ---------- */
+const fmtEvDate = d => new Date(d).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const fmtEvTime = d => new Date(d).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+function evWhen(e){
+  const s = new Date(e.starts_at), en = e.ends_at ? new Date(e.ends_at) : null;
+  const sameDay = en && s.toDateString() === en.toDateString();
+  return `${fmtEvDate(s)}${en ? ` – ${sameDay ? fmtEvTime(en) : fmtEvDate(en)}` : ""}`;
+}
+function rsvpBlock(e){
+  const list = evRsvps.get(e.id) || [], mine = user ? list.find(r => r.user_id === user.id)?.status : null;
+  const going = list.filter(r => r.status === "going"), maybe = list.filter(r => r.status === "interested");
+  const past = !evIsUpcoming(e) || e.cancelled;
+  const faces = going.slice(0, 6).map(r => avatar(mem(r.user_id), 28)).join("");
+  return `${past ? "" : `<button class="rsvp${mine === "going" ? " on" : ""}" data-rsvp="${e.id}" data-st="going">${mine === "going" ? "✓ Going" : "Going"}</button>
+      <button class="rsvp${mine === "interested" ? " on" : ""}" data-rsvp="${e.id}" data-st="interested">${mine === "interested" ? "★ Interested" : "Interested"}</button>`}
+    ${going.length || maybe.length ? `<span class="ev-who">${faces}<small>${going.length} going${maybe.length ? ` · ${maybe.length} interested` : ""}</small></span>` : ""}
+    ${past ? "" : `<button class="icon-btn" data-cal="${e.id}" title="Add to calendar">📅 Add to calendar</button>`}`;
+}
+function eventCard(e, opts = {}){
+  const live = evIsLive(e);
+  return `<article class="card ev${e.cancelled ? " cancelled" : ""}${opts.next ? " ev-next" : ""}" data-ev="${e.id}">
+    ${e.image_url ? `<img class="ev-img" src="${esc(e.image_url)}" alt="" loading="lazy">` : ""}
+    <div class="ev-body">
+      ${opts.next ? `<div class="ev-next-label">${live ? "Happening now" : "Next event"}</div>` : ""}
+      <div class="ev-meta"><span class="ev-kind">${esc(EV_KINDS[e.kind] || "Event")}</span>
+        ${e.server === "both" ? `<span class="ev-flag both">Both servers</span>` : ""}
+        ${live ? `<span class="ev-flag live">Live now</span>` : ""}${e.cancelled ? `<span class="ev-flag cancel">Cancelled</span>` : ""}</div>
+      <h3>${esc(e.title)}</h3>
+      <div class="ev-facts"><span>📅 ${evWhen(e)} <span class="muted" style="font-size:.85rem">(your time)</span></span>
+        ${e.location ? `<span>📍 ${esc(e.location)}</span>` : ""}${e.prize ? `<span>🏆 ${esc(e.prize)}</span>` : ""}</div>
+      ${opts.next && !e.cancelled && !live ? `<div class="cd" data-evcd="${esc(e.starts_at)}"><div><b data-u="d">0</b><span>Days</span></div><div><b data-u="h">00</b><span>Hours</span></div><div><b data-u="m">00</b><span>Min</span></div><div><b data-u="s">00</b><span>Sec</span></div></div>` : ""}
+      ${e.description ? `<div class="ev-desc">${linkify(esc(e.description))}</div>` : ""}
+      ${e.results ? `<div class="ev-results"><b>Results</b>${linkify(esc(e.results))}</div>` : ""}
+      <div class="ev-actions">${rsvpBlock(e)}
+        ${amAdmin ? `<span class="ev-staff">
+          <button class="icon-btn" data-ev-edit="${e.id}" title="Edit">✏️</button>
+          <button class="icon-btn" data-ev-res="${e.id}" title="Post results">🏁</button>
+          <button class="icon-btn" data-ev-cancel="${e.id}" title="${e.cancelled ? "Restore" : "Cancel"}">${e.cancelled ? "↩️" : "🚫"}</button>
+          <button class="icon-btn" data-ev-del="${e.id}" title="Delete">🗑</button></span>` : ""}
+      </div>
+    </div>
+  </article>`;
+}
+
+/* ---------- per-server page ---------- */
+let currentServer = null;
+async function renderServerDetail(key){
+  currentServer = key;
+  const i = CONFIG.servers.findIndex(s => s.key === key), s = CONFIG.servers[i];
+  const box = $("#sv-server-detail");
+  if (!s) { box.innerHTML = `<div class="kf-empty">Server not found.</div>`; return; }
+  box.innerHTML = `<div class="srv-layout"><div>${serverCard(s, i, true)}</div><div id="ev-col"><div class="kf-empty">Loading events…</div></div></div>`;
+  bindIpButtons(box);
+  if (!evLoaded) await loadEvents();
+  drawServerEvents();
+}
+function drawServerEvents(){
+  const col = $("#ev-col"); if (!col || !currentServer) return;
+  const key = currentServer;
+  if (!sb) { col.innerHTML = `<div class="ev-head"><h2>Events</h2></div><div class="kf-empty">Events are coming soon. Watch Discord for announcements.</div>`; return; }
+  const list = evFor(key), upcoming = list.filter(evIsUpcoming).sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at));
+  const past = list.filter(e => !evIsUpcoming(e)).sort((a, b) => new Date(b.starts_at) - new Date(a.starts_at)).slice(0, 10);
+  const next = upcoming.find(e => !e.cancelled);
+  col.innerHTML = `<div class="ev-head"><h2>${esc(srvShort(key))} events</h2>${amAdmin ? `<button class="btn sm" id="ev-new">+ Post event</button>` : ""}</div>
+    ${next ? eventCard(next, { next: true }) : `<div class="kf-empty" style="margin-bottom:16px">No events scheduled on ${esc(srvShort(key))} yet.${amAdmin ? " Post one with the button above." : " Check back soon."}</div>`}
+    ${upcoming.filter(e => e !== next).map(e => eventCard(e)).join("")}
+    ${past.length ? `<h3 class="ev-past-title">Past events</h3>${past.map(e => eventCard(e)).join("")}` : ""}`;
+  if ($("#ev-new")) $("#ev-new").onclick = () => openEventEditor(null, key);
+  tickEvents();
+}
+function fillNextEventLines(){
+  $$("[data-next-for]").forEach(el => {
+    const k = el.dataset.nextFor, e = evLoaded ? nextEvent(k) : null;
+    el.innerHTML = !evLoaded ? `<span class="muted">Loading events…</span>`
+      : e ? `<span>📅 <b>${esc(e.title)}</b> · ${fmtEvDate(e.starts_at)}</span><a href="#server-${esc(k)}">Events →</a>`
+      : `<span class="muted">No events scheduled</span><a href="#server-${esc(k)}">Events →</a>`;
+  });
+}
+function renderHomeEvent(){
+  const box = $("#home-event"); if (!box) return;
+  const e = nextEvent(null);
+  if (!e) { box.innerHTML = ""; return; }
+  const key = e.server === "both" ? CONFIG.servers[0].key : e.server;
+  box.innerHTML = `<div class="card home-ev"><div><span class="ev-next-label">${evIsLive(e) ? "Happening now" : "Next event"} · ${esc(srvShort(e.server))}</span>
+    <b>${esc(e.title)}</b><div class="muted">${fmtEvDate(e.starts_at)}${e.prize ? " · 🏆 " + esc(e.prize) : ""}</div></div>
+    <a class="btn sm" href="#server-${esc(key)}">See event</a></div>`;
+}
+function tickEvents(){
+  $$("[data-evcd]").forEach(el => {
+    const left = Math.max(0, new Date(el.dataset.evcd) - Date.now());
+    if (!left) { if (!el.dataset.done) { el.dataset.done = 1; setTimeout(drawServerEvents, 500); } return; }
+    const v = { d: Math.floor(left / 864e5), h: Math.floor(left / 36e5) % 24, m: Math.floor(left / 6e4) % 60, s: Math.floor(left / 1e3) % 60 };
+    for (const k in v) { const b = el.querySelector(`[data-u="${k}"]`); if (b) b.textContent = k === "d" ? v[k] : String(v[k]).padStart(2, "0"); }
+  });
+  if (!evTimer) evTimer = setInterval(() => { if (/^#server-/.test(location.hash)) tickEvents(); }, 1000);
+}
+
+/* ---------- RSVP + calendar ---------- */
+async function toggleRsvp(id, status){
+  if (!user) { toast("Sign in with Discord to RSVP"); location.hash = "#account"; return; }
+  const list = evRsvps.get(id) || []; evRsvps.set(id, list);
+  const mine = list.find(r => r.user_id === user.id), before = mine ? mine.status : null;
+  let res;
+  if (before === status) { list.splice(list.indexOf(mine), 1); res = await sb.from("event_rsvps").delete().eq("event_id", id).eq("user_id", user.id); }
+  else {
+    if (mine) mine.status = status; else list.push({ event_id: id, user_id: user.id, status });
+    memberCache.set(user.id, meCard());
+    res = await sb.from("event_rsvps").upsert({ event_id: id, user_id: user.id, status }, { onConflict: "event_id,user_id" });
+  }
+  if (res.error) { toast(/row-level/i.test(res.error.message) ? "You can't RSVP right now" : res.error.message); await loadEvents(); }
+  drawServerEvents();
+  if (!res.error && before !== status) toast(status === "going" ? "See you there! 🫡" : "Marked as interested");
+}
+function calTimes(e){
+  const z = d => new Date(d).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  return [z(e.starts_at), z(evEnd(e))];
+}
+function openCalendar(id){
+  const e = evAll.find(x => x.id === id); if (!e) return;
+  const [s, en] = calTimes(e), details = `${EV_KINDS[e.kind] || "Event"} on ${srvName(e.server)}${e.prize ? "\nPrize: " + e.prize : ""}${e.description ? "\n\n" + e.description : ""}\n\n${location.origin + location.pathname}#server-${e.server === "both" ? CONFIG.servers[0].key : e.server}`;
+  const g = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("AF: " + e.title)}&dates=${s}/${en}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(e.location || srvName(e.server))}`;
+  const icsEsc = t => String(t || "").replace(/[\\;,]/g, m => "\\" + m).replace(/\n/g, "\\n");
+  const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Allied Forces//Events//EN", "BEGIN:VEVENT",
+    `UID:af-event-${e.id}@alliedforces`, `DTSTAMP:${calTimes({ starts_at: new Date() })[0]}`, `DTSTART:${s}`, `DTEND:${en}`,
+    `SUMMARY:${icsEsc("AF: " + e.title)}`, `DESCRIPTION:${icsEsc(details)}`, `LOCATION:${icsEsc(e.location || srvName(e.server))}`,
+    "BEGIN:VALARM", "TRIGGER:-PT30M", "ACTION:DISPLAY", `DESCRIPTION:${icsEsc(e.title)}`, "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+  openModal(`<h3>Add to your calendar</h3><p class="muted">${esc(e.title)} · ${fmtEvDate(e.starts_at)}</p>
+    <div class="row" style="flex-direction:column;align-items:stretch">
+      <a class="btn" href="${g}" target="_blank" rel="noopener" style="text-align:center">Google Calendar</a>
+      <a class="btn ghost" href="${url}" download="allied-forces-event-${e.id}.ics" style="text-align:center">Apple / Outlook (.ics file)</a>
+      <button class="btn ghost" id="cal-x">Close</button></div>
+    <p class="muted" style="font-size:.85rem;margin-top:10px">The calendar file includes a reminder 30 minutes before it starts.</p>`);
+  $("#cal-x").onclick = closeModal;
+}
+
+/* ---------- staff: post / edit / results ---------- */
+const toLocalInput = d => { if (!d) return ""; const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 16); };
+function openEventEditor(id, defaultServer){
+  if (!amAdmin) return;
+  const e = id ? evAll.find(x => x.id === id) : null;
+  let img = e?.image_url || "", newImg = null;
+  const srvOpts = [...CONFIG.servers.map(s => [s.key, srvName(s.key)]), ["both", "Both servers"]]
+    .map(([k, l]) => `<option value="${k}" ${(e ? e.server : defaultServer) === k ? "selected" : ""}>${esc(l)}</option>`).join("");
+  const kindOpts = Object.entries(EV_KINDS).map(([k, l]) => `<option value="${k}" ${(e?.kind || "community") === k ? "selected" : ""}>${l}</option>`).join("");
+  openModal(`<h3>${e ? "Edit event" : "Post an event"}</h3>
+    <div class="two"><div class="field"><label for="ef-srv">Server</label><select id="ef-srv">${srvOpts}</select></div>
+      <div class="field"><label for="ef-kind">Type</label><select id="ef-kind">${kindOpts}</select></div></div>
+    <div class="field"><label for="ef-title">Title</label><input id="ef-title" maxlength="100" value="${esc(e?.title || "")}" placeholder="e.g. Battle for Elektro"></div>
+    <div class="two"><div class="field"><label for="ef-start">Starts</label><input id="ef-start" type="datetime-local" value="${toLocalInput(e?.starts_at)}"></div>
+      <div class="field"><label for="ef-end">Ends (optional)</label><input id="ef-end" type="datetime-local" value="${toLocalInput(e?.ends_at)}"></div></div>
+    <p class="muted" style="font-size:.85rem;margin:-6px 0 12px">Enter times in your own time zone. Players see them converted to theirs.</p>
+    <div class="field"><label for="ef-loc">Location</label><input id="ef-loc" maxlength="100" value="${esc(e?.location || "")}" placeholder="e.g. Elektrozavodsk power plant"></div>
+    <div class="field"><label for="ef-prize">Prize (optional)</label><input id="ef-prize" maxlength="200" value="${esc(e?.prize || "")}" placeholder="e.g. Faction billboard for a month"></div>
+    <div class="field"><label for="ef-desc">Details</label><textarea id="ef-desc" maxlength="3000" rows="5" placeholder="Rules, teams, what to bring…">${esc(e?.description || "")}</textarea></div>
+    <div class="field"><label>Banner image (optional)</label><div id="ef-prev"></div>
+      <label class="btn ghost sm" style="cursor:pointer;margin-top:6px">🖼 Choose image<input type="file" id="ef-file" accept="image/jpeg,image/png,image/webp" hidden></label></div>
+    <div class="row"><button class="btn" id="ef-save">${e ? "Save changes" : "Post event"}</button><button class="btn ghost" id="ef-x">Cancel</button></div>
+    ${e ? "" : `<p class="muted" style="font-size:.85rem;margin-top:8px">Posting sends a notice to everyone's inbox.</p>`}
+    <div id="ef-msg"></div>`);
+  const prev = () => $("#ef-prev").innerHTML = (newImg || img) ? `<div class="c-photo"><img src="${newImg ? URL.createObjectURL(newImg) : esc(img)}" alt=""><button type="button" id="ef-rm" aria-label="Remove image">✕</button></div>` : "";
+  const bindRm = () => { if ($("#ef-rm")) $("#ef-rm").onclick = () => { newImg = null; img = ""; prev(); bindRm(); }; };
+  prev(); bindRm();
+  $("#ef-file").onchange = async ev => {
+    const f = ev.target.files[0]; if (!f) return;
+    try { newImg = await resizeJpeg(f, 1600); prev(); bindRm(); } catch (err) { $("#ef-msg").innerHTML = `<p class="msg err">${esc(err.message)}</p>`; }
+  };
+  $("#ef-x").onclick = closeModal;
+  $("#ef-save").onclick = async () => {
+    const msg = $("#ef-msg"), btn = $("#ef-save");
+    const title = $("#ef-title").value.trim(), st = $("#ef-start").value, en = $("#ef-end").value;
+    if (!title) { msg.innerHTML = `<p class="msg err">Give the event a title.</p>`; return; }
+    if (!st) { msg.innerHTML = `<p class="msg err">Pick a start date and time.</p>`; return; }
+    if (en && new Date(en) <= new Date(st)) { msg.innerHTML = `<p class="msg err">The end time has to be after the start.</p>`; return; }
+    btn.disabled = true; btn.textContent = "Saving…";
+    try {
+      if (newImg) {
+        const path = `${user.id}/${Date.now()}.jpg`;
+        const up = await sb.storage.from("event-images").upload(path, newImg, { contentType: "image/jpeg" });
+        if (up.error) throw up.error;
+        img = sb.storage.from("event-images").getPublicUrl(path).data.publicUrl;
+      }
+      const row = { server: $("#ef-srv").value, kind: $("#ef-kind").value, title,
+        starts_at: new Date(st).toISOString(), ends_at: en ? new Date(en).toISOString() : null,
+        location: $("#ef-loc").value.trim() || null, prize: $("#ef-prize").value.trim() || null,
+        description: $("#ef-desc").value.trim() || null, image_url: img || null };
+      const { error } = e ? await sb.from("events").update(row).eq("id", e.id) : await sb.from("events").insert(row);
+      if (error) throw error;
+      closeModal(); toast(e ? "Event updated" : "Event posted!");
+      await loadEvents(); refreshEventViews();
+      if (!e && row.server !== "both" && row.server !== currentServer) location.hash = "#server-" + row.server;
+    } catch (err) {
+      msg.innerHTML = `<p class="msg err">${esc(/row-level|permission/i.test(err.message) ? "Only AF staff can post events. Make sure you're in the admins table." : err.message)}</p>`;
+      btn.disabled = false; btn.textContent = e ? "Save changes" : "Post event";
+    }
+  };
+}
+function openResults(id){
+  const e = evAll.find(x => x.id === id); if (!e || !amAdmin) return;
+  openModal(`<h3>Results: ${esc(e.title)}</h3>
+    <div class="field"><label for="er-txt">What happened?</label><textarea id="er-txt" maxlength="2000" rows="6" placeholder="Winner, MVP, final score, shout-outs…">${esc(e.results || "")}</textarea></div>
+    <div class="row"><button class="btn" id="er-save">Save results</button><button class="btn ghost" id="er-x">Cancel</button></div><div id="er-msg"></div>`);
+  $("#er-x").onclick = closeModal;
+  $("#er-save").onclick = async () => {
+    const { error } = await sb.from("events").update({ results: $("#er-txt").value.trim() || null }).eq("id", id);
+    if (error) { $("#er-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+    closeModal(); toast("Results saved"); await loadEvents(); refreshEventViews();
+  };
+}
+function refreshEventViews(){
+  drawServerEvents(); fillNextEventLines(); renderHomeEvent();
+}
+$("#v-servers").addEventListener("click", async ev => {
+  const b = ev.target.closest("button"); if (!b) return;
+  const d = b.dataset;
+  if (d.rsvp) return toggleRsvp(+d.rsvp, d.st);
+  if (d.cal) return openCalendar(+d.cal);
+  if (d.evEdit) return openEventEditor(+d.evEdit);
+  if (d.evRes) return openResults(+d.evRes);
+  if (d.evCancel) {
+    const e = evAll.find(x => x.id === +d.evCancel);
+    if (!e.cancelled && !(await confirmModal("Cancel this event?", "It stays on the page marked CANCELLED. You can restore it later.", "Cancel event"))) return;
+    const { error } = await sb.from("events").update({ cancelled: !e.cancelled }).eq("id", e.id);
+    if (error) return toast(error.message);
+    await loadEvents(); refreshEventViews();
+  }
+  if (d.evDel) {
+    if (!(await confirmModal("Delete this event?", "This removes it and its RSVPs for good."))) return;
+    const { error } = await sb.from("events").delete().eq("id", +d.evDel);
+    if (error) return toast(error.message);
+    await loadEvents(); refreshEventViews();
+  }
+});
+async function startEvents(){ await loadEvents(); refreshEventViews(); }
+
+/* ===================== AF WHEEL + AFtokens ===================== */
+let whPrizes = [], whSettings = { spin_cost: 25, daily_spins: 1, war_win_reward: 50 }, whBalance = 0, whSpinsLeft = 0, whRot = 0, whBusy = false, whFaction = null;
+const SRV_LABEL = { nasdara: "Nasdara", chernarus: "Chernarus" };
+const WH_COLORS = ["#8a5a22", "#2a4f7a", "#5b6e3a", "#7a2a2a", "#4a3f6b", "#3f6b5e", "#6b5a3f", "#5a2a4f"];
+
+function etMidnightISO(){
+  const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric", month: "numeric", day: "numeric" }).formatToParts(new Date()).map(x => [x.type, x.value]));
+  return new Date(zonedTs(+p.year, +p.month - 1, +p.day, 0, 0, "America/New_York")).toISOString();
+}
+function wheelSVG(){
+  const list = whPrizes.filter(p => p.active);
+  if (!list.length) return `<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="96" fill="#211e1b" stroke="#34302b" stroke-width="4"/></svg>`;
+  const n = list.length, seg = 360 / n, R = 96, rad = d => (d - 90) * Math.PI / 180;
+  const pt = (d, r) => [100 + r * Math.cos(rad(d)), 100 + r * Math.sin(rad(d))];
+  const slices = list.map((p, i) => {
+    const a0 = i * seg, a1 = (i + 1) * seg, [x0, y0] = pt(a0, R), [x1, y1] = pt(a1, R);
+    const mid = a0 + seg / 2, [tx, ty] = pt(mid, R * 0.6);
+    const label = p.label.length > 14 ? p.label.slice(0, 13) + "…" : p.label;
+    const path = n === 1 ? `<circle cx="100" cy="100" r="${R}" fill="${esc(p.color || WH_COLORS[i % WH_COLORS.length])}"/>`
+      : `<path d="M100,100 L${x0.toFixed(2)},${y0.toFixed(2)} A${R},${R} 0 ${seg > 180 ? 1 : 0} 1 ${x1.toFixed(2)},${y1.toFixed(2)} Z" fill="${esc(p.color || WH_COLORS[i % WH_COLORS.length])}" stroke="#060606" stroke-width="1.2"/>`;
+    return `${path}<text x="${tx.toFixed(2)}" y="${ty.toFixed(2)}" transform="rotate(${(mid > 180 ? mid + 90 : mid - 90).toFixed(2)} ${tx.toFixed(2)} ${ty.toFixed(2)})" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-family="Sora, sans-serif" font-weight="700" font-size="${n > 8 ? 6.6 : 7.8}">${esc(label)}</text>`;
+  }).join("");
+  return `<svg viewBox="0 0 200 200" aria-label="Prize wheel"><circle cx="100" cy="100" r="99" fill="#060606" stroke="#ff7a1a" stroke-width="2"/>
+    <g class="wh-rotor" id="wh-rotor" style="transform:rotate(${whRot}deg)">${slices}</g></svg>`;
+}
+
+async function loadWheelData(){
+  const tasks = [
+    sb.from("wheel_prizes").select("*").order("sort_order").order("id"),
+    sb.from("token_settings").select("*").eq("id", 1).maybeSingle(),
+    sb.from("wheel_recent_wins").select("*").limit(12)
+  ];
+  if (user) tasks.push(
+    sb.from("token_wallets").select("balance").eq("user_id", user.id).maybeSingle(),
+    sb.from("wheel_spins").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("created_at", etMidnightISO()),
+    sb.from("prize_claims").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
+    sb.from("token_ledger").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(15),
+    sb.rpc("my_faction")
+  );
+  const [pz, st, rw, wl, sp, cl, lg, fc] = await Promise.all(tasks);
+  if (pz.error) return { error: pz.error };
+  whPrizes = pz.data || [];
+  if (st.data) whSettings = st.data;
+  whBalance = wl?.data?.balance || 0;
+  whSpinsLeft = user ? Math.max(0, whSettings.daily_spins - (sp?.count || 0)) : 0;
+  whFaction = fc?.data || null;
+  return { wins: rw.data || [], claims: cl?.data || [], ledger: lg?.data || [] };
+}
+
+async function renderWheel(){
+  const box = $("#wheel-root");
+  if (!sb) { box.innerHTML = `<div class="kf-empty">The AF Wheel is coming soon.</div>`; return; }
+  box.innerHTML = `<div class="kf-empty">Loading the wheel…</div>`;
+  const d = await loadWheelData();
+  if (d.error) { box.innerHTML = `<div class="kf-empty">The AF Wheel isn't set up yet${amAdmin ? " — run tokens-setup.sql in Supabase" : ""}.</div>`; return; }
+  const totalW = whPrizes.filter(p => p.active).reduce((a, p) => a + p.weight, 0) || 1;
+  const canSpin = user && whSpinsLeft > 0 && whBalance >= whSettings.spin_cost && whPrizes.some(p => p.active);
+  const why = !user ? "Sign in to spin" : whSpinsLeft <= 0 ? "No spins left today · resets at midnight ET"
+    : whBalance < whSettings.spin_cost ? `You need ${whSettings.spin_cost} AFtokens to spin` : `${whSpinsLeft} spin${whSpinsLeft === 1 ? "" : "s"} left today`;
+  box.innerHTML = `<div class="wh-layout">
+    <div class="card">
+      <div class="wh-stage"><div class="wh-pointer"></div>${wheelSVG()}<div class="wh-hub">AF</div></div>
+      ${user ? `<button class="btn wh-spin" id="wh-spin" ${canSpin ? "" : "disabled"}>Spin · ${whSettings.spin_cost} AFtokens</button>`
+             : `<button class="btn discord-btn wh-spin" id="wh-signin">${DISCORD_SVG} Sign in to spin</button>`}
+      <div class="wh-sub">${esc(why)}</div>
+      <div class="wh-rule">AFtokens are earned by winning wars and events. They can't be bought, sold or cashed out. Item prizes are handed out in game by AF staff, or you can sell them for AFtokens (75% of the prize's value, sales are final).</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px">
+      ${user ? `<div class="card">
+        <div class="wh-bal"><b id="wh-bal">${whBalance}</b><span>AFtokens</span></div>
+        <p class="muted" style="margin:6px 0 0;font-size:.92rem">Every member of the winning faction gets <b style="color:var(--text)">${whSettings.war_win_reward}</b> AFtokens when staff record a war win.</p>
+        <h3 style="margin-top:16px">⚔️ War chest</h3>
+        ${whFaction ? `<p class="muted" style="margin:0">${esc(whFaction.name)} has <b style="color:var(--text)" id="wh-chest">${whFaction.chest}</b> AFtokens in its chest.</p>
+          <div class="wh-chest"><input type="number" id="wh-amt" min="1" step="1" placeholder="Amount"><button class="btn sm" id="wh-give">Contribute</button></div>
+          <div id="wh-cmsg"></div>`
+          : `<p class="muted" style="margin:0">Join a faction on the <a href="factions.html">War Board</a> to contribute to its war chest.</p>`}
+      </div>` : ""}
+      ${user ? `<div class="card"><h3>🎁 My prizes</h3>${d.claims.length ? `<ul class="wh-list">${d.claims.map(c => `<li><div><b>${esc(c.item_name)}</b>
+          <small>${new Date(c.created_at).toLocaleDateString()}${c.server ? " · " + esc(SRV_LABEL[c.server] || c.server) : ""}${c.note ? " · " + esc(c.note) : ""}</small></div>
+          ${c.status === "pending" && !c.server ? `<button class="btn sm" data-claim-srv="${c.id}">Pick server</button>` : `<span class="st st-${esc(c.status)}">${esc(c.status === "pending" ? "Waiting for staff" : c.status)}</span>`}</li>`).join("")}</ul>`
+          : `<p class="muted" style="margin:0">No item prizes yet. Spin to win!</p>`}</div>` : ""}
+      <div class="card"><h3>🏆 Recent wins</h3>${d.wins.length ? `<ul class="wh-list">${d.wins.map(w => `<li><span><b>${esc(w.name)}</b> won ${esc(w.prize_label)}</span><small>${ago(w.created_at)}</small></li>`).join("")}</ul>` : `<p class="muted" style="margin:0">No winners yet.</p>`}</div>
+      <div class="card"><h3>🎯 Odds</h3><ul class="wh-list">${whPrizes.filter(p => p.active).map(p => `<li><span><span class="sw" style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${esc(p.color || "#555")};margin-right:8px"></span>${esc(p.label)}</span><b>${(p.weight / totalW * 100).toFixed(1)}%</b></li>`).join("")}</ul></div>
+      ${user && d.ledger.length ? `<div class="card"><h3>📜 Token history</h3><ul class="wh-list">${d.ledger.map(l => `<li><div>${esc(l.reason)}<small>${new Date(l.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</small></div><span class="${l.amount >= 0 ? "amt-pos" : "amt-neg"}">${l.amount >= 0 ? "+" : ""}${l.amount}</span></li>`).join("")}</ul></div>` : ""}
+    </div>
+  </div>
+  ${amAdmin ? `<div id="wh-staff" style="margin-top:22px"></div>` : ""}`;
+
+  if ($("#wh-signin")) $("#wh-signin").onclick = signIn;
+  if ($("#wh-spin")) $("#wh-spin").onclick = spinWheel;
+  if ($("#wh-give")) $("#wh-give").onclick = contributeChest;
+  $$("[data-claim-srv]").forEach(b => b.onclick = () => pickClaimServer(+b.dataset.claimSrv, d.claims.find(c => c.id === +b.dataset.claimSrv)?.item_name));
+  if (amAdmin) renderWheelStaff();
+}
+
+async function spinWheel(){
+  if (whBusy) return; whBusy = true;
+  const btn = $("#wh-spin"); btn.disabled = true; btn.textContent = "Spinning…";
+  const { data, error } = await sb.rpc("spin_wheel");
+  if (error) { whBusy = false; toast(error.message.replace(/^.*?:\s*/, "")); renderWheel(); return; }
+  const list = whPrizes.filter(p => p.active), idx = Math.max(0, list.findIndex(p => p.id === data.prize_id)), seg = 360 / list.length;
+  const jitter = (Math.random() - 0.5) * seg * 0.6;
+  const target = 360 - (idx * seg + seg / 2) + jitter;
+  whRot = whRot + 360 * 6 + ((target - (whRot % 360)) + 360) % 360;
+  $("#wh-rotor").style.transform = `rotate(${whRot}deg)`;
+  $("#wh-bal").textContent = data.balance;
+  setTimeout(() => {
+    whBusy = false;
+    if (data.kind === "nothing") {
+      openModal(`<div class="wh-win"><div style="font-size:2.4rem">😬</div><div class="big">${esc(data.label)}</div><p class="muted">Better luck next time.</p><button class="btn" id="wh-ok">OK</button></div>`);
+      $("#wh-ok").onclick = () => { closeModal(); renderWheel(); };
+    } else if (data.kind === "tokens") {
+      openModal(`<div class="wh-win"><div style="font-size:2.4rem">🪙</div><div class="big">${esc(data.label)}</div><p class="muted">Added to your balance. You now have <b style="color:var(--text)">${data.balance}</b> AFtokens.</p><button class="btn" id="wh-ok">Nice</button></div>`);
+      $("#wh-ok").onclick = () => { closeModal(); renderWheel(); };
+    } else {
+      pickClaimServer(data.claim_id, data.item_name, true);
+    }
+  }, 4800);
+}
+function pickClaimServer(claimId, itemName, justWon = false, onDone = null){
+  const done = () => (onDone || renderWheel)();
+  openModal(`<div class="wh-win">${justWon ? `<div style="font-size:2.4rem">🎉</div><div class="big">You won ${esc(itemName)}!</div>` : `<h3>What do you want to do with ${esc(itemName)}?</h3>`}
+    <p class="muted">Pick the server you want it on and AF staff will hand it out in game. Make sure your in-game name is saved on your <a href="#account" id="wh-acc">Account</a> page.</p>
+    <div class="row" style="justify-content:center;margin:12px 0">${Object.entries(SRV_LABEL).map(([k, l]) => `<button class="btn" data-srv="${k}">${l}</button>`).join("")}</div>
+    <div id="wh-sellbox" style="text-align:center;margin-bottom:12px"></div>
+    <button class="btn ghost sm" id="wh-later">Decide later</button><div id="wh-pmsg"></div></div>`);
+  $("#wh-later").onclick = () => { closeModal(); done(); };
+  $("#wh-acc").onclick = closeModal;
+  $$("[data-srv]").forEach(b => b.onclick = async () => {
+    const { error } = await sb.rpc("set_claim_server", { p_claim: claimId, p_server: b.dataset.srv });
+    if (error) { $("#wh-pmsg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+    closeModal(); toast(`Got it — staff will deliver on ${SRV_LABEL[b.dataset.srv]}`); done();
+  });
+  sb.rpc("claim_sale_price", { p_claim: claimId }).then(({ data: price }) => {
+    const box = $("#wh-sellbox");
+    if (!box) return;
+    if (!price) { box.innerHTML = `<p class="muted" style="margin:0">This prize can't be sold yet (no sale value set).</p>`; return; }
+    box.innerHTML = `<p class="muted" style="margin:0 0 8px">Or sell it for <b>${price} AFtokens</b> (75% of the prize's value). Sales are final.</p><button class="btn ghost" id="wh-sell">Sell for ${price} AFtokens</button>`;
+    $("#wh-sell").onclick = async () => {
+      if (!(await confirmModal(`Sell ${itemName} for ${price} AFtokens?`, "Sales are final. Once sold, this prize can't be claimed for a server.", "Sell"))) return;
+      const { data, error } = await sb.rpc("sell_claim", { p_claim: claimId });
+      if (error) { toast(error.message.replace(/^.*?:\s*/, "")); return; }
+      closeModal(); toast(`Sold for ${data.amount} AFtokens`); done();
+    };
+  });
+}
+async function contributeChest(){
+  const amt = parseInt($("#wh-amt").value, 10), msg = $("#wh-cmsg");
+  if (!amt || amt < 1) { msg.innerHTML = `<p class="msg err">Enter how many AFtokens to give.</p>`; return; }
+  if (amt > whBalance) { msg.innerHTML = `<p class="msg err">You only have ${whBalance} AFtokens.</p>`; return; }
+  if (!(await confirmModal(`Give ${amt} AFtokens to ${whFaction.name}?`, "Contributions go into the faction's war chest and can't be taken back.", "Contribute"))) return;
+  const { data, error } = await sb.rpc("contribute_to_chest", { p_amount: amt });
+  if (error) { msg.innerHTML = `<p class="msg err">${esc(error.message.replace(/^.*?:\s*/, ""))}</p>`; return; }
+  toast(`+${amt} to the ${whFaction.name} war chest`); renderWheel();
+}
+
+/* ---------- staff panel ---------- */
+async function renderWheelStaff(){
+  const box = $("#wh-staff"); if (!box) return;
+  const { data: claims, error } = await sb.rpc("admin_claims");
+  const totalW = whPrizes.filter(p => p.active).reduce((a, p) => a + p.weight, 0) || 1;
+  const pending = (claims || []).filter(c => c.status === "pending");
+  box.innerHTML = `<div class="card staff-card">
+    <h3>Staff controls <span class="adm">Staff</span></h3>
+    <h4 style="margin:14px 0 8px">📦 Prizes to deliver (${pending.length})</h4>
+    ${error ? `<p class="msg err">${esc(error.message)}</p>` : (claims || []).length ? `<ul class="wh-list">${claims.map(c => `<li><div><b>${esc(c.item_name)}</b> → ${esc(c.discord_username || "Unknown")}
+        <small>IGN: ${esc(c.ingame_name || "not set")} · Steam: ${esc(c.steam_id || "not set")} · Server: ${esc(SRV_LABEL[c.server] || "not picked yet")} · ${new Date(c.created_at).toLocaleDateString()}</small></div>
+        ${c.status === "pending" ? `<span class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm" data-deliver="${c.id}">Delivered</button><button class="btn sm ghost" data-cancelc="${c.id}">Cancel</button></span>` : `<span class="st st-${esc(c.status)}">${esc(c.status)}</span>`}</li>`).join("")}</ul>` : `<p class="muted">Nothing to deliver.</p>`}
+
+    <h4 style="margin:22px 0 8px">⚙️ Settings</h4>
+    <div class="three">
+      <div class="field"><label for="ws-cost">Spin cost</label><input id="ws-cost" type="number" min="0" value="${whSettings.spin_cost}"></div>
+      <div class="field"><label for="ws-daily">Spins per day</label><input id="ws-daily" type="number" min="0" max="20" value="${whSettings.daily_spins}"></div>
+      <div class="field"><label for="ws-war">Tokens per war win (each member)</label><input id="ws-war" type="number" min="0" value="${whSettings.war_win_reward}"></div>
+    </div>
+    <button class="btn sm" id="ws-save">Save settings</button> <span id="ws-msg"></span>
+
+    <h4 style="margin:22px 0 8px">🎡 Wheel prizes</h4>
+    <div style="overflow-x:auto"><table class="pz"><thead><tr><th>Prize</th><th>Gives</th><th>Weight</th><th>Odds</th><th></th></tr></thead><tbody>
+      ${whPrizes.map(p => `<tr class="${p.active ? "" : "off"}"><td><span class="sw" style="background:${esc(p.color || "#555")}"></span>${esc(p.label)}</td>
+        <td>${p.kind === "item" ? "🎁 " + esc(p.item_name || p.label) : p.kind === "tokens" ? `🪙 ${p.token_amount} tokens` : "Nothing"}</td>
+        <td>${p.weight}</td><td>${p.active ? (p.weight / totalW * 100).toFixed(1) + "%" : "off"}</td>
+        <td style="white-space:nowrap"><button class="icon-btn" data-pz-edit="${p.id}" title="Edit">✏️</button><button class="icon-btn" data-pz-del="${p.id}" title="Delete">🗑</button></td></tr>`).join("")}
+    </tbody></table></div>
+    <button class="btn sm" id="pz-add" style="margin-top:10px">+ Add prize</button>
+    <p class="muted" style="font-size:.85rem;margin-top:8px">Weight sets the odds: a prize with weight 20 is twice as likely as one with weight 10.</p>
+
+    <h4 style="margin:22px 0 8px">🪙 Give or take AFtokens</h4>
+    <div id="aw-pick"></div>
+    <div class="two" style="margin-top:10px"><div class="field"><label for="aw-amt">Amount (negative takes away)</label><input id="aw-amt" type="number" placeholder="e.g. 100"></div>
+      <div class="field"><label for="aw-why">Reason</label><input id="aw-why" maxlength="150" placeholder="e.g. Won the Elektro event"></div></div>
+    <button class="btn sm" id="aw-go">Send</button> <span id="aw-msg"></span>
+  </div>`;
+
+  box.querySelectorAll("[data-deliver],[data-cancelc]").forEach(b => b.onclick = async () => {
+    const id = +(b.dataset.deliver || b.dataset.cancelc), status = b.dataset.deliver ? "delivered" : "cancelled";
+    if (status === "cancelled" && !(await confirmModal("Cancel this prize?", "The player keeps nothing for this spin.", "Cancel prize"))) return;
+    const { error } = await sb.rpc("admin_update_claim", { p_claim: id, p_status: status });
+    if (error) return toast(error.message);
+    toast(status === "delivered" ? "Marked delivered" : "Prize cancelled"); renderWheelStaff();
+  });
+  $("#ws-save").onclick = async () => {
+    const row = { spin_cost: Math.max(0, parseInt($("#ws-cost").value, 10) || 0), daily_spins: Math.min(20, Math.max(0, parseInt($("#ws-daily").value, 10) || 0)),
+      war_win_reward: Math.max(0, parseInt($("#ws-war").value, 10) || 0), updated_at: new Date().toISOString() };
+    const { error } = await sb.from("token_settings").update(row).eq("id", 1);
+    $("#ws-msg").innerHTML = error ? `<span class="msg err">${esc(error.message)}</span>` : `<span class="msg ok">Saved</span>`;
+    if (!error) { whSettings = { ...whSettings, ...row }; }
+  };
+  box.querySelectorAll("[data-pz-edit]").forEach(b => b.onclick = () => openPrizeEditor(+b.dataset.pzEdit));
+  box.querySelectorAll("[data-pz-del]").forEach(b => b.onclick = async () => {
+    if (!(await confirmModal("Delete this prize?", "It disappears from the wheel. Past wins stay in the history."))) return;
+    const { error } = await sb.from("wheel_prizes").delete().eq("id", +b.dataset.pzDel);
+    if (error) return toast(error.message);
+    renderWheel();
+  });
+  $("#pz-add").onclick = () => openPrizeEditor(null);
+  let target = null;
+  memberPicker($("#aw-pick"), m => { target = m; }, "Search the player by Discord name…");
+  $("#aw-go").onclick = async () => {
+    const amt = parseInt($("#aw-amt").value, 10), msg = $("#aw-msg");
+    if (!target) { msg.innerHTML = `<span class="msg err">Pick a player first</span>`; return; }
+    if (!amt) { msg.innerHTML = `<span class="msg err">Enter an amount</span>`; return; }
+    const { data, error } = await sb.rpc("admin_award_tokens", { p_user: target.id, p_amount: amt, p_reason: $("#aw-why").value.trim() });
+    msg.innerHTML = error ? `<span class="msg err">${esc(error.message.replace(/^.*?:\s*/, ""))}</span>` : `<span class="msg ok">${amt > 0 ? "Gave" : "Took"} ${Math.abs(amt)} · ${esc(target.name)} now has ${data}</span>`;
+    if (!error) { $("#aw-amt").value = ""; $("#aw-why").value = ""; }
+  };
+}
+// Fills a shop dropdown from the Chernarus shop (prices pushed by the game server).
+async function loadShopOptions(sel, current){
+  const el = $(sel); if (!el) return;
+  const { data } = await sb.from("af_shop_items").select("class_name,display_name,price").eq("server_id", "Nasdara").order("display_name");
+  (data || []).forEach(s => {
+    const o = document.createElement("option");
+    o.value = s.class_name;
+    o.textContent = `${s.display_name} · buys ${s.price} · sells ${Math.floor(s.price * 0.75)}`;
+    if (s.class_name === current) o.selected = true;
+    el.appendChild(o);
+  });
+}
+function openPrizeEditor(id){
+  const p = id ? whPrizes.find(x => x.id === id) : null;
+  openModal(`<h3>${p ? "Edit prize" : "Add a prize"}</h3>
+    <div class="field"><label for="pz-label">Label on the wheel</label><input id="pz-label" maxlength="40" value="${esc(p?.label || "")}" placeholder="e.g. M4-A1 kit"></div>
+    <div class="two"><div class="field"><label for="pz-kind">Gives</label><select id="pz-kind">
+        <option value="item" ${p?.kind === "item" || !p ? "selected" : ""}>An in-game item</option>
+        <option value="tokens" ${p?.kind === "tokens" ? "selected" : ""}>AFtokens</option>
+        <option value="nothing" ${p?.kind === "nothing" ? "selected" : ""}>Nothing (try again)</option></select></div>
+      <div class="field"><label for="pz-weight">Weight (odds)</label><input id="pz-weight" type="number" min="1" max="10000" value="${p?.weight ?? 10}"></div></div>
+    <div class="field" id="pz-item-f"><label for="pz-item">Item staff hand out</label><input id="pz-item" maxlength="100" value="${esc(p?.item_name || "")}" placeholder="e.g. M4-A1 with 3 mags"></div>
+    <div class="field" id="pz-tok-f"><label for="pz-tok">AFtokens won</label><input id="pz-tok" type="number" min="0" value="${p?.token_amount ?? 10}"></div>
+    <div class="field"><label for="pz-worth">Worth in AFtokens (players can sell for 75%; 0 = not sellable)</label><input id="pz-worth" type="number" min="0" value="${p?.worth ?? 0}"></div>
+    <div class="field"><label for="pz-shop">Shop item (sells for 75% of its shop price)</label><select id="pz-shop"><option value="">None: use the worth box</option></select></div>
+    <div class="two"><div class="field"><label for="pz-color">Color</label><input id="pz-color" type="color" value="${esc(p?.color || "#8a5a22")}" style="height:44px;padding:4px"></div>
+      <div class="field"><label for="pz-sort">Order on the wheel</label><input id="pz-sort" type="number" value="${p?.sort_order ?? whPrizes.length + 1}"></div></div>
+    <label style="display:flex;gap:8px;align-items:center;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="pz-active" ${p?.active === false ? "" : "checked"}> On the wheel</label>
+    <div class="row"><button class="btn" id="pz-save">Save prize</button><button class="btn ghost" id="pz-x">Cancel</button></div><div id="pz-msg"></div>`);
+  const sync = () => { const k = $("#pz-kind").value; $("#pz-item-f").hidden = k !== "item"; $("#pz-tok-f").hidden = k !== "tokens"; };
+  $("#pz-kind").onchange = sync; sync();
+  $("#pz-x").onclick = closeModal;
+  loadShopOptions("#pz-shop", p?.shop_class);
+  $("#pz-save").onclick = async () => {
+    const kind = $("#pz-kind").value, label = $("#pz-label").value.trim();
+    if (!label) { $("#pz-msg").innerHTML = `<p class="msg err">Give it a label.</p>`; return; }
+    const row = { label, kind, weight: Math.max(1, parseInt($("#pz-weight").value, 10) || 1),
+      item_name: kind === "item" ? ($("#pz-item").value.trim() || label) : null,
+      token_amount: kind === "tokens" ? Math.max(0, parseInt($("#pz-tok").value, 10) || 0) : 0,
+      worth: Math.max(0, parseInt($("#pz-worth").value, 10) || 0), shop_class: $("#pz-shop").value || null,
+      color: $("#pz-color").value, sort_order: parseInt($("#pz-sort").value, 10) || 100, active: $("#pz-active").checked };
+    const { error } = p ? await sb.from("wheel_prizes").update(row).eq("id", p.id) : await sb.from("wheel_prizes").insert(row);
+    if (error) { $("#pz-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+    closeModal(); toast("Prize saved"); renderWheel();
+  };
+}
+
+/* ===================== AF CRATES (crate opening) ===================== */
+const RARITY = {
+  common:    { label: "Common",    color: "#a1a1aa" },
+  uncommon:  { label: "Uncommon",  color: "#4ade80" },
+  rare:      { label: "Rare",      color: "#3b82f6" },
+  epic:      { label: "Epic",      color: "#a855f7" },
+  legendary: { label: "Legendary", color: "#fbbf24" }
+};
+const rar = r => RARITY[r] || RARITY.common;
+let crList = [], crItems = [], crCounts = {}, crBalance = 0, crOpen = null, crBusy = false, crMuted = false, crDropsTimer = null;
+try { crMuted = localStorage.getItem("af-crate-mute") === "1"; } catch {}
+
+/* Supabase returns at most 1000 rows per request, and crates hold thousands of items */
+async function fetchAllRows(table){
+  const all = [];
+  for (let from = 0; from < 20000; from += 1000) {
+    const { data, error } = await sb.from(table).select("*").order("id").range(from, from + 999);
+    if (error) return { data: null, error };
+    all.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+  return { data: all, error: null };
+}
+async function loadCrateData(){
+  const tasks = [
+    sb.from("crates").select("*").order("sort_order").order("id"),
+    fetchAllRows("crate_items")
+  ];
+  if (user) tasks.push(
+    sb.from("token_wallets").select("balance").eq("user_id", user.id).maybeSingle(),
+    sb.rpc("my_crate_counts")
+  );
+  const [cr, it, wl, ct] = await Promise.all(tasks);
+  if (cr.error || it.error) return { error: cr.error || it.error };
+  crList = cr.data || []; crItems = it.data || [];
+  crBalance = wl?.data?.balance || 0;
+  crCounts = {}; (ct?.data || []).forEach(r => crCounts[r.crate_id] = r.opened);
+  return {};
+}
+const crateItems = id => crItems.filter(i => i.crate_id === id && i.active);
+const crateLeft = c => Math.max(0, c.daily_limit - (crCounts[c.id] || 0));
+function crateArt(c, size = 120){
+  return `<div class="crate-art" style="--cc:${hexOk(c.color) || "#ff7a1a"};width:${size}px;height:${size}px">
+    <div class="crate-box"><span class="crate-lid"></span><span class="crate-band"></span><span class="crate-emo">${esc(c.emoji || "📦")}</span></div></div>`;
+}
+function itemTile(i, extra = ""){
+  const R = rar(i.rarity);
+  return `<div class="ci ${extra}" style="--rc:${R.color}"><div class="ci-emo">${esc(i.emoji || (i.kind === "tokens" ? "🪙" : i.kind === "nothing" ? "🕸️" : "🎁"))}</div><div class="ci-name">${esc(i.label)}</div><div class="ci-rar">${R.label}</div></div>`;
+}
+
+/* live drops bar (shared by the Wheel and Crates tabs) */
+async function renderDrops(){
+  const bar = $("#arcade-drops"); if (!bar || !sb) return;
+  const [cd, wd] = await Promise.all([
+    sb.from("crate_recent_drops").select("*").limit(20),
+    sb.from("wheel_recent_wins").select("*").limit(10)
+  ]);
+  const drops = [
+    ...(cd.data || []).map(d => ({ at: d.created_at, name: d.name, label: d.label, color: rar(d.rarity).color, from: d.crate_name })),
+    ...(wd.data || []).map(d => ({ at: d.created_at, name: d.name, label: d.prize_label, color: "#ff7a1a", from: "AF Wheel" }))
+  ].sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 20);
+  bar.hidden = !drops.length;
+  bar.innerHTML = `<span class="drops-live"><i></i>Live drops</span><div class="drops-track">${drops.map(d => `<div class="drop" style="--rc:${d.color}" title="${esc(d.from)} · ${esc(ago(d.at))}"><b>${esc(d.label)}</b><small>${esc(d.name)}</small></div>`).join("")}</div>`;
+}
+function startDrops(){
+  renderDrops(); clearInterval(crDropsTimer);
+  crDropsTimer = setInterval(() => { if (/^#(wheel|crates)$/.test(location.hash)) renderDrops(); else clearInterval(crDropsTimer); }, 30000);
+}
+
+async function renderCrates(){
+  const box = $("#crates-root");
+  if (!sb) { box.innerHTML = `<div class="kf-empty">Crates are coming soon.</div>`; return; }
+  if (!crOpen) box.innerHTML = `<div class="kf-empty">Loading crates…</div>`;
+  const d = await loadCrateData();
+  if (!d.error && crOpen) return renderCrateDetail();
+  if (d.error) { box.innerHTML = `<div class="kf-empty">Crates aren't set up yet${amAdmin ? " — run crates-setup.sql in Supabase" : ""}.</div>`; return; }
+  const live = crList.filter(c => c.active);
+  box.innerHTML = `
+    ${user ? `<div class="cr-bar"><div class="wh-bal"><b>${crBalance}</b><span>AFtokens</span></div><span class="muted" style="font-size:.9rem">Win wars and events to earn more. Opens reset at midnight ET.</span></div>` : ""}
+    <div class="cr-grid">${live.map(c => {
+      const items = crateItems(c.id), best = items.reduce((a, i) => Object.keys(RARITY).indexOf(i.rarity) > Object.keys(RARITY).indexOf(a) ? i.rarity : a, "common");
+      return `<button type="button" class="card cr-card" data-crate="${c.id}" style="--cc:${hexOk(c.color) || "#ff7a1a"}">
+        ${crateArt(c, 130)}
+        <div class="cr-name">${esc(c.name)}</div>
+        ${c.description ? `<div class="cr-desc">${esc(c.description)}</div>` : ""}
+        <div class="cr-meta"><span class="cr-cost">🪙 ${c.cost}</span><span class="cr-best" style="color:${rar(best).color}">Up to ${rar(best).label}</span></div>
+        <div class="cr-left">${items.filter(i => i.kind === "item").length} items inside</div>
+        ${user ? `<div class="cr-left">${crateLeft(c)} of ${c.daily_limit} left today</div>` : ""}
+      </button>`;
+    }).join("") || `<div class="kf-empty">No crates yet.</div>`}</div>
+    <div class="wh-rule" style="margin-top:18px">Crates are opened with AFtokens, which are earned by winning wars and events — they can't be bought, sold or cashed out. Every result is picked on the server and the odds are shown on each crate. Item prizes are handed out in game by AF staff, or you can sell them for AFtokens (75% of the prize's value, sales are final).</div>
+    ${amAdmin ? `<div id="cr-staff" style="margin-top:22px"></div>` : ""}`;
+  box.querySelectorAll("[data-crate]").forEach(b => b.onclick = () => { crOpen = +b.dataset.crate; renderCrateDetail(); window.scrollTo(0, $("#v-wheel").offsetTop); });
+  if (amAdmin) renderCrateStaff();
+}
+
+function renderCrateDetail(){
+  const box = $("#crates-root"), c = crList.find(x => x.id === crOpen);
+  if (!c) { crOpen = null; return renderCrates(); }
+  const items = crateItems(c.id), total = items.reduce((a, i) => a + i.weight, 0) || 1;
+  const sorted = [...items].sort((a, b) => Object.keys(RARITY).indexOf(b.rarity) - Object.keys(RARITY).indexOf(a.rarity) || a.weight - b.weight);
+  const left = crateLeft(c), can = user && left > 0 && crBalance >= c.cost && items.length;
+  const why = !user ? "Sign in to open for real — or try a free demo"
+    : !items.length ? "This crate is empty right now"
+    : left <= 0 ? "No opens left today · resets at midnight ET"
+    : crBalance < c.cost ? `You need ${c.cost} AFtokens (you have ${crBalance})` : `${left} of ${c.daily_limit} left today · you have ${crBalance} AFtokens`;
+  box.innerHTML = `
+    <div class="row" style="justify-content:space-between;margin-bottom:14px">
+      <button class="btn ghost sm" id="cr-back">← All crates</button>
+      <button class="btn ghost sm" id="cr-mute" aria-pressed="${crMuted}">${crMuted ? "🔇 Sound off" : "🔊 Sound on"}</button>
+    </div>
+    <div class="card cr-stage" style="--cc:${hexOk(c.color) || "#ff7a1a"}">
+      <div class="cr-head">${crateArt(c, 84)}<div><h3 style="margin:0">${esc(c.name)}</h3><div class="muted">${esc(c.description || "")}</div></div></div>
+      <div class="roller" id="roller"><div class="roller-mark"></div><div class="roller-strip" id="strip">${rollerStrip(items, null)}</div></div>
+      <div class="cr-actions">
+        ${user ? `<button class="btn cr-go" id="cr-go" ${can ? "" : "disabled"}>Open · 🪙 ${c.cost}</button>` : `<button class="btn discord-btn cr-go" id="cr-signin">${DISCORD_SVG} Sign in to open</button>`}
+        <button class="btn ghost" id="cr-demo" ${items.length ? "" : "disabled"}>Free demo</button>
+      </div>
+      <div class="wh-sub">${esc(why)}</div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">What's inside <span class="muted" style="font-weight:400;font-size:.9rem">${items.length} possible drops</span></h3>
+        <input class="ms-search" id="cc-q" type="search" placeholder="Search this crate" style="max-width:260px"></div>
+      <div class="cc-odds-bar">${Object.keys(RARITY).map(r => { const w = items.filter(i => i.rarity === r).reduce((a, i) => a + i.weight, 0); return w ? `<span style="--rc:${rar(r).color};flex:${w}" title="${rar(r).label} ${(w / total * 100).toFixed(1)}%"><b>${rar(r).label}</b> ${(w / total * 100).toFixed(w / total < .01 ? 2 : 1)}%</span>` : ""; }).join("")}</div>
+      <div id="cc-list"></div>
+    </div>`;
+  const pct = w => { const p = w / total * 100; return p >= 1 ? p.toFixed(1) + "%" : p >= .01 ? p.toFixed(2) + "%" : "<0.01%"; };
+  const shown = {};
+  const drawContents = () => {
+    const q = ($("#cc-q")?.value || "").trim().toLowerCase();
+    const list = q ? sorted.filter(i => (i.label + " " + (i.item_name || "")).toLowerCase().includes(q)) : sorted;
+    $("#cc-list").innerHTML = [...Object.keys(RARITY)].reverse().map(r => {
+      const g = list.filter(i => i.rarity === r); if (!g.length) return "";
+      const lim = shown[r] || 24;
+      return `<div class="cc-group"><div class="cc-gh" style="color:${rar(r).color}">${rar(r).label} · ${g.length}</div>
+        <div class="cr-contents">${g.slice(0, lim).map(i => `<div class="cc-wrap" title="${esc(i.item_name || i.label)}">${itemTile(i)}<div class="cc-odds">${pct(i.weight)}</div></div>`).join("")}</div>
+        ${g.length > lim ? `<button class="btn ghost sm cc-more" data-more="${r}">Show all ${g.length}</button>` : ""}</div>`;
+    }).join("") || `<p class="muted">Nothing matches.</p>`;
+    $$("#cc-list [data-more]").forEach(b => b.onclick = () => { shown[b.dataset.more] = 99999; drawContents(); });
+  };
+  drawContents();
+  $("#cc-q").oninput = drawContents;
+  $("#cr-back").onclick = () => { crOpen = null; renderCrates(); };
+  $("#cr-mute").onclick = () => { crMuted = !crMuted; try { localStorage.setItem("af-crate-mute", crMuted ? "1" : "0"); } catch {} renderCrateDetail(); };
+  if ($("#cr-signin")) $("#cr-signin").onclick = signIn;
+  if ($("#cr-go")) $("#cr-go").onclick = () => openCrate(c, false);
+  $("#cr-demo").onclick = () => openCrate(c, true);
+}
+
+const WIN_AT = 52;
+function pickWeighted(items){
+  const total = items.reduce((a, i) => a + i.weight, 0); let r = Math.random() * total;
+  for (const i of items) { r -= i.weight; if (r < 0) return i; }
+  return items[items.length - 1];
+}
+function rollerStrip(items, winner){
+  if (!items.length) return "";
+  const out = [];
+  for (let k = 0; k < WIN_AT + 8; k++) out.push(k === WIN_AT && winner ? winner : pickWeighted(items));
+  return out.map((i, k) => itemTile(i, k === WIN_AT && winner ? "win-slot" : "")).join("");
+}
+
+let audioCtx = null;
+function tick(pitch = 1){
+  if (crMuted) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = "square"; o.frequency.value = 900 * pitch;
+    g.gain.setValueAtTime(0.04, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
+    o.connect(g).connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.06);
+  } catch {}
+}
+
+async function openCrate(c, demo){
+  if (crBusy) return;
+  const items = crateItems(c.id); if (!items.length) return;
+  crBusy = true;
+  const go = $("#cr-go"), dm = $("#cr-demo");
+  if (go) { go.disabled = true; go.textContent = "Opening…"; } dm.disabled = true;
+  let result;
+  if (demo) {
+    const w = pickWeighted(items);
+    result = { ...w, item_name: w.item_name || w.label, demo: true };
+  } else {
+    const { data, error } = await sb.rpc("open_crate", { p_crate: c.id });
+    if (error) { crBusy = false; toast(error.message.replace(/^.*?:\s*/, "")); await loadCrateData(); renderCrateDetail(); return; }
+    result = data;
+    crBalance = data.balance; crCounts[c.id] = (crCounts[c.id] || 0) + 1;
+  }
+  const winner = items.find(i => i.id === result.item_id) || items.find(i => i.label === result.label) || { ...result };
+  const strip = $("#strip"), roller = $("#roller");
+  strip.style.transition = "none"; strip.style.transform = "translateX(0)";
+  strip.innerHTML = rollerStrip(items, winner);
+  void strip.offsetWidth;
+  const w = strip.children[0].getBoundingClientRect().width, step = w + 8;
+  const center = roller.clientWidth / 2, jitter = (Math.random() - 0.5) * (w - 24);
+  const dist = 4 + WIN_AT * step + w / 2 - center + jitter;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches, dur = reduce ? 600 : 6500;
+  strip.style.transition = `transform ${dur}ms cubic-bezier(.08,.72,.12,1)`;
+  strip.style.transform = `translateX(${-dist}px)`;
+  // tick each time a tile passes the marker
+  let last = -1; const t0 = performance.now();
+  const watch = now => {
+    const m = new DOMMatrixReadOnly(getComputedStyle(strip).transform), idx = Math.floor((-m.m41 + center - 4) / step);
+    if (idx !== last) { last = idx; tick(1 + Math.min(.5, (now - t0) / dur * .3)); }
+    if (now - t0 < dur) requestAnimationFrame(watch);
+  };
+  requestAnimationFrame(watch);
+  setTimeout(() => {
+    crBusy = false;
+    $(".win-slot")?.classList.add("won");
+    if (!crMuted) { tick(1.6); setTimeout(() => tick(2), 90); }
+    showCrateWin(c, result);
+  }, dur + 250);
+}
+function showCrateWin(c, r){
+  const R = rar(r.rarity), em = esc(r.emoji || (r.kind === "tokens" ? "🪙" : r.kind === "nothing" ? "🕸️" : "🎁"));
+  const again = () => { closeModal(); renderCrateDetail(); };
+  const head = `<div class="cw-glow" style="--rc:${R.color}"><div class="cw-emo">${em}</div></div><div class="cw-rar" style="color:${R.color}">${R.label}</div><div class="big">${esc(r.label)}</div>`;
+  if (r.demo) {
+    openModal(`<div class="wh-win">${head}<p class="muted">That was a free demo — nothing was won or spent.${user ? "" : " Sign in with Discord to open crates for real."}</p><button class="btn" id="cw-ok">${user ? "OK" : "Got it"}</button></div>`);
+    $("#cw-ok").onclick = again; return;
+  }
+  if (r.kind === "item") {
+    openModal(`<div class="wh-win">${head}<p class="muted">Pick the server you want it on — AF staff will hand it out in game.</p><button class="btn" id="cw-ok">Claim it</button></div>`);
+    $("#cw-ok").onclick = () => pickClaimServer(r.claim_id, r.item_name, true, renderCrateDetail);
+    return;
+  }
+  openModal(`<div class="wh-win">${head}<p class="muted">${r.kind === "tokens" ? `Added to your balance. You now have <b style="color:var(--text)">${r.balance}</b> AFtokens.` : "Nothing this time. Better luck on the next one."}</p>
+    <div class="row" style="justify-content:center">${r.left_today > 0 && r.balance >= c.cost ? `<button class="btn" id="cw-again">Open another · 🪙 ${c.cost}</button>` : ""}<button class="btn ghost" id="cw-ok">Close</button></div></div>`);
+  $("#cw-ok").onclick = again;
+  if ($("#cw-again")) $("#cw-again").onclick = () => { closeModal(); renderCrateDetail(); setTimeout(() => openCrate(c, false), 50); };
+}
+
+/* ---------- staff: crates + contents ---------- */
+function renderCrateStaff(){
+  const box = $("#cr-staff"); if (!box) return;
+  box.innerHTML = `<div class="card staff-card">
+    <h3>Crate controls <span class="adm">Staff</span></h3>
+    <p class="muted" style="font-size:.9rem">Item prizes from crates show up in the <a href="#wheel">AF Wheel</a> staff list ("Prizes to deliver"), together with wheel prizes.</p>
+    ${crList.map(c => {
+      const items = crItems.filter(i => i.crate_id === c.id), tot = items.filter(i => i.active).reduce((a, i) => a + i.weight, 0) || 1;
+      const ev = items.filter(i => i.active && i.kind === "tokens").reduce((a, i) => a + i.token_amount * i.weight / tot, 0);
+      return `<details class="cs-crate${c.active ? "" : " off"}" data-cs="${c.id}">
+        <summary><b>${esc(c.emoji || "📦")} ${esc(c.name)}</b> <span class="muted">· ${items.length} items · cost ${c.cost} · ${c.daily_limit}/day · pays back ~${ev.toFixed(1)} tokens per open${ev >= c.cost ? " ⚠️ more than it costs" : ""}</span></summary>
+        <div class="cs-crate-in">
+        <div class="row" style="justify-content:space-between;margin-top:10px">
+          <input class="ms-search cs-q" type="search" placeholder="Search items or class names" style="max-width:300px">
+          <span class="row" style="gap:6px"><button class="btn sm ghost" data-cr-edit="${c.id}">Edit crate${c.active ? "" : " (hidden)"}</button><button class="btn sm ghost" data-ci-add="${c.id}">+ Item</button></span></div>
+        <div style="overflow-x:auto"><table class="pz"><thead><tr><th>Item</th><th>Rarity</th><th>Gives</th><th>Weight</th><th>Odds</th><th></th></tr></thead><tbody>
+        ${items.map(i => `<tr class="${i.active ? "" : "off"}" data-q="${esc((i.label + " " + (i.item_name || "")).toLowerCase())}"><td>${esc(i.emoji || "")} ${esc(i.label)}</td><td style="color:${rar(i.rarity).color}">${rar(i.rarity).label}</td>
+          <td>${i.kind === "item" ? "🎁 " + esc(i.item_name || i.label) : i.kind === "tokens" ? `🪙 ${i.token_amount}` : "Nothing"}</td><td>${i.weight}</td>
+          <td>${i.active ? (i.weight / tot * 100).toFixed(i.weight / tot < .01 ? 3 : 1) + "%" : "off"}</td>
+          <td style="white-space:nowrap"><button class="icon-btn" data-ci-edit="${i.id}" title="Edit">✏️</button><button class="icon-btn" data-ci-del="${i.id}" title="Delete">🗑</button></td></tr>`).join("")}
+        </tbody></table></div></div></details>`;
+    }).join("")}
+    <button class="btn sm" id="cr-add" style="margin-top:12px">+ New crate</button>
+  </div>`;
+  box.querySelectorAll(".cs-q").forEach(inp => inp.oninput = () => {
+    const q = inp.value.trim().toLowerCase();
+    inp.closest("details").querySelectorAll("tbody tr").forEach(tr => tr.hidden = q && !tr.dataset.q.includes(q));
+  });
+  box.querySelectorAll("[data-cr-edit]").forEach(b => b.onclick = () => openCrateEditor(+b.dataset.crEdit));
+  box.querySelectorAll("[data-ci-add]").forEach(b => b.onclick = () => openCrateItemEditor(null, +b.dataset.ciAdd));
+  box.querySelectorAll("[data-ci-edit]").forEach(b => b.onclick = () => openCrateItemEditor(+b.dataset.ciEdit));
+  box.querySelectorAll("[data-ci-del]").forEach(b => b.onclick = async () => {
+    if (!(await confirmModal("Delete this item?", "It's removed from the crate. Past drops stay in the history."))) return;
+    const { error } = await sb.from("crate_items").delete().eq("id", +b.dataset.ciDel);
+    if (error) return toast(error.message);
+    renderCrates();
+  });
+  $("#cr-add").onclick = () => openCrateEditor(null);
+}
+function openCrateEditor(id){
+  const c = id ? crList.find(x => x.id === id) : null;
+  openModal(`<h3>${c ? "Edit crate" : "New crate"}</h3>
+    <div class="field"><label for="ce-name">Name</label><input id="ce-name" maxlength="40" value="${esc(c?.name || "")}" placeholder="e.g. Medic Crate"></div>
+    <div class="field"><label for="ce-desc">Description</label><input id="ce-desc" maxlength="200" value="${esc(c?.description || "")}"></div>
+    <div class="three"><div class="field"><label for="ce-cost">Cost (AFtokens)</label><input id="ce-cost" type="number" min="0" value="${c?.cost ?? 25}"></div>
+      <div class="field"><label for="ce-lim">Opens per day</label><input id="ce-lim" type="number" min="0" max="50" value="${c?.daily_limit ?? 3}"></div>
+      <div class="field"><label for="ce-emo">Emoji</label><input id="ce-emo" maxlength="8" value="${esc(c?.emoji || "📦")}"></div></div>
+    <div class="two"><div class="field"><label for="ce-color">Glow color</label><input id="ce-color" type="color" value="${esc(hexOk(c?.color) || "#ff7a1a")}" style="height:44px;padding:4px"></div>
+      <div class="field"><label for="ce-sort">Order</label><input id="ce-sort" type="number" value="${c?.sort_order ?? crList.length + 1}"></div></div>
+    <label style="display:flex;gap:8px;align-items:center;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="ce-active" ${c?.active === false ? "" : "checked"}> Show on the site</label>
+    <div class="row"><button class="btn" id="ce-save">Save crate</button>${c ? `<button class="btn ghost" id="ce-del">Delete crate</button>` : ""}<button class="btn ghost" id="ce-x">Cancel</button></div><div id="ce-msg"></div>`);
+  $("#ce-x").onclick = closeModal;
+  if ($("#ce-del")) $("#ce-del").onclick = async () => {
+    if (!(await confirmModal("Delete this crate?", "The crate and everything in it are removed. Past drops stay in the history. To just hide it, untick \"Show on the site\" instead."))) return;
+    const { error } = await sb.from("crates").delete().eq("id", c.id);
+    if (error) return toast(error.message);
+    toast("Crate deleted"); renderCrates();
+  };
+  $("#ce-save").onclick = async () => {
+    const name = $("#ce-name").value.trim();
+    if (!name) { $("#ce-msg").innerHTML = `<p class="msg err">Give it a name.</p>`; return; }
+    const row = { name, description: $("#ce-desc").value.trim() || null, cost: Math.max(0, parseInt($("#ce-cost").value, 10) || 0),
+      daily_limit: Math.min(50, Math.max(0, parseInt($("#ce-lim").value, 10) || 0)), emoji: $("#ce-emo").value.trim() || null,
+      color: $("#ce-color").value, sort_order: parseInt($("#ce-sort").value, 10) || 100, active: $("#ce-active").checked };
+    const { error } = c ? await sb.from("crates").update(row).eq("id", c.id) : await sb.from("crates").insert(row);
+    if (error) { $("#ce-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+    closeModal(); toast("Crate saved"); renderCrates();
+  };
+}
+function openCrateItemEditor(id, crateId){
+  const i = id ? crItems.find(x => x.id === id) : null, cid = i?.crate_id ?? crateId;
+  openModal(`<h3>${i ? "Edit item" : "Add an item"}</h3>
+    <div class="two"><div class="field"><label for="ie-label">Name in the crate</label><input id="ie-label" maxlength="40" value="${esc(i?.label || "")}" placeholder="e.g. SVD"></div>
+      <div class="field"><label for="ie-emo">Emoji</label><input id="ie-emo" maxlength="8" value="${esc(i?.emoji || "")}" placeholder="🔫"></div></div>
+    <div class="two"><div class="field"><label for="ie-rar">Rarity</label><select id="ie-rar">${Object.entries(RARITY).map(([k, v]) => `<option value="${k}" ${(i?.rarity || "common") === k ? "selected" : ""}>${v.label}</option>`).join("")}</select></div>
+      <div class="field"><label for="ie-kind">Gives</label><select id="ie-kind">
+        <option value="item" ${i?.kind === "item" || !i ? "selected" : ""}>An in-game item</option>
+        <option value="tokens" ${i?.kind === "tokens" ? "selected" : ""}>AFtokens</option>
+        <option value="nothing" ${i?.kind === "nothing" ? "selected" : ""}>Nothing</option></select></div></div>
+    <div class="field" id="ie-item-f"><label for="ie-item">Item staff hand out</label><input id="ie-item" maxlength="300" value="${esc(i?.item_name || "")}" placeholder="e.g. SVD with 2 mags and PSO scope"></div>
+    <div class="field" id="ie-tok-f"><label for="ie-tok">AFtokens won</label><input id="ie-tok" type="number" min="0" value="${i?.token_amount ?? 10}"></div>
+    <div class="field"><label for="ie-worth">Worth in AFtokens (players can sell for 75%; 0 = not sellable)</label><input id="ie-worth" type="number" min="0" value="${i?.worth ?? 0}"></div>
+    <div class="field"><label for="ie-shop">Shop item (sells for 75% of its shop price)</label><select id="ie-shop"><option value="">None: use the worth box</option></select></div>
+    <div class="field"><label for="ie-w">Weight (odds)</label><input id="ie-w" type="number" min="1" max="1000000" value="${i?.weight ?? 10}"></div>
+    <label style="display:flex;gap:8px;align-items:center;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="ie-active" ${i?.active === false ? "" : "checked"}> In the crate</label>
+    <div class="row"><button class="btn" id="ie-save">Save item</button><button class="btn ghost" id="ie-x">Cancel</button></div><div id="ie-msg"></div>`);
+  const sync = () => { const k = $("#ie-kind").value; $("#ie-item-f").hidden = k !== "item"; $("#ie-tok-f").hidden = k !== "tokens"; };
+  $("#ie-kind").onchange = sync; sync();
+  $("#ie-x").onclick = closeModal;
+  loadShopOptions("#ie-shop", i?.shop_class);
+  $("#ie-save").onclick = async () => {
+    const kind = $("#ie-kind").value, label = $("#ie-label").value.trim();
+    if (!label) { $("#ie-msg").innerHTML = `<p class="msg err">Give it a name.</p>`; return; }
+    const row = { crate_id: cid, label, rarity: $("#ie-rar").value, kind, emoji: $("#ie-emo").value.trim() || null,
+      weight: Math.max(1, parseInt($("#ie-w").value, 10) || 1),
+      item_name: kind === "item" ? ($("#ie-item").value.trim() || label) : null,
+      token_amount: kind === "tokens" ? Math.max(0, parseInt($("#ie-tok").value, 10) || 0) : 0,
+      worth: Math.max(0, parseInt($("#ie-worth").value, 10) || 0), shop_class: $("#ie-shop").value || null, active: $("#ie-active").checked };
+    const { error } = i ? await sb.from("crate_items").update(row).eq("id", i.id) : await sb.from("crate_items").insert(row);
+    if (error) { $("#ie-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
+    closeModal(); toast("Item saved"); renderCrates();
+  };
+}
+
+/* ===================== AF CARDS (trading card game) + XP ===================== */
+const CT = {
+  survivor: { label: "Survivor", color: "#38bdf8", icon: "🧍" },
+  infected: { label: "Infected", color: "#84cc16", icon: "🧟" },
+  vehicle:  { label: "Vehicle",  color: "#94a3b8", icon: "🚙" },
+  supply:   { label: "Supply",   color: "#fbbf24", icon: "🥫" }
+};
+const isFighter = c => c && (c.type === "survivor" || c.type === "infected");
+let cdCards = [], cdById = {}, cdState = null, cdTab = "battle", cdBattle = null, cdSel = null, cdChan = null, cdTimer = null, cdBusy = false;
+let cdFilter = { type: "all", rarity: "all", owned: false }, cdDeckSel = null;
+
+async function loadCardDefs(){
+  if (cdCards.length) return;
+  const { data, error } = await sb.from("cards").select("*").eq("active", true).order("num");
+  if (error) throw error;
+  cdCards = data || []; cdById = Object.fromEntries(cdCards.map(c => [c.id, c]));
+}
+async function loadCardState(){
+  if (!user) { cdState = null; return; }
+  const { data, error } = await sb.rpc("my_card_state");
+  if (error) throw error;
+  cdState = data;
+  if (!cdDeckSel || !cdState.decks.some(d => d.id === cdDeckSel)) cdDeckSel = cdState.decks[0]?.id || null;
+}
+const ownedN = id => cdState?.owned?.[id] || 0;
+function legendPhoto(c){
+  if (!c.legend_discord_id) return null;
+  const l = (legendsData || []).find(x => String(x.discord_id || "").replace(/\s/g, "") === c.legend_discord_id);
+  return l?.photo_url || null;
+}
+function cardArt(c){
+  const src = c.art_url || legendPhoto(c);
+  return src ? `<img src="${esc(src)}" alt="" loading="lazy">` : `<span class="tc-emo">${esc(c.emoji || CT[c.type].icon)}</span>`;
+}
+/* one card. opts: size (sm|md|lg), qty, missing, attrs, fighter (live board state) */
+function cardHTML(c, o = {}){
+  if (!c) return "";
+  const R = rar(c.rarity), T = CT[c.type], f = o.fighter;
+  const atk = f ? f.atkNow : c.atk, hp = f ? f.hp : c.hp;
+  return `<div class="tc tc-${o.size || "md"}${o.missing ? " missing" : ""}${o.cls ? " " + o.cls : ""}" style="--tc:${T.color};--rc:${R.color}" ${o.attrs || ""}>
+    <div class="tc-top"><span class="tc-cost" title="Supply cost">${c.cost}</span><span class="tc-name">${esc(c.name)}</span></div>
+    <div class="tc-art">${o.missing ? `<span class="tc-emo">?</span>` : cardArt(c)}${c.legend_discord_id ? `<span class="tc-legend">AF Legend</span>` : ""}</div>
+    <div class="tc-type"><span>${T.label}</span><span style="color:${R.color}">${R.label}</span></div>
+    ${o.size === "sm" && !o.rules ? "" : `<div class="tc-text">${esc(c.rules || "")}${c.flavor && o.size === "lg" ? `<i>${esc(c.flavor)}</i>` : ""}</div>`}
+    ${isFighter(c) ? `<div class="tc-stats"><span class="tc-atk" title="Attack">⚔ ${atk}</span><span class="tc-hp${f && f.hp < f.max ? " hurt" : ""}" title="Health">❤ ${hp}${f && f.hp < f.max ? `<small>/${f.max}</small>` : ""}</span></div>` : ""}
+    ${o.qty ? `<span class="tc-qty">×${o.qty}</span>` : ""}
+    ${o.badge ? `<span class="tc-badge">${o.badge}</span>` : ""}
+  </div>`;
+}
+function openCardModal(id){
+  const c = cdById[id]; if (!c) return;
+  openModal(`<div class="tc-modal">${cardHTML(c, { size: "lg" })}
+    <div class="tc-modal-info"><p class="muted" style="margin:0">${CT[c.type].label} · ${rar(c.rarity).label} · costs ${c.cost} Supply</p>
+    ${user ? `<p style="margin:8px 0 0">You own <b>${ownedN(c.id)}</b></p>` : ""}
+    <button class="btn ghost sm" id="tcm-x" style="margin-top:14px">Close</button></div></div>`);
+  $("#tcm-x").onclick = closeModal;
+}
+function cardsHowTo(){
+  openModal(`<h3>How to play AF Cards</h3>
+    <ul class="howto">
+      <li><b>Goal:</b> knock out 3 enemy fighters. Attacking when they have no fighters left raids their camp — that counts as a knock-out too (once per turn).</li>
+      <li><b>Decks:</b> 20 cards, max 2 copies of a card (1 for legendaries), at least 6 Survivors or Infected.</li>
+      <li><b>Supply ⚡:</b> you get 1 on your first turn, +1 every turn (max 6). Every card costs Supply.</li>
+      <li><b>Your turn:</b> draw a card, play cards, then attack with fighters that were already out at the start of the turn. Up to 3 fighters on the board.</li>
+      <li><b>Vehicles</b> attach to one of your fighters and boost it. <b>Supplies</b> are used once (heal, buff, draw…).</li>
+      <li><b>Rush</b> attacks the turn it's played · <b>Guard</b> must be attacked first · <b>Armor N</b> blocks N damage · <b>Dodge</b> ignores the first hit · <b>Horde</b> +1 attack per other Infected you have · <b>Strikes twice</b> attacks twice a turn · <b>Regen N</b> heals N each turn · <b>Scavenge</b> draws a card when it knocks something out.</li>
+      <li><b>After 40 turns</b> the player with more knock-outs wins.</li>
+      <li><b>Quick battle</b> plays both decks automatically against a deck with a similar power level — instant result.</li>
+      <li><b>XP:</b> daily visit +10, bot win +40 (first 5 a day), quick win +20 (first 10 a day), player battle +60 win / +20 loss, packs +5, crates +5, wheel +5, war win +150. Every level = a free Outbreak pack, every 5 levels = +50 AFtokens.</li>
+    </ul><button class="btn" id="ht-x">Got it</button>`);
+  $("#ht-x").onclick = closeModal;
+}
+
+/* ---------- page shell ---------- */
+async function renderCardsPage(){
+  const box = $("#cards-root"); if (!box) return;
+  if (!sb) { box.innerHTML = `<div class="kf-empty">AF Cards is coming soon.</div>`; return; }
+  if (!cdCards.length) box.innerHTML = `<div class="kf-empty">Shuffling the deck…</div>`;
+  try { await loadCardDefs(); await loadCardState(); }
+  catch (err) { box.innerHTML = `<div class="kf-empty">AF Cards isn't set up yet${amAdmin ? " — run cards-setup.sql in Supabase" : ""}.</div>`; return; }
+  if (cdBattle && cdTab === "battle") return renderBattleBoard();
+  const s = cdState, pct = s ? Math.min(100, (s.xp - s.level_xp) / Math.max(1, s.next_xp - s.level_xp) * 100) : 0;
+  box.innerHTML = `
+    ${s ? `<div class="card xp-card">
+      <div class="xp-lvl"><b>${s.level}</b><span>Level</span></div>
+      <div class="xp-main"><div class="xp-row"><b>${esc(s.title)}</b><span class="muted">${s.level >= 50 ? "Max level" : `${s.xp.toLocaleString()} / ${s.next_xp.toLocaleString()} XP`}</span></div>
+        <div class="xp-bar"><i style="width:${s.level >= 50 ? 100 : pct.toFixed(1)}%"></i></div>
+        <div class="xp-meta"><span>🏆 ${s.wins}W · ${s.losses}L</span>${s.pack_credits ? `<span class="xp-free">🎁 ${s.pack_credits} free pack${s.pack_credits === 1 ? "" : "s"}</span>` : ""}<span>📚 ${Object.keys(s.owned).length} / ${cdCards.length} cards</span></div></div>
+      <button class="btn ghost sm" id="cd-how">How to play</button></div>`
+    : `<div class="card mo-cta"><div><h3>Collect them all. Battle everyone.</h3><p class="muted" style="margin:0">A DayZ trading card game: Survivors, Infected, vehicles and supplies — plus the real AF Legends. Sign in to get your free starter deck.</p></div><div class="row"><button class="btn ghost" id="cd-how">How to play</button><button class="btn discord-btn" id="cd-signin">${DISCORD_SVG} Sign in</button></div></div>`}
+    ${s && !s.starter ? `<div class="card hl mo-cta"><div><h3>🎒 Your starter deck is waiting</h3><p class="muted" style="margin:0">20 cards and a ready-to-play deck, free.</p></div><button class="btn" id="cd-starter">Claim starter deck</button></div>` : ""}
+    <div class="kf-filters cd-tabs">${[["battle", "⚔️ Battle"], ["ranked", "🏅 Ranked"], ["collection", "📚 Collection"], ["packs", "🎁 Packs"], ["decks", "🗂️ Decks"]].map(([k, l]) => `<button class="chip${cdTab === k ? " active" : ""}" data-cdt="${k}">${l}${k === "packs" && s?.daily_ready ? ` <i class="dot-new"></i>` : ""}</button>`).join("")}</div>
+    <div id="cd-body"></div>`;
+  $("#cd-how").onclick = cardsHowTo;
+  if ($("#cd-signin")) $("#cd-signin").onclick = signIn;
+  if ($("#cd-starter")) $("#cd-starter").onclick = async () => {
+    const { error } = await sb.rpc("claim_starter");
+    if (error) return toast(error.message.replace(/^.*?:\s*/, ""));
+    toast("Starter deck added!"); cdTab = "decks"; renderCardsPage();
+  };
+  $$("[data-cdt]").forEach(b => b.onclick = () => { cdTab = b.dataset.cdt; renderCardsPage(); });
+  const body = $("#cd-body");
+  if (cdTab === "collection" || !s) renderCollection(body);
+  else if (cdTab === "packs") renderPacks(body);
+  else if (cdTab === "decks") renderDecks(body);
+  else if (cdTab === "ranked") renderRanked(body);
+  else renderBattleHub(body);
+}
+
+/* ---------- collection book ---------- */
+function renderCollection(body){
+  const f = cdFilter;
+  const list = cdCards.filter(c => (f.type === "all" || c.type === f.type) && (f.rarity === "all" || c.rarity === f.rarity) && (!f.owned || ownedN(c.id)));
+  body.innerHTML = `<div class="cd-filters">
+      <div class="kf-filters">${["all", ...Object.keys(CT)].map(t => `<button class="chip${f.type === t ? " active" : ""}" data-ft="${t}">${t === "all" ? "All types" : CT[t].icon + " " + CT[t].label}</button>`).join("")}</div>
+      <div class="kf-filters">${["all", ...Object.keys(RARITY)].map(r => `<button class="chip${f.rarity === r ? " active" : ""}" data-fr="${r}"${r !== "all" ? ` style="color:${rar(r).color}"` : ""}>${r === "all" ? "All rarities" : rar(r).label}</button>`).join("")}
+        ${user ? `<label class="pe-check" style="margin-left:6px"><input type="checkbox" id="f-own"${f.owned ? " checked" : ""}> Owned only</label>` : ""}</div></div>
+    <div class="tc-grid">${list.map(c => cardHTML(c, { size: "md", qty: user && ownedN(c.id) > 1 ? ownedN(c.id) : 0, missing: user && !ownedN(c.id), attrs: `data-card="${c.id}"` })).join("") || `<p class="muted">No cards match.</p>`}</div>`;
+  body.querySelectorAll("[data-ft]").forEach(b => b.onclick = () => { f.type = b.dataset.ft; renderCollection(body); });
+  body.querySelectorAll("[data-fr]").forEach(b => b.onclick = () => { f.rarity = b.dataset.fr; renderCollection(body); });
+  if ($("#f-own")) $("#f-own").onchange = e => { f.owned = e.target.checked; renderCollection(body); };
+  body.querySelectorAll("[data-card]").forEach(el => el.onclick = () => openCardModal(el.dataset.card));
+}
+
+/* ---------- packs ---------- */
+function renderPacks(body){
+  const s = cdState, st = s.settings;
+  const pack = (k, name, emo, desc, price, can, color) => `<div class="card pk-card" style="--pc:${color}">
+      <div class="pk-art"><span>${emo}</span></div><h3>${name}</h3><p class="muted">${desc}</p>
+      <button class="btn${can ? "" : " ghost"}" data-pack="${k}" ${can ? "" : "disabled"}>${price}</button></div>`;
+  body.innerHTML = `<div class="pk-grid">
+    ${pack("daily", "Daily Supply Drop", "📦", "3 cards — commons and uncommons. Free once a day (resets midnight ET). +10 XP.", s.daily_ready ? "Open free" : "Come back tomorrow", s.daily_ready, "#4ade80")}
+    ${pack("outbreak", "Outbreak Pack", "🧟", "5 cards — 3 common, 1 uncommon or better, 1 rare or better (5% legendary).", s.pack_credits ? `Open free (${s.pack_credits} left)` : `Open · 🪙 ${st.outbreak_cost}`, true, "#ff7a1a")}
+    ${pack("elite", "Elite Pack", "👑", "5 cards — 2 uncommon+, 2 rare+, 1 guaranteed epic or legendary (20% legendary).", `Open · 🪙 ${st.elite_cost}`, true, "#fbbf24")}
+  </div>
+  <div class="wh-rule" style="margin-top:16px">Packs are free or bought with AFtokens, which are earned by playing — never with real money. Cards can't be sold or cashed out.</div>
+  <div id="pk-open"></div>`;
+  body.querySelectorAll("[data-pack]").forEach(b => b.onclick = async () => {
+    if (cdBusy) return; cdBusy = true; b.disabled = true; b.textContent = "Opening…";
+    const { data, error } = await sb.rpc("open_pack", { p_kind: b.dataset.pack });
+    cdBusy = false;
+    if (error) { toast(error.message.replace(/^.*?:\s*/, "")); renderPacks(body); return; }
+    await loadCardState();
+    showPackOpen(data, () => renderCardsPage());
+  });
+}
+function showPackOpen(r, done){
+  const order = [...r.cards].sort((a, b) => Object.keys(RARITY).indexOf(cdById[a]?.rarity) - Object.keys(RARITY).indexOf(cdById[b]?.rarity));
+  const isNew = new Set(r.new || []);
+  openModal(`<div class="pk-reveal"><h3>Tap a card to flip it</h3>
+    <div class="pk-row">${order.map((id, i) => `<div class="flip" data-i="${i}"><div class="flip-in"><div class="flip-back"><span>AF</span></div><div class="flip-front">${cardHTML(cdById[id], { size: "md", badge: isNew.has(id) ? "NEW" : "" })}</div></div></div>`).join("")}</div>
+    <div class="row" style="justify-content:center;margin-top:16px"><button class="btn ghost" id="pk-all">Flip all</button><button class="btn" id="pk-done">Done</button></div></div>`);
+  const m = $("#ui-modal"); m.querySelector(".modal-card").classList.add("wide");
+  const flip = el => { if (el.classList.contains("on")) return; el.classList.add("on"); const c = cdById[order[+el.dataset.i]]; if (c && ["epic", "legendary"].includes(c.rarity)) { el.classList.add("big"); tick(1.6); setTimeout(() => tick(2), 90); } else tick(1.2); };
+  m.querySelectorAll(".flip").forEach(el => el.onclick = () => flip(el));
+  $("#pk-all").onclick = () => m.querySelectorAll(".flip").forEach((el, i) => setTimeout(() => flip(el), i * 180));
+  $("#pk-done").onclick = () => { closeModal(); done(); };
+}
+
+/* ---------- decks ---------- */
+function renderDecks(body){
+  const s = cdState;
+  body.innerHTML = `<div class="dk-list">${s.decks.map(d => `<div class="card dk-item"><div><b>${esc(d.name)}</b><div class="muted" style="font-size:.88rem">${d.cards.length} cards · power ${d.power} · ${d.cards.filter(id => isFighter(cdById[id])).length} fighters</div>
+      <div class="dk-peek">${[...new Set(d.cards)].slice(0, 8).map(id => `<span title="${esc(cdById[id]?.name || "")}">${esc(cdById[id]?.emoji || "🃏")}</span>`).join("")}</div></div>
+      <div class="row" style="gap:6px"><button class="btn sm ghost" data-dk-edit="${d.id}">Edit</button><button class="btn sm ghost" data-dk-del="${d.id}">Delete</button></div></div>`).join("") || `<p class="muted">No decks yet.</p>`}</div>
+    ${s.decks.length < 5 ? `<button class="btn" id="dk-new" style="margin-top:12px">+ New deck</button>` : ""}`;
+  if ($("#dk-new")) $("#dk-new").onclick = () => openDeckEditor(null);
+  body.querySelectorAll("[data-dk-edit]").forEach(b => b.onclick = () => openDeckEditor(s.decks.find(d => d.id === +b.dataset.dkEdit)));
+  body.querySelectorAll("[data-dk-del]").forEach(b => b.onclick = async () => {
+    if (!(await confirmModal("Delete this deck?", "Your cards stay in your collection."))) return;
+    await sb.rpc("delete_deck", { p_id: +b.dataset.dkDel }); renderCardsPage();
+  });
+}
+function openDeckEditor(deck){
+  let cards = deck ? [...deck.cards] : [], name = deck?.name || "My deck", q = "";
+  const body = $("#cd-body");
+  const lim = c => c.rarity === "legendary" ? 1 : 2;
+  const draw = () => {
+    const counts = {}; cards.forEach(id => counts[id] = (counts[id] || 0) + 1);
+    const fighters = cards.filter(id => isFighter(cdById[id])).length;
+    const power = cards.reduce((a, id) => { const c = cdById[id]; return a + ({ common: 10, uncommon: 20, rare: 30, epic: 45, legendary: 60 }[c.rarity]) + c.cost * 5; }, 0);
+    const pool = cdCards.filter(c => ownedN(c.id) && (!q || c.name.toLowerCase().includes(q)));
+    const curve = [0, 1, 2, 3, 4, 5, 6].map(n => cards.filter(id => Math.min(6, cdById[id].cost) === n).length);
+    body.innerHTML = `<div class="dk-ed">
+      <div class="card dk-pool"><div class="row" style="justify-content:space-between"><h3 style="margin:0">Your cards</h3><input class="ms-search" id="dk-q" type="search" placeholder="Search" value="${esc(q)}" style="max-width:200px"></div>
+        <p class="muted" style="font-size:.85rem;margin:6px 0 10px">Tap a card to add it.</p>
+        <div class="tc-grid sm">${pool.map(c => { const left = Math.min(ownedN(c.id), lim(c)) - (counts[c.id] || 0); return cardHTML(c, { size: "sm", cls: left > 0 ? "" : "used", badge: `${counts[c.id] || 0}/${Math.min(ownedN(c.id), lim(c))}`, attrs: `data-add="${c.id}"` }); }).join("")}</div></div>
+      <div class="card dk-side">
+        <div class="field" style="margin-bottom:10px"><label for="dk-name">Deck name</label><input id="dk-name" maxlength="30" value="${esc(name)}"></div>
+        <div class="dk-stats"><span class="${cards.length === 20 ? "ok" : ""}">${cards.length}/20 cards</span><span class="${fighters >= 6 ? "ok" : ""}">${fighters} fighters (min 6)</span><span>Power ${power}</span></div>
+        <div class="dk-curve" title="Supply curve">${curve.map((n, i) => `<div><i style="height:${Math.min(100, n * 14)}%"></i><small>${i === 6 ? "6+" : i}</small></div>`).join("")}</div>
+        <div class="dk-rows">${Object.keys(counts).sort((a, b) => cdById[a].cost - cdById[b].cost || cdById[a].name.localeCompare(cdById[b].name)).map(id => { const c = cdById[id]; return `<button type="button" class="dk-row" data-rm="${id}" style="--rc:${rar(c.rarity).color};--tc:${CT[c.type].color}"><span class="dk-cost">${c.cost}</span><span class="dk-nm">${esc(c.emoji || "")} ${esc(c.name)}</span><b>×${counts[id]}</b></button>`; }).join("") || `<p class="muted" style="font-size:.9rem">Empty — add 20 cards.</p>`}</div>
+        <div class="row" style="margin-top:12px"><button class="btn" id="dk-save">Save deck</button><button class="btn ghost" id="dk-cancel">Cancel</button>${!deck ? `<button class="btn ghost sm" id="dk-auto">Auto-fill</button>` : ""}</div>
+        <div id="dk-msg"></div></div></div>`;
+    $("#dk-q").oninput = e => { q = e.target.value.trim().toLowerCase(); draw(); setTimeout(() => { const i = $("#dk-q"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 0); };
+    $("#dk-name").oninput = e => name = e.target.value;
+    body.querySelectorAll("[data-add]").forEach(el => el.onclick = () => {
+      const c = cdById[el.dataset.add];
+      if (cards.length >= 20) return toast("Deck is full (20)");
+      if ((counts[c.id] || 0) >= Math.min(ownedN(c.id), lim(c))) return toast(ownedN(c.id) < lim(c) ? "You don't own more copies" : `Max ${lim(c)} of this card`);
+      cards.push(c.id); draw();
+    });
+    body.querySelectorAll("[data-rm]").forEach(el => el.onclick = () => { const i = cards.lastIndexOf(el.dataset.rm); if (i >= 0) cards.splice(i, 1); draw(); });
+    $("#dk-cancel").onclick = () => renderCardsPage();
+    if ($("#dk-auto")) $("#dk-auto").onclick = () => {
+      const pool2 = cdCards.filter(c => ownedN(c.id)).sort((a, b) => Object.keys(RARITY).indexOf(b.rarity) - Object.keys(RARITY).indexOf(a.rarity) || a.cost - b.cost);
+      const want = (filter, n) => { for (const c of pool2.filter(filter)) { while (cards.length < 20 && n > 0 && cards.filter(x => x === c.id).length < Math.min(ownedN(c.id), lim(c))) { cards.push(c.id); n--; } } };
+      cards = []; want(isFighter, 13); want(c => !isFighter(c), 20); want(() => true, 20); draw();
+    };
+    $("#dk-save").onclick = async () => {
+      const { error } = await sb.rpc("save_deck", { p_id: deck?.id || null, p_name: name.trim(), p_cards: cards });
+      if (error) { $("#dk-msg").innerHTML = `<p class="msg err">${esc(error.message.replace(/^.*?:\s*/, ""))}</p>`; return; }
+      toast("Deck saved"); renderCardsPage();
+    };
+  };
+  draw();
+}
+
+/* ---------- battle hub ---------- */
+function deckPicker(id = "bt-deck"){
+  const d = cdState.decks;
+  return d.length ? `<select id="${id}" class="bt-select">${d.map(x => `<option value="${x.id}"${x.id === cdDeckSel ? " selected" : ""}>${esc(x.name)} · power ${x.power}</option>`).join("")}</select>` : "";
+}
+async function renderBattleHub(body){
+  if (!cdState.decks.length) { body.innerHTML = `<div class="kf-empty">Build a deck first (or claim your starter deck above).</div>`; return; }
+  body.innerHTML = `<div class="bt-hub">
+    <div class="card bt-start">
+      <h3 style="margin-top:0">Pick your deck</h3>${deckPicker()}
+      <div class="bt-modes">
+        <button class="bt-mode" data-mode="ai"><span>🤖</span><b>Battle the bot</b><small>Turn by turn. The bot's deck matches yours.</small></button>
+        <button class="bt-mode" data-mode="quick"><span>⚡</span><b>Quick battle</b><small>Instant result vs a deck with similar power.</small></button>
+        <button class="bt-mode" data-mode="pvp"><span>🎯</span><b>Challenge a player</b><small>Live, turn by turn. They get a notification.</small></button>
+        <button class="bt-mode rk" data-mode="ranked"><span>🏅</span><b>Ranked</b><small>Climb the season ladder — Bronze to Diamond.</small></button>
+      </div>
+      <div id="bt-pvp-pick" hidden style="margin-top:12px"></div>
+    </div>
+    <div class="card"><h3 style="margin-top:0">Your battles</h3><div id="bt-list"><p class="muted">Loading…</p></div></div>
+    <div class="card"><h3 style="margin-top:0">🏆 Top players</h3><div id="bt-lb"><p class="muted">Loading…</p></div></div>
+  </div>`;
+  $("#bt-deck").onchange = e => cdDeckSel = +e.target.value;
+  body.querySelectorAll("[data-mode]").forEach(b => b.onclick = async () => {
+    const deck = +$("#bt-deck").value; cdDeckSel = deck;
+    if (b.dataset.mode === "ranked") { cdTab = "ranked"; return renderCardsPage(); }
+    if (b.dataset.mode === "pvp") {
+      const box = $("#bt-pvp-pick"); box.hidden = false;
+      memberPicker(box, m => challengePlayer(m.id, deck), "Who do you want to battle?");
+      box.querySelector("input").focus(); return;
+    }
+    if (cdBusy) return; cdBusy = true; b.classList.add("busy");
+    const { data, error } = await sb.rpc(b.dataset.mode === "ai" ? "start_ai_battle" : "quick_battle", { p_deck: deck });
+    cdBusy = false; b.classList.remove("busy");
+    if (error) return toast(error.message.replace(/^.*?:\s*/, ""));
+    if (b.dataset.mode === "quick") return showQuickResult(data);
+    openBattle(data);
+  });
+  const [mb, lb] = await Promise.all([sb.rpc("my_battles"), sb.from("card_leaderboard").select("*").limit(10)]);
+  const L = mb.data || [];
+  const mode = { ai: "🤖 Bot", quick: "⚡ Quick", pvp: "🎯 Player" };
+  $("#bt-list").innerHTML = L.length ? `<ul class="wh-list">${L.map(b => {
+    const res = b.status === "over" ? (b.draw ? "Draw" : b.winner === b.me ? "<span class='amt-pos'>Won</span>" : "<span class='amt-neg'>Lost</span>") : "";
+    let act = "";
+    if (b.status === "pending" && b.me === 1) act = `<button class="btn sm" data-acc="${b.id}">Accept</button><button class="btn sm ghost" data-dec="${b.id}">Decline</button>`;
+    else if (b.status === "pending") act = `<span class="muted" style="font-size:.85rem">Waiting…</span><button class="btn sm ghost" data-cancel="${b.id}">Cancel</button>`;
+    else if (b.status === "active") act = `<button class="btn sm" data-open="${b.id}">${b.mode === "pvp" ? (b.my_turn ? "Your turn!" : "Watch") : "Resume"}</button>`;
+    else if (b.mode !== "quick") act = `<button class="btn sm ghost" data-open="${b.id}">Log</button>`;
+    const rd = b.rewards && b.ranked ? b.rewards["r" + b.me] : null;
+    return `<li><div><b>${b.ranked ? "🏅 Ranked" : mode[b.mode]} vs ${esc(b.opponent || "Bot")}</b><small>${b.status === "pending" ? (b.me === 1 ? "challenged you" : "challenge sent") : b.status === "active" ? "in progress" : esc(b.status)} · ${ago(b.created_at)}${b.rewards && b.rewards[b.me] ? ` · +${b.rewards[b.me]} XP` : ""}${rd ? ` · <b class="${rd > 0 ? "amt-pos" : "amt-neg"}">${rd > 0 ? "+" : ""}${rd} rating</b>` : ""}</small></div><span class="row" style="gap:6px;flex-wrap:nowrap">${res}${act}</span></li>`;
+  }).join("")}</ul>` : `<p class="muted" style="margin:0">No battles yet. Pick a mode above!</p>`;
+  const LB = lb.data || [];
+  $("#bt-lb").innerHTML = LB.length ? `<ol class="bt-lb">${LB.map(p => `<li data-profile="${esc(p.user_id)}">${avatar({ name: p.name, avatar_url: p.avatar_url }, 30)}<span class="lb-nm"><b>${esc(p.name)}</b><small>Lv ${p.level} ${esc(p.title)} · ${p.wins}W ${p.losses}L</small></span><em>${p.xp.toLocaleString()} XP</em></li>`).join("")}</ol>` : `<p class="muted" style="margin:0">No one yet.</p>`;
+  body.querySelectorAll("[data-open]").forEach(b => b.onclick = async () => { const { data, error } = await sb.rpc("get_battle", { p_battle: +b.dataset.open }); if (error) return toast(error.message); data.status === "over" ? showBattleLog(data) : openBattle(data); });
+  body.querySelectorAll("[data-acc]").forEach(b => b.onclick = () => acceptChallenge(+b.dataset.acc));
+  body.querySelectorAll("[data-dec]").forEach(b => b.onclick = async () => { await sb.rpc("respond_challenge", { p_battle: +b.dataset.dec, p_accept: false }); toast("Declined"); renderCardsPage(); });
+  body.querySelectorAll("[data-cancel]").forEach(b => b.onclick = async () => { await sb.rpc("cancel_challenge", { p_battle: +b.dataset.cancel }); renderCardsPage(); });
+}
+async function challengePlayer(targetId, deckId, ranked = false){
+  if (!deckId) {
+    await loadCardDefs(); await loadCardState();
+    if (!cdState.decks.length) { toast("Build a deck first in Arcade → Cards"); location.hash = "#cards"; return; }
+    openModal(`<h3>Challenge to a card battle</h3><p class="muted">Pick the deck you'll use.</p>${deckPicker("ch-deck")}
+      <label class="pe-check" style="margin-top:12px"><input type="checkbox" id="ch-rk"> 🏅 Ranked (both ratings move)</label>
+      <div class="row" style="margin-top:14px"><button class="btn" id="ch-go">Send challenge</button><button class="btn ghost" id="ch-x">Cancel</button></div>`);
+    $("#ch-x").onclick = closeModal;
+    $("#ch-go").onclick = () => { const d = +$("#ch-deck").value, rk = $("#ch-rk").checked; closeModal(); challengePlayer(targetId, d, rk); };
+    return;
+  }
+  const { error } = await sb.rpc("challenge_player", { p_target: targetId, p_deck: deckId, p_ranked: !!ranked });
+  if (error) return toast(error.message.replace(/^.*?:\s*/, ""));
+  toast(`${ranked ? "Ranked challenge" : "Challenge"} sent! You'll get a notification when they answer.`);
+  if (location.hash === "#cards") renderCardsPage();
+}
+async function acceptChallenge(id){
+  openModal(`<h3>Accept the challenge</h3><p class="muted">Pick the deck you'll use.</p>${deckPicker("ac-deck")}<div class="row" style="margin-top:14px"><button class="btn" id="ac-go">Battle!</button><button class="btn ghost" id="ac-x">Cancel</button></div><div id="ac-msg"></div>`);
+  $("#ac-x").onclick = closeModal;
+  $("#ac-go").onclick = async () => {
+    const { data, error } = await sb.rpc("respond_challenge", { p_battle: id, p_accept: true, p_deck: +$("#ac-deck").value });
+    if (error) { $("#ac-msg").innerHTML = `<p class="msg err">${esc(error.message.replace(/^.*?:\s*/, ""))}</p>`; return; }
+    closeModal(); openBattle(data);
+  };
+}
+function showQuickResult(v, after){
+  const won = v.winner === v.me, s = v.state, me = s.p[v.me], op = s.p[1 - v.me];
+  openModal(`<div class="wh-win"><div style="font-size:2.6rem">${v.draw ? "🤝" : won ? "🏆" : "💀"}</div>
+    <div class="big">${v.draw ? "Draw" : won ? "Victory!" : "Defeat"}</div>
+    <p class="muted">vs ${esc(op.name)} · ${me.kos}–${op.kos} knock-outs · ${s.turn} turns${v.rewards?.[v.me] ? ` · <b style="color:var(--ok)">+${v.rewards[v.me]} XP</b>` : ""}${v.ranked && v.rewards ? ` · <b class="${v.rewards["r" + v.me] >= 0 ? "amt-pos" : "amt-neg"}">${v.rewards["r" + v.me] >= 0 ? "+" : ""}${v.rewards["r" + v.me]} rating</b>` : ""}</p>
+    <div class="bt-log modal-log">${s.log.map(l => `<div>${esc(l.m)}</div>`).join("")}</div>
+    <div class="row" style="justify-content:center;margin-top:12px"><button class="btn" id="qr-again">Again</button><button class="btn ghost" id="qr-x">Close</button></div></div>`);
+  $("#qr-x").onclick = () => { closeModal(); after ? after() : renderCardsPage(); };
+  $("#qr-again").onclick = async () => { closeModal(); const { data, error } = await sb.rpc(v.ranked ? "ranked_match" : "quick_battle", { p_deck: cdDeckSel }); if (error) return toast(error.message.replace(/^.*?:\s*/, "")); showQuickResult(data, after); };
+}
+function showBattleLog(v){
+  openModal(`<h3>Battle log</h3><div class="bt-log modal-log">${(v.state?.log || []).map(l => `<div>${esc(l.m)}</div>`).join("")}</div><button class="btn" id="bl-x" style="margin-top:12px">Close</button>`);
+  $("#bl-x").onclick = closeModal;
+}
+
+/* ---------- live battle board ---------- */
+function openBattle(v){
+  cdBattle = v; cdSel = null; cdTab = "battle";
+  if (location.hash !== "#cards") location.hash = "#cards"; else renderBattleBoard();
+  setTimeout(() => { const r = $("#cards-root"); if (r) window.scrollTo(0, r.getBoundingClientRect().top + window.scrollY - 76); }, 50);
+  if (cdChan) { sb.removeChannel(cdChan); cdChan = null; }
+  if (v.mode === "pvp") {
+    cdChan = sb.channel("battle-" + v.id)
+      .on("postgres_changes", { event: "*", schema: "public", table: "battle_pings", filter: `battle_id=eq.${v.id}` }, async () => {
+        const { data } = await sb.rpc("get_battle", { p_battle: v.id });
+        if (data && cdBattle && cdBattle.id === data.id) { cdBattle = data; if (location.hash === "#cards") renderBattleBoard(); }
+      }).subscribe();
+  }
+}
+function closeBattle(){
+  if (cdChan) { sb.removeChannel(cdChan); cdChan = null; }
+  clearInterval(cdTimer); cdBattle = null; cdSel = null; renderCardsPage();
+}
+function fighterView(f, s, side){
+  const horde = (f.abil || []).includes("horde") ? s.p[side].board.filter(x => x.id !== f.id && x.t === "infected").length : 0;
+  return { ...f, atkNow: f.atk + (f.tmp || 0) + horde };
+}
+const canAttack = f => !f.sick && f.att < 1 + ((f.abil || []).includes("double") ? 1 : 0);
+function renderBattleBoard(){
+  const box = $("#cards-root"), v = cdBattle; if (!box || !v) return;
+  const s = v.state, me = v.me, op = 1 - me, P = s.p[me], O = s.p[op], myTurn = s.active === me && !s.over && v.status === "active";
+  const needs = cdSel?.need;
+  const kos = n => `<span class="bt-kos">${[0, 1, 2].map(i => `<i class="${i < n ? "on" : ""}">☠</i>`).join("")}</span>`;
+  const fcard = (f, side) => {
+    const c = cdById[f.card], fv = fighterView(f, s, side);
+    const tags = [f.veh ? (cdById[f.veh]?.emoji || "🚙") : "", f.dodge ? "💨" : "", (f.abil || []).includes("guard") ? "🛡️" : "", f.sick && side === me && myTurn ? "💤" : ""].filter(Boolean).join(" ");
+    let cls = "";
+    if (side === me && myTurn && canAttack(f) && !needs) cls = "ready";
+    if (cdSel?.attacker === f.id) cls = "sel";
+    if (needs === "enemy" && side === op) cls = "target";
+    if (needs === "ally" && side === me) cls = "target";
+    if (cdSel?.attacker && side === op) {
+      const guards = O.board.some(x => (x.abil || []).includes("guard"));
+      if (!guards || (f.abil || []).includes("guard")) cls = "target";
+    }
+    return `<div class="bt-f" data-f="${f.id}" data-side="${side}">${cardHTML(c, { size: "sm", fighter: fv, cls })}${tags ? `<div class="bt-tags">${tags}</div>` : ""}</div>`;
+  };
+  const hand = P.hand.map((id, i) => {
+    const c = cdById[id], ab = (c.abilities || []).join(",");
+    const playable = myTurn && c.cost <= P.sup && (isFighter(c) ? P.board.length < 3
+      : c.type === "vehicle" ? P.board.some(f => !f.veh)
+      : /(^|,)(heal|maxhp|atk_turn|refresh)/.test(ab) ? P.board.length > 0
+      : /revive/.test(ab) ? P.grave.some(g => isFighter(cdById[g])) : true);
+    return `<div class="bt-h${cdSel?.hand === i ? " sel" : ""}${playable ? "" : " dim"}" data-h="${i}">${cardHTML(c, { size: "sm", rules: true })}</div>`;
+  }).join("");
+  const title = v.mode === "ai" ? "vs the bot" : v.mode === "pvp" ? (v.ranked ? "🏅 Ranked battle" : "Player battle") : "Quick battle";
+  box.innerHTML = `<div class="bt-board">
+    <div class="bt-bar"><button class="btn ghost sm" id="bt-back">← Leave</button><b>${title}</b><span class="bt-turn">${s.over ? "Battle over" : myTurn ? "Your turn" : `${esc(O.name)}'s turn`} · turn ${s.turn}</span><span id="bt-clock"></span><button class="btn ghost sm" id="bt-help">?</button></div>
+    <div class="bt-side op">
+      <div class="bt-who"><b>${esc(O.name)}</b>${kos(O.kos)}<span>⚡ ${O.sup}/${O.maxsup}</span><span>✋ ${O.hand_n ?? O.hand.length}</span><span>🂠 ${O.deck_n}</span></div>
+      <div class="bt-row">${O.board.map(f => fcard(f, op)).join("") || `<div class="bt-empty${cdSel?.attacker ? " target" : ""}" id="bt-camp">${cdSel?.attacker ? "🏕️ Raid their camp!" : "No fighters"}</div>`}</div>
+    </div>
+    <div class="bt-mid"><div class="bt-log" id="bt-log">${s.log.slice(-6).map(l => `<div>${esc(l.m)}</div>`).join("")}</div>
+      <div class="bt-hint">${s.over ? "" : !myTurn ? "Waiting for the other side…" : needs === "enemy" ? "Pick an enemy fighter to target" : needs === "ally" ? "Pick one of your fighters" : cdSel?.attacker ? "Pick a target to attack (Guard 🛡️ first)" : "Play cards from your hand, tap a glowing fighter to attack, then end your turn."}</div></div>
+    <div class="bt-side me">
+      <div class="bt-row">${P.board.map(f => fcard(f, me)).join("") || `<div class="bt-empty">Play a fighter</div>`}</div>
+      <div class="bt-who"><b>${esc(P.name)} (you)</b>${kos(P.kos)}<span class="bt-sup">⚡ ${P.sup}/${P.maxsup} Supply</span><span>🂠 ${P.deck_n}</span>
+        ${myTurn ? `${cdSel ? `<button class="btn ghost sm" id="bt-cancel">Cancel</button>` : ""}<button class="btn sm" id="bt-end">End turn</button>` : ""}
+        ${!s.over && v.status === "active" ? `<button class="btn ghost sm" id="bt-ff">Surrender</button>` : ""}</div>
+      <div class="bt-hand">${hand || `<span class="muted">No cards in hand</span>`}</div>
+    </div></div>`;
+  $("#bt-log").scrollTop = 1e6;
+  $("#bt-back").onclick = closeBattle;
+  $("#bt-help").onclick = cardsHowTo;
+  if ($("#bt-cancel")) $("#bt-cancel").onclick = () => { cdSel = null; renderBattleBoard(); };
+  if ($("#bt-end")) $("#bt-end").onclick = () => battleAct({ type: "end" });
+  if ($("#bt-ff")) $("#bt-ff").onclick = async () => {
+    if (!(await confirmModal("Surrender?", "This counts as a loss.", "Surrender"))) return;
+    const { data, error } = await sb.rpc("forfeit_battle", { p_battle: v.id });
+    if (error) return toast(error.message); cdBattle = data; renderBattleBoard();
+  };
+  box.querySelectorAll("[data-h]").forEach(el => el.onclick = () => {
+    if (!myTurn) return;
+    const i = +el.dataset.h, c = cdById[P.hand[i]], ab = (c.abilities || []).join(",");
+    if (c.cost > P.sup) return toast(`Needs ${c.cost} Supply`);
+    if (isFighter(c)) {
+      if (P.board.length >= 3) return toast("You already have 3 fighters out");
+      if (/onplay_dmg/.test(ab) && O.board.length > 1) { cdSel = { hand: i, need: "enemy" }; return renderBattleBoard(); }
+      return battleAct({ type: "play", hand: i });
+    }
+    const needAlly = c.type === "vehicle" || /(^|,)(heal|maxhp|atk_turn|refresh)/.test(ab);
+    const pool = c.type === "vehicle" ? P.board.filter(f => !f.veh) : P.board;
+    if (needAlly) {
+      if (!pool.length) return toast(c.type === "vehicle" ? "You need a fighter without a vehicle" : "You need a fighter on the board");
+      if (pool.length === 1) return battleAct({ type: "play", hand: i, target: pool[0].id });
+      cdSel = { hand: i, need: "ally" }; return renderBattleBoard();
+    }
+    battleAct({ type: "play", hand: i });
+  });
+  box.querySelectorAll("[data-f]").forEach(el => el.onclick = () => {
+    if (!myTurn) return openCardModal(([...P.board, ...O.board].find(x => x.id === el.dataset.f) || {}).card);
+    const id = el.dataset.f, side = +el.dataset.side;
+    if (cdSel?.need === "enemy" && side === op) return battleAct({ type: "play", hand: cdSel.hand, target: id });
+    if (cdSel?.need === "ally" && side === me) return battleAct({ type: "play", hand: cdSel.hand, target: id });
+    if (cdSel?.attacker && side === op) return battleAct({ type: "attack", from: cdSel.attacker, to: id });
+    if (side === op) return openCardModal((O.board.find(x => x.id === id) || {}).card);
+    if (side === me) {
+      const f = P.board.find(x => x.id === id);
+      if (!canAttack(f)) return toast(f.sick ? "Just arrived — it can attack next turn" : "Already attacked this turn");
+      cdSel = cdSel?.attacker === id ? null : { attacker: id }; renderBattleBoard();
+    }
+  });
+  if ($("#bt-camp")) $("#bt-camp").onclick = () => { if (cdSel?.attacker) battleAct({ type: "attack", from: cdSel.attacker, to: "camp" }); };
+  // PvP clock
+  clearInterval(cdTimer);
+  if (v.mode === "pvp" && v.status === "active" && v.deadline) {
+    const skew = Date.now() - new Date(v.now).getTime();
+    const tickClock = () => {
+      const el = $("#bt-clock"); if (!el || cdBattle !== v) return clearInterval(cdTimer);
+      const left = Math.round((new Date(v.deadline).getTime() + skew - Date.now()) / 1000);
+      if (left > 0) el.innerHTML = `⏱ ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+      else el.innerHTML = myTurn ? `<span class="amt-neg">Time's up</span>` : `<button class="btn sm" id="bt-claim">Claim win (time out)</button>`;
+      if ($("#bt-claim")) $("#bt-claim").onclick = async () => { const { data, error } = await sb.rpc("claim_timeout", { p_battle: v.id }); if (error) return toast(error.message.replace(/^.*?:\s*/, "")); cdBattle = data; renderBattleBoard(); };
+    };
+    tickClock(); cdTimer = setInterval(tickClock, 1000);
+  }
+  if (s.over || v.status === "over") showBattleOver(v);
+}
+async function battleAct(act){
+  if (cdBusy || !cdBattle) return; cdBusy = true;
+  const { data, error } = await sb.rpc("battle_action", { p_battle: cdBattle.id, p_act: act });
+  cdBusy = false; cdSel = null;
+  if (error) { toast(error.message.replace(/^.*?:\s*/, "")); renderBattleBoard(); return; }
+  cdBattle = data; tick(1.1); renderBattleBoard();
+}
+function showBattleOver(v){
+  if ($("#ui-modal").classList.contains("open")) return;
+  const won = v.winner === v.me, xp = v.rewards?.[v.me];
+  openModal(`<div class="wh-win"><div style="font-size:2.8rem">${v.draw ? "🤝" : won ? "🏆" : "💀"}</div><div class="big">${v.draw ? "Draw" : won ? "Victory!" : "Defeat"}</div>
+    <p class="muted">${xp ? `<b style="color:var(--ok)">+${xp} XP</b>` : "No XP this time (daily bot limit reached)"}${v.ranked && v.rewards ? ` · <b class="${v.rewards["r" + v.me] >= 0 ? "amt-pos" : "amt-neg"}">${v.rewards["r" + v.me] >= 0 ? "+" : ""}${v.rewards["r" + v.me]} rating</b>` : ""}</p>
+    <div class="row" style="justify-content:center">${v.mode === "ai" ? `<button class="btn" id="bo-again">Play again</button>` : ""}<button class="btn ghost" id="bo-x">Back to Cards</button></div></div>`);
+  $("#bo-x").onclick = () => { closeModal(); closeBattle(); };
+  if ($("#bo-again")) $("#bo-again").onclick = async () => { closeModal(); const { data, error } = await sb.rpc("start_ai_battle", { p_deck: cdDeckSel }); if (error) return toast(error.message.replace(/^.*?:\s*/, "")); openBattle(data); };
+}
+
+/* ---------- ranked ladder ---------- */
+const TIERS = { Bronze: "#d08b4f", Silver: "#cbd5e1", Gold: "#fbbf24", Platinum: "#67e8f9", Diamond: "#a78bfa" };
+const TIER_STEPS = [["Bronze", 0], ["Silver", 1100], ["Gold", 1250], ["Platinum", 1400], ["Diamond", 1550]];
+const tierBadge = (t, r) => t ? `<span class="tier" style="--tr:${TIERS[t] || "#a1a1aa"}">🏅 ${esc(t)}${r != null ? ` · ${r}` : ""}</span>` : "";
+function nextWipeTs(key){
+  const w = (CONFIG.wipes || []).find(x => x.key === key) || (CONFIG.wipes || [])[0];
+  try { return w ? wipeState(w).next : null; } catch { return null; }
+}
+async function renderRanked(body){
+  body.innerHTML = `<div class="kf-empty">Loading the ladder…</div>`;
+  const { data: L, error } = await sb.rpc("ranked_ladder");
+  if (error) { body.innerHTML = `<div class="kf-empty">The ranked ladder isn't set up yet${amAdmin ? " — run the latest cards-setup.sql" : ""}.</div>`; return; }
+  const me = L.me, ends = L.season.ends_at ? new Date(L.season.ends_at) : null;
+  const left = ends ? Math.max(0, ends - Date.now()) : 0, days = Math.floor(left / 864e5), hrs = Math.floor(left / 36e5) % 24;
+  const r = me?.rating ?? 1000, played = me && (me.wins + me.losses + me.draws) > 0;
+  const ti = TIER_STEPS.findLastIndex(([, m]) => r >= m), cur = TIER_STEPS[ti], nxt = TIER_STEPS[ti + 1];
+  const prog = nxt ? Math.min(100, (r - cur[1]) / (nxt[1] - cur[1]) * 100) : 100;
+  body.innerHTML = `<div class="rk-grid">
+    <div class="card rk-me" style="--tr:${TIERS[cur[0]]}">
+      <div class="rk-season"><b>${esc(L.season.name)}</b><span class="muted">${ends ? `ends in ${days}d ${hrs}h · ${ends.toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "end date not set yet"}</span></div>
+      <div class="rk-emblem"><span>🏅</span><b>${cur[0]}</b><em>${r}</em></div>
+      ${nxt ? `<div class="xp-bar rk-bar"><i style="width:${prog.toFixed(1)}%"></i></div><div class="muted" style="font-size:.82rem;text-align:center">${nxt[1] - r} to ${nxt[0]}</div>` : `<div class="muted" style="text-align:center;font-size:.85rem">Top tier!</div>`}
+      <div class="rk-stats"><div><b>${played ? "#" + me.place : "—"}</b><small>Place</small></div><div><b>${me?.wins || 0}-${me?.losses || 0}</b><small>W-L</small></div><div><b>${me?.peak || 1000}</b><small>Peak</small></div></div>
+      ${cdState?.decks?.length ? `${deckPicker("rk-deck")}
+        <button class="btn rk-go" id="rk-match" ${L.matches_today >= 10 ? "disabled" : ""}>🏅 Ranked match <small>(${L.matches_today}/10 today)</small></button>
+        <button class="btn ghost rk-go" id="rk-chal">🎯 Ranked challenge</button><div id="rk-pick" hidden style="margin-top:10px"></div>` : `<p class="muted">Build a deck first.</p>`}
+      <div class="wh-rule" style="margin-top:12px;font-size:.8rem">Ranked match: your deck vs a real player's deck near your rating (instant, 10 a day). Ranked challenge: live battle, both ratings move. Everyone starts at 1000 each season.</div>
+    </div>
+    <div class="card rk-board">
+      <div class="row" style="justify-content:space-between"><h3 style="margin:0">🏆 Ladder</h3><span class="muted" style="font-size:.82rem">Rewards: #1 500 · #2 300 · #3 200 · top 10 100 · 5+ games 25 AFtokens</span></div>
+      ${L.top.length ? `<table class="rk-table"><thead><tr><th>#</th><th>Player</th><th>Rank</th><th>Rating</th><th>W-L</th></tr></thead><tbody>
+        ${L.top.map(t => `<tr class="${user && t.user_id === user.id ? "me" : ""}${t.place <= 3 ? " top" + t.place : ""}" data-profile="${esc(t.user_id)}"><td>${t.place <= 3 ? ["🥇", "🥈", "🥉"][t.place - 1] : t.place}</td>
+          <td><span class="rk-pl">${avatar({ name: t.name, avatar_url: t.avatar_url }, 28)}<b>${esc(t.name)}</b></span></td><td>${tierBadge(t.tier)}</td><td><b>${t.rating}</b></td><td>${t.wins}-${t.losses}</td></tr>`).join("")}
+      </tbody></table>` : `<p class="muted">No ranked games yet this season. Be the first on the board!</p>`}
+      ${L.previous?.top?.length ? `<div class="rk-prev"><b>${esc(L.previous.name)} podium</b> ${L.previous.top.map(p => `<span>${["🥇", "🥈", "🥉"][p.place - 1]} ${esc(p.name)} <small>${p.rating}</small></span>`).join("")}</div>` : ""}
+    </div>
+    ${amAdmin ? `<div class="card staff-card rk-staff"><h3 style="margin-top:0">Season controls <span class="adm">Staff</span></h3>
+      <p class="muted" style="font-size:.88rem">Set the season to end on wipe day. When it ends, rewards are paid, top 10 get a notice, and the next season starts automatically with the same length.</p>
+      <div class="three"><div class="field"><label for="ss-name">Season name</label><input id="ss-name" maxlength="40" value="${esc(L.season.name)}"></div>
+        <div class="field"><label for="ss-end">Ends (your time)</label><input id="ss-end" type="datetime-local" value="${ends ? toLocalInput(ends.getTime()) : ""}"></div>
+        <div class="field"><label>Use next wipe</label><div class="row" style="gap:6px">${(CONFIG.wipes || []).map(w => `<button type="button" class="btn ghost sm" data-wipe="${esc(w.key)}">${esc(CONFIG.servers.find(s => s.key === w.key)?.name.split(" ")[0] || w.key)}</button>`).join("")}</div></div></div>
+      <div class="row"><button class="btn sm" id="ss-save">Save season</button><button class="btn ghost sm" id="ss-end-now">End season now</button><span id="ss-msg"></span></div></div>` : ""}
+  </div>`;
+  body.querySelectorAll("[data-wipe]").forEach(b => b.onclick = () => { const t = nextWipeTs(b.dataset.wipe); if (t) $("#ss-end").value = toLocalInput(t); });
+  if ($("#ss-save")) $("#ss-save").onclick = async () => {
+    const v = $("#ss-end").value;
+    const { error } = await sb.rpc("set_season", { p_name: $("#ss-name").value.trim(), p_ends_at: v ? new Date(v).toISOString() : null });
+    $("#ss-msg").innerHTML = error ? `<span class="msg err">${esc(error.message.replace(/^.*?:\s*/, ""))}</span>` : `<span class="msg ok">Saved</span>`;
+    if (!error) renderRanked(body);
+  };
+  if ($("#ss-end-now")) $("#ss-end-now").onclick = async () => {
+    if (!(await confirmModal("End the season now?", "Final places are locked in, rewards are paid and everyone starts the new season at 1000. This can't be undone.", "End season"))) return;
+    const { error } = await sb.rpc("end_season_now", { p_next_name: null, p_next_ends: null });
+    if (error) return toast(error.message.replace(/^.*?:\s*/, ""));
+    toast("New season started"); renderRanked(body);
+  };
+  if ($("#rk-deck")) $("#rk-deck").onchange = e => cdDeckSel = +e.target.value;
+  if ($("#rk-match")) $("#rk-match").onclick = async () => {
+    if (cdBusy) return; cdBusy = true; const b = $("#rk-match"); b.disabled = true; b.innerHTML = "Finding an opponent…";
+    const { data, error } = await sb.rpc("ranked_match", { p_deck: +$("#rk-deck").value });
+    cdBusy = false;
+    if (error) { toast(error.message.replace(/^.*?:\s*/, "")); return renderRanked(body); }
+    showQuickResult(data, () => renderRanked(body));
+  };
+  if ($("#rk-chal")) $("#rk-chal").onclick = () => {
+    const box = $("#rk-pick"); box.hidden = false;
+    memberPicker(box, m => challengePlayer(m.id, +$("#rk-deck").value, true), "Who do you want to battle (ranked)?");
+    box.querySelector("input").focus();
+  };
+}
+
+/* ---------- levels everywhere (Members list, profile cards) ---------- */
+const levelCache = new Map();
+async function loadLevels(ids){
+  if (!sb) return;
+  const need = ids ? [...new Set(ids.filter(id => id && !levelCache.has(id)))] : null;
+  if (need && !need.length) return;
+  let q = sb.from("player_levels").select("*");
+  if (need) q = q.in("user_id", need); else q = q.limit(2000);
+  const { data } = await q;
+  (data || []).forEach(l => levelCache.set(l.user_id, l));
+  (need || []).forEach(id => { if (!levelCache.has(id)) levelCache.set(id, null); });
+}
+
+/* ---------- home hero: server status panel ---------- */
+function renderHeroPanel(){
+  const box = $("#hero-servers"); if (!box) return;
+  const now = Date.now();
+  box.innerHTML = CONFIG.servers.map((s, i) => {
+    const w = CONFIG.wipes.find(x => x.key === s.key);
+    const st = w ? wipeState(w, now) : null, ph = st ? PHASES[st.phase] : null;
+    const left = st ? st.next - now : 0, d = Math.floor(left / 864e5), h = Math.floor(left / 36e5) % 24;
+    const pct = st ? Math.min(100, Math.max(0, (now - st.last) / (st.next - st.last) * 100)) : 0;
+    return `<div class="hp-srv">
+      <div class="hp-top"><b>${esc(s.name)}</b>${ph ? `<span class="hp-phase ${ph.cls}">${esc(ph.label)}</span>` : ""}</div>
+      ${st ? `<div class="hp-wipe">Next wipe in <b>${d}d ${h}h</b></div><div class="hp-bar"><i style="width:${pct.toFixed(1)}%"></i></div>` : ""}
+      <div class="hp-actions">
+        ${s.ip ? `<button class="btn sm" data-hero-ip="${i}">Copy IP</button>` : `<a class="btn sm" href="${esc(CONFIG.discord)}" target="_blank" rel="noopener">Get IP</a>`}
+        <a class="btn sm ghost" href="#server-${esc(s.key)}">Events</a>
+      </div></div>`;
+  }).join("");
+  box.querySelectorAll("[data-hero-ip]").forEach(b => b.onclick = async () => {
+    const ip = CONFIG.servers[b.dataset.heroIp].ip;
+    try { await navigator.clipboard.writeText(ip); toast("IP copied!"); } catch (e) { toast(ip); }
+  });
+}
+renderHeroPanel();
+setInterval(() => { if (!location.hash || location.hash === "#home") renderHeroPanel(); }, 60000);
+
+/* ===================== DISCORD BRIDGE ===================== */
+async function loadDiscordStats(){
+  const el = $("#discord-stats"); if (!el || !CONFIG.discordBridge) return;
+  try {
+    const r = await fetch(CONFIG.discordBridge + "/stats");
+    const d = await r.json();
+    if (!d || d.members == null) return;
+    const fmt = n => Number(n).toLocaleString();
+    el.href = d.invite || CONFIG.discord;
+    el.innerHTML = `${d.icon ? `<img src="${esc(d.icon)}" alt="">` : ""}<span class="dc-txt"><b>${esc(d.name || "Allied Forces")} Discord</b>
+      <span><i class="dc-on"></i>${fmt(d.online)} online · ${fmt(d.members)} members</span></span><span class="dc-join">Join</span>`;
+    el.hidden = false;
+  } catch (e) { /* stats are a bonus — stay hidden if Discord can't be reached */ }
+}
+let dcLast = null;
+async function syncDiscordRoles(){
+  if (!sb || !user || !CONFIG.discordBridge) return null;
+  try {
+    const { data } = await sb.auth.getSession();
+    const token = data.session?.access_token; if (!token) return null;
+    const r = await fetch(CONFIG.discordBridge + "/sync", { method: "POST", headers: { Authorization: "Bearer " + token } });
+    dcLast = await r.json();
+  } catch (e) { dcLast = { ok: false, reason: "unreachable" }; }
+  return dcLast;
+}
+async function autoSyncDiscord(){
+  let done = false;
+  try { done = sessionStorage.getItem("af-dc-sync") === user.id; } catch (e) {}
+  if (done) return;
+  const r = await syncDiscordRoles();
+  try { if (r) sessionStorage.setItem("af-dc-sync", user.id); } catch (e) {}
+  if (r?.added?.length) toast(`Discord roles added: ${r.added.join(", ")}`);
+}
+async function renderDiscordRoles(force = false){
+  const box = $("#dc-roles"); if (!box) return;
+  if (force || !dcLast) { box.innerHTML = `<p class="muted" style="margin:0">Checking your Discord roles…</p>`; await syncDiscordRoles(); }
+  const r = dcLast || { ok: false, reason: "unreachable" };
+  const again = `<button class="btn sm ghost" id="dc-again">Sync again</button>`;
+  const staff = amAdmin ? `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)"><b style="font-size:.9rem">Staff</b>
+      <p class="muted" style="margin:4px 0 8px;font-size:.88rem">Update everyone's Discord roles now (faction, leader, legend, verified).</p>
+      <button class="btn sm" id="dc-all">Resync everyone</button> <span id="dc-all-msg"></span></div>` : "";
+  let html;
+  if (r.ok || r.reason === "missing_permission") {
+    html = `<p class="muted" style="margin:0">${r.ok ? "Your Discord roles match your website account." : "Most of your roles are synced. A few couldn't be added — AF staff can fix this."}</p>
+      ${r.roles?.length ? `<div class="dc-roles">${r.roles.map(n => `<span class="dc-role">${esc(n)}</span>`).join("")}</div>` : ""}
+      <p class="muted" style="font-size:.85rem;margin:6px 0 10px">Join a faction, become a Leader or make the Legends page and your roles update automatically.</p>${again}`;
+  } else if (r.reason === "not_in_server") {
+    html = `<p style="margin:0 0 10px">Join the Allied Forces Discord to get your roles (Verified, your faction and more).</p>
+      <div class="row"><a class="btn sm" href="${esc(CONFIG.discord)}" target="_blank" rel="noopener" style="background:linear-gradient(180deg,#6b77f5,#5865F2);color:#fff">Join the Discord</a>${again}</div>`;
+  } else if (r.reason === "not_configured") {
+    html = `<p class="muted" style="margin:0">Discord roles are coming soon.</p>`;
+  } else {
+    const why = {
+      discord_error_403: "The AF bot isn't in the Discord server yet, or it's missing permissions.",
+      discord_error_401: "The bot token in Supabase is wrong. Reset it in the Discord Developer Portal and update DISCORD_BOT_TOKEN.",
+      discord_error_404: "Discord couldn't find the server. Check the server ID in the Discord settings.",
+      no_discord_id: "Your account isn't linked to a Discord ID. Sign out and sign in again with Discord.",
+      not_signed_in: "Your sign-in expired. Sign out and sign in again.",
+      server_error: "The Discord function hit an error. Check its Logs in Supabase.",
+      unreachable: "Couldn't reach the Discord function. Make sure it's deployed as \"discord\" with Verify JWT off."
+    }[r.reason] || `Couldn't sync with Discord (${esc(r.reason || "unknown error")}).`;
+    html = `<p class="muted" style="margin:0 0 10px">${esc(why)}</p>${again}`;
+  }
+  box.innerHTML = html + staff;
+  if ($("#dc-again")) $("#dc-again").onclick = () => renderDiscordRoles(true);
+  if ($("#dc-all")) $("#dc-all").onclick = async () => {
+    const b = $("#dc-all"), msg = $("#dc-all-msg"); b.disabled = true; b.textContent = "Syncing…";
+    try {
+      const { data } = await sb.auth.getSession();
+      const res = await fetch(CONFIG.discordBridge + "/sync-all", { method: "POST", headers: { Authorization: "Bearer " + data.session.access_token } });
+      const j = await res.json();
+      msg.innerHTML = j.ok ? `<span class="msg ok">Done: ${j.synced} synced, ${j.notInServer} not in the Discord${j.problems ? `, ${j.problems} problems` : ""}</span>` : `<span class="msg err">${esc(j.reason || "Failed")}</span>`;
+    } catch (e) { msg.innerHTML = `<span class="msg err">Couldn't reach Discord</span>`; }
+    b.disabled = false; b.textContent = "Resync everyone";
+  };
+}
+loadDiscordStats();
+
+renderServerOverview();
+startEvents();
+
+/* ===================== PROFILES + MEMBERS LIST ===================== */
+const PLAYSTYLES = ["PvP","PvE","Builder","Raider","Trader","Medic","Sniper","Scout","Looter","Hunter","Crafter","Driver","Roleplayer","Solo","Squad"];
+const STATUS_EMOJI = ["🎯","💥","🪓","🏕️","🚗","🩹","💀","🔥","🎮","😴","🍖","📦"];
+const ACCENTS = ["#ff7a1a","#ef4444","#f59e0b","#4ade80","#22d3ee","#5865F2","#a855f7","#ec4899","#e5e7eb"];
+const RESERVED_NAME = /(admin|staff|moderator|allied ?forces|official)/i;
+const hexOk = c => /^#[0-9a-f]{6}$/i.test(c || "") ? c : null;
+const serverLabel = k => k === "both" ? "Both servers" : (CONFIG.servers.find(s => s.key === k)?.name || "");
+const MEDIA_PREFIX = `${CONFIG.supabaseUrl}/storage/v1/object/public/profile-media/`;
+
+let presenceCh = null, onlineIds = new Set(), allMembers = [], allMembersAt = 0, memFilter = "all", memQuery = "", memSelected = null, lastSeenTimer = null;
+
+/* who's on the site right now (Supabase Realtime presence — signed-in players only are counted) */
+function startPresence(){
+  if (!sb) return;
+  if (presenceCh) { sb.removeChannel(presenceCh); presenceCh = null; }
+  const ch = sb.channel("af-online", { config: { presence: { key: user ? user.id : "guest-" + Math.random().toString(36).slice(2) } } });
+  presenceCh = ch;
+  ch.on("presence", { event: "sync" }, () => {
+    onlineIds = new Set(Object.keys(ch.presenceState()).filter(k => !k.startsWith("guest-")));
+    if (user) onlineIds.add(user.id);
+    refreshOnlineUI();
+  }).subscribe(async status => {
+    if (status === "SUBSCRIBED" && user) { try { await ch.track({ at: Date.now() }); } catch {} }
+  });
+  clearInterval(lastSeenTimer);
+  if (user) {
+    const stamp = () => { if (document.visibilityState === "visible") sb.rpc("touch_last_seen").then(() => {}, () => {}); };
+    stamp(); lastSeenTimer = setInterval(stamp, 5 * 60 * 1000);
+  }
+}
+const isOnline = id => onlineIds.has(id);
+function refreshOnlineUI(){
+  if (location.hash === "#members") { renderMemberSide("#mem-side"); if (!memSelected) renderMemberOverview(); }
+  if (location.hash === "#feed") renderMemberSide("#feed-side", true);
+  $$("[data-dot]").forEach(d => d.classList.toggle("on", isOnline(d.dataset.dot)));
+}
+
+async function loadAllMembers(force = false){
+  if (!sb) return [];
+  if (!force && allMembers.length && Date.now() - allMembersAt < 60000) return allMembers;
+  const { data, error } = await sb.from("members").select("*").order("created_at", { ascending: true }).limit(2000);
+  if (error) throw error;
+  allMembers = data || []; allMembersAt = Date.now();
+  try { await loadLevels(); } catch {}
+  allMembers.forEach(m => memberCache.set(m.id, m));
+  return allMembers;
+}
+async function getMember(id){
+  if (!memberCache.has(id) || memberCache.get(id).discord_username === undefined) { memberCache.delete(id); await loadMembers([id]); }
+  try { levelCache.delete(id); await loadLevels([id]); } catch {}
+  return mem(id);
+}
+
+/* Discord-style groups: AF Staff → AF Legends → each faction → Members */
+function groupMembers(list){
+  const groups = new Map();
+  const add = (key, label, color, m) => { if (!groups.has(key)) groups.set(key, { label, color, items: [] }); groups.get(key).items.push(m); };
+  groups.set("staff", { label: "AF Staff", color: "#ff7a1a", items: [] });
+  groups.set("legend", { label: "AF Legends", color: "#ffad5c", items: [] });
+  list.forEach(m => {
+    if (m.is_admin) add("staff", "AF Staff", "#ff7a1a", m);
+    else if (m.is_legend) add("legend", "AF Legends", "#ffad5c", m);
+    else if (m.faction_id) add("f-" + m.faction_id, m.faction_name || "Faction", hexOk(m.faction_color) || "#a1a1aa", m);
+    else add("members", "Members", null, m);
+  });
+  const order = ["staff", "legend", ...[...groups.keys()].filter(k => k.startsWith("f-")).sort((a, b) => groups.get(a).label.localeCompare(groups.get(b).label)), "members"];
+  return order.filter(k => groups.get(k)?.items.length).map(k => {
+    const g = groups.get(k);
+    g.items.sort((a, b) => (isOnline(b.id) - isOnline(a.id)) || a.name.localeCompare(b.name));
+    return g;
+  });
+}
+const nameColor = m => m.is_admin ? "#ff9a4d" : m.faction_id ? (hexOk(m.faction_color) || "") : "";
+function avatarDot(m, size){
+  return `<span class="av-wrap">${avatar(m, size)}<i class="dot${isOnline(m.id) ? " on" : ""}" data-dot="${esc(m.id)}"></i></span>`;
+}
+function memberRow(m){
+  const col = nameColor(m), sub = m.status_text || m.status_emoji ? `${esc(m.status_emoji || "")} ${esc(m.status_text || "")}` : m.faction_name ? `${esc(m.faction_name)}${m.faction_rank ? " · " + esc(m.faction_rank) : ""}` : "";
+  return `<button type="button" class="mrow${isOnline(m.id) ? "" : " off"}${memSelected === m.id ? " sel" : ""}" data-mid="${esc(m.id)}">
+    ${avatarDot(m, 34)}
+    <span class="mrow-txt"><span class="mrow-name"${col ? ` style="color:${col}"` : ""}>${levelCache.get(m.id) ? `<em class="lv">${levelCache.get(m.id).level}</em>` : ""}${esc(m.name)}${m.is_legend && !m.is_admin ? ` <span title="AF Legend">★</span>` : ""}</span>${sub ? `<small>${sub}</small>` : ""}</span>
+  </button>`;
+}
+async function renderMemberSide(sel, compact = false){
+  const box = $(sel); if (!box) return;
+  if (!sb) { box.innerHTML = `<p class="muted" style="margin:0">Members are coming soon.</p>`; return; }
+  if (!box.dataset.ready) {
+    box.innerHTML = `<div class="ms-top">
+        ${compact ? `<div class="ms-title"><b>Members</b><a href="#members">See all</a></div>` : ""}
+        <input class="ms-search" type="search" placeholder="Search members" aria-label="Search members" value="${esc(memQuery)}">
+        ${compact ? "" : `<div class="kf-filters ms-filters"><button class="chip" data-mf="all">All</button><button class="chip" data-mf="online">Online</button></div>`}
+      </div><div class="ms-list"><p class="muted" style="margin:6px 4px">Loading members…</p></div>`;
+    box.dataset.ready = "1";
+    const s = box.querySelector(".ms-search");
+    s.oninput = () => { memQuery = s.value.trim().toLowerCase(); fillMemberList(box, compact); };
+    box.querySelectorAll("[data-mf]").forEach(b => b.onclick = () => { memFilter = b.dataset.mf; fillMemberList(box, compact); });
+    box.querySelector(".ms-list").onclick = e => {
+      const r = e.target.closest("[data-mid]"); if (!r) return;
+      if (!compact && window.matchMedia("(min-width: 901px)").matches) { memSelected = r.dataset.mid; fillMemberList(box, compact); renderMemberMain(); }
+      else openProfile(r.dataset.mid);
+    };
+  }
+  try { await loadAllMembers(); } catch (err) {
+    box.querySelector(".ms-list").innerHTML = `<p class="msg err">${esc(/members|column|relation/i.test(err.message) ? "Members list needs profiles-setup.sql run in Supabase." : err.message)}</p>`;
+    return;
+  }
+  fillMemberList(box, compact);
+}
+function fillMemberList(box, compact){
+  box.querySelectorAll("[data-mf]").forEach(b => b.classList.toggle("active", b.dataset.mf === memFilter));
+  let list = allMembers;
+  if (memQuery) list = list.filter(m => (m.name + " " + (m.discord_username || "") + " " + (m.faction_name || "")).toLowerCase().includes(memQuery));
+  if (memFilter === "online" && !compact) list = list.filter(m => isOnline(m.id));
+  const on = allMembers.filter(m => isOnline(m.id)).length;
+  const groups = groupMembers(list);
+  box.querySelector(".ms-list").innerHTML = `<div class="ms-count"><i class="dot on"></i>${on} online · ${allMembers.length} member${allMembers.length === 1 ? "" : "s"}</div>` +
+    (groups.length ? groups.map(g => `<div class="mgroup"><div class="mg-head"${g.color ? ` style="--gc:${g.color}"` : ""}>${esc(g.label)} — ${g.items.length}</div>${g.items.map(memberRow).join("")}</div>`).join("")
+      : `<p class="muted" style="margin:10px 6px">${memFilter === "online" ? "Nobody else is on the site right now." : "No one matches that."}</p>`);
+}
+
+/* ---------- profile card (used in the popout, the Members page and the editor preview) ---------- */
+function profileCardHTML(m, opts = {}){
+  const accent = hexOk(m.accent_color) || "#ff7a1a", banner = hexOk(m.banner_color) || accent;
+  const online = !opts.preview && isOnline(m.id);
+  const since = m.created_at ? new Date(m.created_at).toLocaleDateString(undefined, { month: "short", year: "numeric" }) : "";
+  const seen = online ? "On the site now" : m.last_seen_at ? "Last seen " + ago(m.last_seen_at) : "";
+  const badges = [
+    m.is_admin ? `<span class="pbadge staff">🛡️ AF Staff</span>` : "",
+    m.is_legend ? `<span class="pbadge legend">★ AF Legend</span>` : "",
+    m.faction_name ? `<span class="pbadge" style="--fc:${hexOk(m.faction_color) || "#a1a1aa"}"><i></i>${esc(m.faction_name)}${m.faction_rank ? ` · ${esc(m.faction_rank)}` : ""}</span>` : "",
+    !opts.preview && levelCache.get(m.id) ? `<span class="pbadge lvb">⭐ Lv ${levelCache.get(m.id).level} · ${esc(levelCache.get(m.id).title)}</span>` : "",
+    !opts.preview && levelCache.get(m.id)?.tier ? tierBadge(levelCache.get(m.id).tier, levelCache.get(m.id).rating) : "",
+    !opts.preview && levelCache.get(m.id)?.best_place && levelCache.get(m.id).best_place <= 3 ? `<span class="pbadge champ">🏆 #${levelCache.get(m.id).best_place} ${esc(levelCache.get(m.id).best_season || "")}</span>` : ""
+  ].join("");
+  const links = [
+    m.twitch ? `<a class="plinkbtn tw" href="https://twitch.tv/${esc(m.twitch)}" target="_blank" rel="noopener nofollow">Twitch</a>` : "",
+    m.youtube ? `<a class="plinkbtn yt" href="https://youtube.com/@${esc(String(m.youtube).replace(/^@/, ""))}" target="_blank" rel="noopener nofollow">YouTube</a>` : "",
+    m.steam_url ? `<a class="plinkbtn st" href="${esc(m.steam_url)}" target="_blank" rel="noopener nofollow">Steam</a>` : ""
+  ].join("");
+  const facts = [
+    since ? ["Member since", esc(since)] : null,
+    m.fav_server ? ["Main server", esc(serverLabel(m.fav_server))] : null,
+    m.fav_weapon ? ["Favorite weapon", esc(m.fav_weapon)] : null
+  ].filter(Boolean);
+  const mine = user && m.id === user.id;
+  return `<div class="pc${opts.large ? " large" : ""}" style="--pa:${accent}">
+    <div class="pc-banner" style="background:linear-gradient(135deg,${banner},#0b0b0c 140%)">${m.banner_url ? `<img src="${esc(m.banner_url)}" alt="">` : ""}</div>
+    <div class="pc-head">
+      <span class="pc-av">${avatar(m, opts.large ? 108 : 88)}${opts.preview ? "" : `<i class="dot${online ? " on" : ""}" data-dot="${esc(m.id)}"></i>`}</span>
+      ${m.status_text || m.status_emoji ? `<div class="pc-status">${esc(m.status_emoji || "")} ${esc(m.status_text || "")}</div>` : ""}
+    </div>
+    <div class="pc-body">
+      <div class="pc-name">${esc(m.name || "Survivor")}</div>
+      <div class="pc-handle">${m.discord_username ? `${DISCORD_SVG}<span>${esc(m.discord_username)}</span>` : ""}${seen ? `<span class="pc-seen${online ? " on" : ""}">${esc(seen)}</span>` : ""}</div>
+      ${badges ? `<div class="pc-badges">${badges}</div>` : ""}
+      ${m.bio ? `<div class="pc-sec"><h4>About me</h4><p>${linkify(esc(m.bio))}</p></div>` : ""}
+      ${(m.playstyles || []).length ? `<div class="pc-sec"><h4>Playstyle</h4><div class="pc-tags">${m.playstyles.map(p => `<span>${esc(p)}</span>`).join("")}</div></div>` : ""}
+      ${facts.length ? `<div class="pc-facts">${facts.map(([k, v]) => `<div><small>${k}</small><b>${v}</b></div>`).join("")}</div>` : ""}
+      ${links ? `<div class="pc-links">${links}</div>` : ""}
+      ${opts.preview ? "" : `<div class="row pc-actions">
+        ${mine ? `<a class="btn sm" href="#account" data-close>Edit profile</a>` : user ? `<button class="btn sm" data-msg="${esc(m.id)}">Message</button><button class="btn ghost sm" data-duel="${esc(m.id)}">🃏 Card battle</button>` : `<a class="btn sm" href="#account" data-close>Sign in to message</a>`}
+        ${m.faction_id ? `<a class="btn ghost sm" href="factions.html">View faction</a>` : ""}
+      </div>`}
+    </div>
+  </div>`;
+}
+function bindCard(root){
+  root.querySelectorAll("[data-msg]").forEach(b => b.onclick = () => { closeModal(); startDm(b.dataset.msg); });
+  root.querySelectorAll("[data-duel]").forEach(b => b.onclick = () => { closeModal(); challengePlayer(b.dataset.duel); });
+  root.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", closeModal));
+}
+async function openProfile(id){
+  if (!id || !sb) return;
+  const m = $("#ui-modal");
+  openModal(`<p class="muted" style="margin:0">Loading profile…</p>`);
+  const card = await getMember(id);
+  if (!m.classList.contains("open")) return;
+  m.innerHTML = `<div class="modal-card pc-modal" role="dialog" aria-modal="true" aria-label="${esc(card.name)}'s profile"><button class="icon-btn pc-x" aria-label="Close">✕</button>${profileCardHTML(card)}</div>`;
+  m.querySelector(".pc-x").onclick = closeModal;
+  bindCard(m);
+}
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-profile]");
+  if (!t) return;
+  e.preventDefault(); e.stopPropagation();
+  openProfile(t.dataset.profile);
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#ui-modal").classList.contains("open")) closeModal(); });
+
+/* ---------- Members page ---------- */
+function renderMembers(){
+  if (!window.matchMedia("(min-width: 901px)").matches) memSelected = null;
+  renderMemberSide("#mem-side");
+  renderMemberMain();
+}
+async function renderMemberMain(){
+  if (memSelected) {
+    const box = $("#mem-main"), card = await getMember(memSelected);
+    box.innerHTML = `<button class="btn ghost sm" id="mem-back" style="margin-bottom:12px">← All members</button>${profileCardHTML(card, { large: true })}`;
+    $("#mem-back").onclick = () => { memSelected = null; renderMembers(); };
+    bindCard(box);
+    return;
+  }
+  renderMemberOverview();
+}
+async function renderMemberOverview(){
+  const box = $("#mem-main"); if (!box || memSelected) return;
+  if (!sb) { box.innerHTML = ""; return; }
+  try { await loadAllMembers(); } catch { box.innerHTML = ""; return; }
+  const online = allMembers.filter(m => isOnline(m.id));
+  const factions = new Set(allMembers.map(m => m.faction_id).filter(Boolean)).size;
+  const legends = allMembers.filter(m => m.is_legend).length;
+  const newest = [...allMembers].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 6);
+  const me = user ? allMembers.find(m => m.id === user.id) : null;
+  const tile = (n, l) => `<div class="card mo-tile"><b>${n}</b><span>${l}</span></div>`;
+  box.innerHTML = `
+    <div class="mo-tiles">${tile(allMembers.length, "Members")}${tile(online.length, "On the site now")}${tile(factions, "Factions")}${tile(legends, "AF Legends")}</div>
+    ${user && me && !me.bio && !me.display_name ? `<div class="card hl mo-cta"><div><h3>Make your profile yours</h3><p class="muted" style="margin:0">Add a banner, bio, status and playstyle so the community knows who you are.</p></div><a class="btn" href="#account">Customize profile</a></div>`
+      : !user ? `<div class="card mo-cta"><div><h3>Get on the list</h3><p class="muted" style="margin:0">Sign in with Discord to appear here and customize your profile.</p></div><a class="btn" href="#account">Sign in</a></div>` : ""}
+    <div class="card"><h3>Online now</h3>${online.length ? `<div class="mo-faces">${online.slice(0, 24).map(m => `<button type="button" class="mo-face" data-pick-m="${esc(m.id)}" title="${esc(m.name)}">${avatarDot(m, 46)}<small>${esc(m.name)}</small></button>`).join("")}</div>` : `<p class="muted" style="margin:0">Nobody's browsing right now — check the Discord.</p>`}</div>
+    <div class="card" style="margin-top:16px"><h3>Newest members</h3><div class="mo-new">${newest.map(m => `<button type="button" class="mrow" data-pick-m="${esc(m.id)}">${avatarDot(m, 34)}<span class="mrow-txt"><span class="mrow-name">${esc(m.name)}</span><small>Joined ${ago(m.created_at)}</small></span></button>`).join("")}</div></div>`;
+  box.querySelectorAll("[data-pick-m]").forEach(b => b.onclick = () => {
+    if (window.matchMedia("(min-width: 901px)").matches) { memSelected = b.dataset.pickM; renderMembers(); } else openProfile(b.dataset.pickM);
+  });
+}
+
+/* ---------- profile editor (Account page) ---------- */
+let pe = null;
+function cropSquare(file, size = 512){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const s = Math.min(img.width, img.height), c = document.createElement("canvas");
+      c.width = c.height = Math.min(size, s);
+      c.getContext("2d").drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => b ? res(b) : rej(new Error("Couldn't read that image")), "image/jpeg", 0.88);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("That file isn't an image we can use")); };
+    img.src = url;
+  });
+}
+function profileEditorHTML(p){
+  const v = k => esc(p?.[k] ?? "");
+  return `<div class="card pe-card" id="pe-card">
+    <div class="pe-grid">
+      <form id="pe-form" class="pe-form" autocomplete="off">
+        <h3 style="margin-top:0">Customize your profile</h3>
+        <p class="muted" style="margin-top:0">This is what people see when they click your name on the site and on the Members page.</p>
+        <div class="field"><label for="pe-name">Display name</label><input id="pe-name" maxlength="32" placeholder="${esc(p?.discord_username || dName(user))}" value="${v("display_name")}"><small>2–32 characters. Leave empty to use your Discord name. Your Discord name always shows under it.</small></div>
+        <div class="field"><label>Status</label>
+          <div class="pe-emoji" id="pe-emoji"><button type="button" data-emo="" class="${p?.status_emoji ? "" : "on"}" aria-label="No emoji">—</button>${STATUS_EMOJI.map(e => `<button type="button" data-emo="${e}" class="${p?.status_emoji === e ? "on" : ""}">${e}</button>`).join("")}</div>
+          <input id="pe-status" maxlength="80" placeholder="Looting Tisy · LFG for raids" value="${v("status_text")}"></div>
+        <div class="field"><label for="pe-bio">About me <span class="muted" id="pe-bio-n"></span></label><textarea id="pe-bio" maxlength="300" rows="3" placeholder="How you play, who you run with, your best story…">${v("bio")}</textarea></div>
+        <div class="two">
+          <div class="field"><label>Profile picture</label><div class="row" style="gap:8px">
+            <label class="btn ghost sm" style="cursor:pointer">Upload<input type="file" id="pe-av" accept="image/jpeg,image/png,image/webp" hidden></label>
+            <button type="button" class="btn ghost sm" id="pe-av-reset">Use Discord's</button></div></div>
+          <div class="field"><label>Banner</label><div class="row" style="gap:8px">
+            <label class="btn ghost sm" style="cursor:pointer">Upload<input type="file" id="pe-bn" accept="image/jpeg,image/png,image/webp" hidden></label>
+            <input type="color" id="pe-bcolor" value="${hexOk(p?.banner_color) || hexOk(p?.accent_color) || "#ff7a1a"}" aria-label="Banner color">
+            <button type="button" class="btn ghost sm" id="pe-bn-reset">Clear</button></div></div>
+        </div>
+        <div class="field"><label>Accent color</label><div class="pe-swatches" id="pe-acc">${ACCENTS.map(c => `<button type="button" data-acc="${c}" style="background:${c}" class="${(hexOk(p?.accent_color) || "#ff7a1a").toLowerCase() === c.toLowerCase() ? "on" : ""}" aria-label="Accent ${c}"></button>`).join("")}<input type="color" id="pe-acc-c" value="${hexOk(p?.accent_color) || "#ff7a1a"}" aria-label="Custom accent"></div></div>
+        <div class="field"><label>Playstyle <span class="muted">(up to 5)</span></label><div class="pe-play" id="pe-play">${PLAYSTYLES.map(s => `<button type="button" class="chip${(p?.playstyles || []).includes(s) ? " active" : ""}" data-ps="${s}">${s}</button>`).join("")}</div></div>
+        <div class="two">
+          <div class="field"><label for="pe-srv">Main server</label><select id="pe-srv"><option value="">—</option>${CONFIG.servers.map(s => `<option value="${s.key}"${p?.fav_server === s.key ? " selected" : ""}>${esc(s.name)}</option>`).join("")}<option value="both"${p?.fav_server === "both" ? " selected" : ""}>Both servers</option></select></div>
+          <div class="field"><label for="pe-wpn">Favorite weapon</label><input id="pe-wpn" maxlength="40" placeholder="M4-A1, Mosin, the trusty axe…" value="${v("fav_weapon")}"></div>
+        </div>
+        <div class="two">
+          <div class="field"><label for="pe-tw">Twitch</label><input id="pe-tw" maxlength="25" placeholder="channel name" value="${v("twitch")}"></div>
+          <div class="field"><label for="pe-yt">YouTube</label><input id="pe-yt" maxlength="31" placeholder="@handle" value="${v("youtube")}"></div>
+        </div>
+        <label class="pe-check"><input type="checkbox" id="pe-steam"${p?.show_steam ? " checked" : ""}${p?.steam_id ? "" : " disabled"}> Show a link to my Steam profile${p?.steam_id ? "" : ` <span class="muted">(add your Steam64 ID above first)</span>`}</label>
+        <div class="row" style="margin-top:16px"><button class="btn" type="submit" id="pe-save">Save profile</button><button class="btn ghost" type="button" id="pe-view">View my card</button></div>
+        <div id="pe-msg"></div>
+      </form>
+      <div class="pe-preview"><div class="muted" style="font-size:.85rem;margin-bottom:8px">Live preview</div><div id="pe-prev"></div></div>
+    </div>
+  </div>`;
+}
+function bindProfileEditor(p, base){
+  pe = {
+    display_name: p?.display_name || "", status_emoji: p?.status_emoji || "", status_text: p?.status_text || "", bio: p?.bio || "",
+    custom_avatar_url: p?.custom_avatar_url || null, banner_url: p?.banner_url || null, banner_color: hexOk(p?.banner_color), accent_color: hexOk(p?.accent_color),
+    playstyles: [...(p?.playstyles || [])], fav_server: p?.fav_server || "", fav_weapon: p?.fav_weapon || "", twitch: p?.twitch || "", youtube: p?.youtube || "",
+    show_steam: !!p?.show_steam, newAvatar: null, newBanner: null, avPreview: null, bnPreview: null
+  };
+  const draw = () => {
+    const card = {
+      ...base, name: pe.display_name.trim() || base.discord_username || dName(user),
+      avatar_url: pe.avPreview || pe.custom_avatar_url || meta(user).avatar_url || null,
+      banner_url: pe.bnPreview || pe.banner_url, banner_color: pe.banner_color, accent_color: pe.accent_color,
+      status_emoji: pe.status_emoji, status_text: pe.status_text.trim(), bio: pe.bio.trim(), playstyles: pe.playstyles,
+      fav_server: pe.fav_server, fav_weapon: pe.fav_weapon.trim(), twitch: pe.twitch.trim(), youtube: pe.youtube.trim(),
+      steam_url: pe.show_steam && p?.steam_id ? "https://steamcommunity.com/profiles/" + p.steam_id : null
+    };
+    $("#pe-prev").innerHTML = profileCardHTML(card, { preview: true });
+    $("#pe-bio-n").textContent = `${pe.bio.length}/300`;
+  };
+  const txt = (sel, key) => $(sel).oninput = e => { pe[key] = e.target.value; draw(); };
+  txt("#pe-name", "display_name"); txt("#pe-status", "status_text"); txt("#pe-bio", "bio"); txt("#pe-wpn", "fav_weapon"); txt("#pe-tw", "twitch"); txt("#pe-yt", "youtube");
+  $("#pe-srv").onchange = e => { pe.fav_server = e.target.value; draw(); };
+  $("#pe-steam").onchange = e => { pe.show_steam = e.target.checked; draw(); };
+  $$("[data-emo]").forEach(b => b.onclick = () => { pe.status_emoji = b.dataset.emo; $$("[data-emo]").forEach(x => x.classList.toggle("on", x === b)); draw(); });
+  const setAcc = c => { pe.accent_color = c; $$("[data-acc]").forEach(x => x.classList.toggle("on", x.dataset.acc.toLowerCase() === c.toLowerCase())); draw(); };
+  $$("[data-acc]").forEach(b => b.onclick = () => { setAcc(b.dataset.acc); $("#pe-acc-c").value = b.dataset.acc; });
+  $("#pe-acc-c").oninput = e => setAcc(e.target.value);
+  $("#pe-bcolor").oninput = e => { pe.banner_color = e.target.value; draw(); };
+  $$("[data-ps]").forEach(b => b.onclick = () => {
+    const s = b.dataset.ps, i = pe.playstyles.indexOf(s);
+    if (i >= 0) pe.playstyles.splice(i, 1);
+    else if (pe.playstyles.length >= 5) { toast("Pick up to 5"); return; }
+    else pe.playstyles.push(s);
+    b.classList.toggle("active", i < 0); draw();
+  });
+  const pick = (sel, fn, key, prevKey) => $(sel).onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { pe[key] = await fn(f); pe[prevKey] = URL.createObjectURL(pe[key]); draw(); }
+    catch (err) { $("#pe-msg").innerHTML = `<p class="msg err">${esc(err.message)}</p>`; }
+  };
+  pick("#pe-av", f => cropSquare(f, 512), "newAvatar", "avPreview");
+  pick("#pe-bn", f => resizeJpeg(f, 1200), "newBanner", "bnPreview");
+  $("#pe-av-reset").onclick = () => { pe.custom_avatar_url = null; pe.newAvatar = null; pe.avPreview = null; $("#pe-av").value = ""; draw(); };
+  $("#pe-bn-reset").onclick = () => { pe.banner_url = null; pe.newBanner = null; pe.bnPreview = null; pe.banner_color = null; $("#pe-bn").value = ""; draw(); };
+  $("#pe-view").onclick = () => openProfile(user.id);
+  $("#pe-form").onsubmit = async e => {
+    e.preventDefault();
+    const msg = $("#pe-msg"), btn = $("#pe-save"), dn = pe.display_name.trim();
+    const bad = t => { msg.innerHTML = `<p class="msg err">${esc(t)}</p>`; };
+    if (dn && (dn.length < 2 || dn.length > 32)) return bad("Display names need 2–32 characters.");
+    if (dn && RESERVED_NAME.test(dn)) return bad("Display names can't include words like admin, staff, moderator or Allied Forces.");
+    const tw = pe.twitch.trim().replace(/^https?:\/\/(www\.)?twitch\.tv\//i, ""), yt = pe.youtube.trim().replace(/^https?:\/\/(www\.)?youtube\.com\//i, "");
+    if (tw && !/^[A-Za-z0-9_]{3,25}$/.test(tw)) return bad("Twitch: just the channel name (letters, numbers, _).");
+    if (yt && !/^@?[A-Za-z0-9._-]{3,30}$/.test(yt)) return bad("YouTube: just your @handle.");
+    btn.disabled = true; btn.textContent = "Saving…"; msg.innerHTML = "";
+    try {
+      const upload = async (blob, kind) => {
+        const path = `${user.id}/${kind}-${Date.now()}.jpg`;
+        const up = await sb.storage.from("profile-media").upload(path, blob, { contentType: "image/jpeg" });
+        if (up.error) throw up.error;
+        return sb.storage.from("profile-media").getPublicUrl(path).data.publicUrl;
+      };
+      if (pe.newAvatar) { pe.custom_avatar_url = await upload(pe.newAvatar, "avatar"); pe.newAvatar = null; }
+      if (pe.newBanner) { pe.banner_url = await upload(pe.newBanner, "banner"); pe.newBanner = null; }
+      const row = {
+        display_name: dn || null, status_emoji: pe.status_emoji || null, status_text: pe.status_text.trim() || null, bio: pe.bio.trim() || null,
+        custom_avatar_url: pe.custom_avatar_url, banner_url: pe.banner_url, banner_color: pe.banner_color, accent_color: pe.accent_color,
+        playstyles: pe.playstyles, fav_server: pe.fav_server || null, fav_weapon: pe.fav_weapon.trim() || null,
+        twitch: tw || null, youtube: yt || null, show_steam: pe.show_steam, updated_at: new Date().toISOString()
+      };
+      const { error } = await sb.from("profiles").update(row).eq("id", user.id);
+      if (error) throw error;
+      memberCache.delete(user.id); allMembersAt = 0;
+      await loadMembers([user.id]);
+      msg.innerHTML = `<p class="msg ok">Saved! <a href="javascript:void 0" data-profile="${esc(user.id)}">See your card</a></p>`;
+      toast("Profile saved");
+    } catch (err) {
+      const t = err.message || String(err);
+      bad(/display_name_unique|duplicate key/i.test(t) ? "That display name is taken — try another."
+        : /display_name_ok/.test(t) ? "Display names need 2–32 characters and can't include staff words."
+        : /column .* does not exist|schema cache/i.test(t) ? "Profile customization isn't switched on yet — run profiles-setup.sql in Supabase."
+        : /bucket|not found/i.test(t) ? "Photo storage isn't set up yet — run profiles-setup.sql in Supabase."
+        : t);
+    }
+    btn.disabled = false; btn.textContent = "Save profile";
+  };
+  draw();
+}
+async function mountProfileEditor(p){
+  const slot = $("#pe-slot"); if (!slot || !user) return;
+  await loadMembers([user.id]);
+  const base = { ...mem(user.id), id: user.id, discord_username: p?.discord_username || dName(user), created_at: p?.created_at || user.created_at };
+  slot.innerHTML = profileEditorHTML(p);
+  bindProfileEditor(p, base);
+}
+
+startPresence();
+
+/* ---------- MOD SHOP: licence requests + server whitelist (tables af_license_requests, af_server_whitelist, af_license_checks) ---------- */
+const MS_PRODUCT = "af_weapons_pack";
+const msIp = s => /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.test(s) && s.split(".").every(n => +n <= 255);
+const msWhen = t => t ? new Date(t).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "";
+const msStatus = s => s === "approved" ? `<span class="tag ok">Approved</span>` : s === "rejected" ? `<span class="tag">Declined</span>` : `<span class="tag">Waiting for staff</span>`;
+async function renderModShop(){
+  const buy = $("#ms-buy"), mine = $("#ms-mine"), staff = $("#ms-staff");
+  if (!buy) return;
+  mine.innerHTML = ""; staff.innerHTML = "";
+  if (!sb) { buy.innerHTML = `<p class="muted">Licence requests open once accounts are switched on.</p>`; return; }
+  if (!user) { buy.innerHTML = `<a class="btn" href="#account">Sign in to request a licence</a>`; return; }
+  buy.innerHTML = `<button class="btn" id="ms-request">Request a free licence</button>`;
+  $("#ms-request").onclick = () => openLicenseRequest();
+
+  const [reqs, servers] = await Promise.all([
+    sb.from("af_license_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+    sb.from("af_server_whitelist").select("*").eq("owner_id", user.id).order("created_at", { ascending: false })
+  ]);
+  if (reqs.error || servers.error) { mine.innerHTML = `<p class="msg err">${esc((reqs.error || servers.error).message)}</p>`; }
+  else if (reqs.data.length || servers.data.length) {
+    mine.innerHTML = `<div class="card"><h3>Your servers</h3>
+      ${servers.data.length ? `<div style="overflow-x:auto"><table class="pz"><thead><tr><th>Licensed server</th><th>Address</th><th>Status</th></tr></thead><tbody>
+        ${servers.data.map(s => `<tr><td>${esc(s.name)}</td><td>${esc(s.ip)}:${s.port}</td><td>${s.enabled ? `<span class="tag ok">Active</span>` : `<span class="tag">Paused</span>`}</td></tr>`).join("")}</tbody></table></div>` : ""}
+      ${reqs.data.length ? `<div style="overflow-x:auto;margin-top:10px"><table class="pz"><thead><tr><th>Request</th><th>Address</th><th>Sent</th><th>Status</th><th></th></tr></thead><tbody>
+        ${reqs.data.map(r => `<tr><td>${esc(r.server_name)}</td><td>${esc(r.ip)}:${r.port}</td><td>${esc(msWhen(r.created_at))}</td><td>${msStatus(r.status)}${r.staff_note ? `<div class="muted" style="font-size:.85rem">${esc(r.staff_note)}</div>` : ""}</td>
+          <td>${r.status === "pending" ? `<button class="btn sm ghost" data-ms-cancel="${r.id}">Cancel</button>` : ""}</td></tr>`).join("")}</tbody></table></div>` : ""}
+    </div>`;
+    mine.querySelectorAll("[data-ms-cancel]").forEach(b => b.onclick = async () => {
+      if (!(await confirmModal("Cancel this request?", "The request is removed. You can send a new one any time.", "Cancel request"))) return;
+      const { error } = await sb.from("af_license_requests").delete().eq("id", +b.dataset.msCancel);
+      if (error) return toast(error.message);
+      toast("Request cancelled"); renderModShop();
+    });
+  }
+  if (amAdmin) renderModShopStaff();
+}
+function openLicenseRequest(){
+  openModal(`<h3>Request a licence — AF Weapons Pack</h3>
+    <p class="muted" style="font-size:.9rem">Free during early access. Staff review the request, then whitelist the server below. This is an early-access mod: expect rough edges.</p>
+    <div class="field"><label for="lr-name">Server name</label><input id="lr-name" maxlength="60" placeholder="e.g. My DayZ Server"></div>
+    <div class="two"><div class="field"><label for="lr-ip">Server IP</label><input id="lr-ip" maxlength="15" placeholder="e.g. 203.0.113.10" inputmode="decimal"></div>
+      <div class="field"><label for="lr-port">Game port</label><input id="lr-port" type="number" min="1" max="65535" placeholder="2302"></div></div>
+    <div class="field"><label for="lr-note">Anything staff should know (optional)</label><input id="lr-note" maxlength="500" placeholder="Host, Discord name if different, etc."></div>
+    <p class="muted" style="font-size:.85rem">Use the public IP your server runs on and the game port from its <code>-port=</code> launch setting (2302 if you never set one). Not the query or RCON port.</p>
+    <div class="row"><button class="btn" id="lr-send">Send request</button><button class="btn ghost" id="lr-x">Cancel</button></div><div id="lr-msg"></div>`);
+  $("#lr-x").onclick = closeModal;
+  $("#lr-send").onclick = async () => {
+    const bad = t => { $("#lr-msg").innerHTML = `<p class="msg err">${esc(t)}</p>`; };
+    const server_name = $("#lr-name").value.trim(), ip = $("#lr-ip").value.trim(), port = parseInt($("#lr-port").value, 10);
+    if (server_name.length < 2) return bad("Give your server a name.");
+    if (!msIp(ip)) return bad("That doesn't look like an IP address. Use numbers like 203.0.113.10.");
+    if (!(port >= 1 && port <= 65535)) return bad("Enter the game port, a number from 1 to 65535.");
+    $("#lr-send").disabled = true;
+    const { error } = await sb.from("af_license_requests").insert({ product: MS_PRODUCT, server_name, ip, port, note: $("#lr-note").value.trim() || null });
+    if (error) { $("#lr-send").disabled = false; return bad(/one_pending|duplicate key/i.test(error.message) ? "You already have a request waiting for that server." : error.message); }
+    closeModal(); toast("Request sent"); renderModShop();
+  };
+}
+async function renderModShopStaff(){
+  const box = $("#ms-staff"); if (!box || !amAdmin) return;
+  const [wl, rq, ck] = await Promise.all([
+    sb.from("af_server_whitelist").select("*").order("created_at", { ascending: false }),
+    sb.from("af_license_requests").select("*").order("created_at", { ascending: false }).limit(100),
+    sb.from("af_license_checks").select("*").order("checked_at", { ascending: false }).limit(40)
+  ]);
+  const err = wl.error || rq.error || ck.error;
+  if (err) { box.innerHTML = `<div class="card staff-card"><h3>Mod licences <span class="adm">Staff</span></h3><p class="msg err">${esc(err.message)}</p></div>`; return; }
+  const ids = [...new Set([...wl.data.map(s => s.owner_id), ...rq.data.map(r => r.user_id)].filter(Boolean))];
+  if (ids.length) await loadMembers(ids);
+  const who = id => id ? `<a href="javascript:void 0" data-profile="${esc(id)}">${esc(mem(id).name || "Member")}</a>` : `<span class="muted">—</span>`;
+  const pending = rq.data.filter(r => r.status === "pending"), listed = new Set(wl.data.map(s => s.ip + ":" + s.port));
+  const denied = ck.data.filter(c => !c.allowed);
+  box.innerHTML = `<div class="card staff-card">
+    <h3>Mod licences <span class="adm">Staff</span></h3>
+    <p class="muted" style="font-size:.9rem">A server can run the AF Weapons Pack only while it is in the whitelist and switched on. Licences are free during early access; approve the requests you want to allow.</p>
+
+    <h4 style="margin-top:14px">Requests waiting (${pending.length})</h4>
+    ${pending.length ? `<div style="overflow-x:auto"><table class="pz"><thead><tr><th>Server</th><th>Address</th><th>From</th><th>Sent</th><th>Note</th><th></th></tr></thead><tbody>
+      ${pending.map(r => `<tr><td>${esc(r.server_name)}</td><td>${esc(r.ip)}:${r.port}</td><td>${who(r.user_id)}</td><td>${esc(msWhen(r.created_at))}</td><td>${esc(r.note || "")}</td>
+        <td style="white-space:nowrap"><button class="btn sm" data-ms-ok="${r.id}">Approve</button> <button class="btn sm ghost" data-ms-no="${r.id}">Decline</button></td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">No requests waiting.</p>`}
+
+    <h4 style="margin-top:18px">Whitelisted servers (${wl.data.length})</h4>
+    ${wl.data.length ? `<div style="overflow-x:auto"><table class="pz"><thead><tr><th>Server</th><th>Address</th><th>Owner</th><th>Added</th><th>Status</th><th></th></tr></thead><tbody>
+      ${wl.data.map(s => `<tr class="${s.enabled ? "" : "off"}"><td>${esc(s.name)}</td><td>${esc(s.ip)}:${s.port}</td><td>${who(s.owner_id)}</td><td>${esc(msWhen(s.created_at))}</td>
+        <td>${s.enabled ? `<span class="tag ok">Active</span>` : `<span class="tag">Paused</span>`}</td>
+        <td style="white-space:nowrap"><button class="btn sm ghost" data-ms-toggle="${s.id}">${s.enabled ? "Pause" : "Turn on"}</button> <button class="icon-btn" data-ms-edit="${s.id}" title="Edit">✏️</button><button class="icon-btn" data-ms-del="${s.id}" title="Remove">🗑</button></td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">No servers whitelisted yet.</p>`}
+    <button class="btn sm" id="ms-add" style="margin-top:12px">+ Add server</button>
+
+    <h4 style="margin-top:18px">Recent denied checks</h4>
+    <p class="muted" style="font-size:.9rem">Servers that started the mod without a licence. If one of these is a paying server, its IP or port doesn't match its whitelist entry.</p>
+    ${denied.length ? `<div style="overflow-x:auto"><table class="pz"><thead><tr><th>Address</th><th>When</th><th></th></tr></thead><tbody>
+      ${denied.slice(0, 15).map(c => `<tr><td>${esc(c.ip)}:${c.port}</td><td>${esc(msWhen(c.checked_at))}</td><td>${listed.has(c.ip + ":" + c.port) ? `<span class="muted">now whitelisted</span>` : `<button class="btn sm ghost" data-ms-allow="${esc(c.ip)}|${c.port}">Whitelist…</button>`}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">None recently.</p>`}
+  </div>`;
+  const reload = () => renderModShop();
+  box.querySelectorAll("[data-ms-ok]").forEach(b => b.onclick = async () => {
+    const r = rq.data.find(x => x.id === +b.dataset.msOk); if (!r) return;
+    if (!(await confirmModal("Approve this licence?", `${r.server_name} (${r.ip}:${r.port}) will be whitelisted straight away.`, "Approve"))) return;
+    const ins = await sb.from("af_server_whitelist").upsert({ name: r.server_name, ip: r.ip, port: r.port, owner_id: r.user_id, product: r.product, enabled: true }, { onConflict: "ip,port" });
+    if (ins.error) return toast(ins.error.message);
+    const up = await sb.from("af_license_requests").update({ status: "approved", decided_at: new Date().toISOString() }).eq("id", r.id);
+    if (up.error) return toast(up.error.message);
+    toast("Server whitelisted"); reload();
+  });
+  box.querySelectorAll("[data-ms-no]").forEach(b => b.onclick = async () => {
+    if (!(await confirmModal("Decline this request?", "The requester sees it as declined. Their server is not whitelisted.", "Decline"))) return;
+    const { error } = await sb.from("af_license_requests").update({ status: "rejected", decided_at: new Date().toISOString() }).eq("id", +b.dataset.msNo);
+    if (error) return toast(error.message);
+    toast("Request declined"); reload();
+  });
+  box.querySelectorAll("[data-ms-toggle]").forEach(b => b.onclick = async () => {
+    const s = wl.data.find(x => x.id === +b.dataset.msToggle); if (!s) return;
+    const { error } = await sb.from("af_server_whitelist").update({ enabled: !s.enabled }).eq("id", s.id);
+    if (error) return toast(error.message);
+    toast(s.enabled ? "Server paused" : "Server turned on"); reload();
+  });
+  box.querySelectorAll("[data-ms-del]").forEach(b => b.onclick = async () => {
+    if (!(await confirmModal("Remove this server?", "The mod stops working on it the next time it restarts."))) return;
+    const { error } = await sb.from("af_server_whitelist").delete().eq("id", +b.dataset.msDel);
+    if (error) return toast(error.message);
+    toast("Server removed"); reload();
+  });
+  box.querySelectorAll("[data-ms-edit]").forEach(b => b.onclick = () => openWhitelistEditor(wl.data.find(x => x.id === +b.dataset.msEdit)));
+  box.querySelectorAll("[data-ms-allow]").forEach(b => b.onclick = () => { const [ip, port] = b.dataset.msAllow.split("|"); openWhitelistEditor(null, { ip, port: +port }); });
+  $("#ms-add").onclick = () => openWhitelistEditor(null);
+}
+function openWhitelistEditor(s, preset = {}){
+  openModal(`<h3>${s ? "Edit server" : "Whitelist a server"}</h3>
+    <div class="field"><label for="we-name">Server name</label><input id="we-name" maxlength="60" value="${esc(s?.name || "")}" placeholder="e.g. AF Chernarus"></div>
+    <div class="two"><div class="field"><label for="we-ip">Server IP</label><input id="we-ip" maxlength="15" value="${esc(s?.ip || preset.ip || "")}" placeholder="203.0.113.10"></div>
+      <div class="field"><label for="we-port">Game port</label><input id="we-port" type="number" min="1" max="65535" value="${s?.port ?? preset.port ?? ""}" placeholder="2302"></div></div>
+    <label style="display:flex;gap:8px;align-items:center;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="we-on" ${s?.enabled === false ? "" : "checked"}> Licence active</label>
+    <div class="row"><button class="btn" id="we-save">Save</button><button class="btn ghost" id="we-x">Cancel</button></div><div id="we-msg"></div>`);
+  $("#we-x").onclick = closeModal;
+  $("#we-save").onclick = async () => {
+    const bad = t => { $("#we-msg").innerHTML = `<p class="msg err">${esc(t)}</p>`; };
+    const name = $("#we-name").value.trim(), ip = $("#we-ip").value.trim(), port = parseInt($("#we-port").value, 10);
+    if (name.length < 2) return bad("Give the server a name.");
+    if (!msIp(ip)) return bad("That doesn't look like an IP address.");
+    if (!(port >= 1 && port <= 65535)) return bad("Enter the game port, a number from 1 to 65535.");
+    const row = { name, ip, port, enabled: $("#we-on").checked };
+    const { error } = s ? await sb.from("af_server_whitelist").update(row).eq("id", s.id) : await sb.from("af_server_whitelist").insert({ ...row, product: MS_PRODUCT });
+    if (error) return bad(/duplicate key/i.test(error.message) ? "That IP and port are already whitelisted." : error.message);
+    closeModal(); toast("Saved"); renderModShop();
+  };
+}
+
+// Members milestone bar. Rewards are announced by staff when a milestone is reached.
+const MILESTONES = [
+  { at: 25, label: "Free wheel spin for everyone" },
+  { at: 50, label: "Free crate for everyone" },
+  { at: 100, label: "Mile marker bonus pack for everyone" }
+];
+async function loadMilestone(){
+  const box = $("#milestone");
+  if (!box) return;
+  const { data: count, error } = await sb.rpc("member_count");
+  if (error || typeof count !== "number") return;
+  const next = MILESTONES.find(m => count < m.at) || MILESTONES[MILESTONES.length - 1];
+  const prev = [...MILESTONES].reverse().find(m => count >= m.at);
+  const from = prev ? prev.at : 0;
+  const pct = next && count < next.at ? Math.min(100, Math.round((count - from) / (next.at - from) * 100)) : 100;
+  box.hidden = false;
+  box.innerHTML = count >= MILESTONES[MILESTONES.length - 1].at
+    ? `<p style="margin:0"><b>🏁 ${count} members. The 100 member mile marker is reached!</b></p>`
+    : `<p style="margin:0 0 8px"><b>${count} / ${next.at} members</b> · next: ${esc(next.label)}</p>
+       <div style="height:12px;border-radius:6px;background:var(--line,#2a2a2a);overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--accent,#e8772e)"></div></div>
+       <p class="muted" style="margin:8px 0 0;font-size:.85rem">Milestones: ${MILESTONES.map(m => `${m.at} · ${esc(m.label)}`).join(" · ")}</p>`;
+}
+
+// Referral codes: a link with ?ref=CODE is remembered, then applied once the visitor signs in.
+const _refFromUrl = new URLSearchParams(location.search).get("ref");
+if (_refFromUrl) localStorage.setItem("af_ref", _refFromUrl.trim().toUpperCase());
+async function applyPendingReferral(){
+  const code = localStorage.getItem("af_ref");
+  if (!code || !user || !sb) return;
+  localStorage.removeItem("af_ref");
+  const { data, error } = await sb.rpc("apply_referral", { p_code: code });
+  if (error) { if (!/own code|already|does not exist/i.test(error.message)) toast(error.message.replace(/^.*?:\s*/, "")); return; }
+  if (data?.ok) toast(`Welcome! +${data.bonus} AFtokens from your referral`);
+}
+
+async function renderDashboard(){
+  const el = $("#dash-body");
+  if (!el) return;
+  if (!user) { el.innerHTML = `<div class="card"><p class="muted" style="margin:0"><a href="#account">Sign in</a> to see your dashboard.</p></div>`; return; }
+  el.innerHTML = `<p class="muted">Loading…</p>`;
+  const [wal, stats, bounties, fac, led, pend, prof, ref, chal] = await Promise.all([
+    sb.from("token_wallets").select("balance").eq("user_id", user.id).maybeSingle(),
+    sb.rpc("my_game_stats"),
+    sb.from("af_open_bounties").select("*").order("pot", { ascending: false }).limit(8),
+    sb.rpc("my_faction"),
+    sb.from("token_ledger").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8),
+    sb.from("prize_claims").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "pending"),
+    sb.from("profiles").select("steam_id,ingame_name").eq("id", user.id).maybeSingle(),
+    sb.rpc("my_referral"),
+    sb.rpc("my_challenges")
+  ]);
+  const challenges = chal.data || [];
+  const fmtProgress = c => c.metric === "playtime_seconds" ? `${(c.progress / 3600).toFixed(1)} / ${(c.target / 3600).toFixed(0)} h` : `${c.progress} / ${c.target}`;
+  const myRef = ref.data;
+  const inviteLink = `${location.origin}${location.pathname}?ref=${myRef?.code || ""}`;
+  const rows = stats.data || [];
+  const kills = rows.reduce((a, r) => a + (r.kills || 0), 0);
+  const deaths = rows.reduce((a, r) => a + (r.deaths || 0), 0);
+  const playHrs = (rows.reduce((a, r) => a + (r.playtime || 0), 0) / 3600).toFixed(1);
+  const balance = wal.data?.balance ?? 0;
+  const f = fac.data;
+  const linked = !!prof.data?.steam_id;
+
+  el.innerHTML = `
+    ${!linked ? `<div class="card hl" style="margin-bottom:14px"><p style="margin:0">Link your Steam ID on your <a href="#account">Account</a> page to see your in-game stats here.</p></div>` : ""}
+    <div class="dash-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px">
+      <div class="card"><small class="muted">AFtokens</small><h3 style="margin:4px 0">🪙 ${balance}</h3></div>
+      <div class="card"><small class="muted">Kills / deaths</small><h3 style="margin:4px 0">${kills} / ${deaths}</h3></div>
+      <div class="card"><small class="muted">K/D</small><h3 style="margin:4px 0">${deaths ? (kills / deaths).toFixed(2) : kills}</h3></div>
+      <div class="card"><small class="muted">Playtime</small><h3 style="margin:4px 0">${playHrs} h</h3></div>
+      <div class="card"><small class="muted">Prizes waiting</small><h3 style="margin:4px 0">🎁 ${pend.count || 0}</h3><a href="#wheel" class="muted" style="font-size:.85rem">Open the Arcade</a></div>
+      <div class="card"><small class="muted">Faction</small><h3 style="margin:4px 0">${f ? esc(f.name) : "None"}</h3>${f ? `<small class="muted">War chest: ${f.chest} AFtokens</small>` : `<a href="factions.html" class="muted" style="font-size:.85rem">Join a faction</a>`}</div>
+    </div>
+    <div class="card" style="margin-top:14px"><h3>🏆 Weekly challenges</h3>
+      <p class="muted" style="margin:0 0 8px">Resets every Monday (UTC). Rewards are paid automatically.</p>
+      ${challenges.length ? `<ul class="wh-list">${challenges.map(c => `<li><div>${esc(c.title)}<small>${fmtProgress(c)}</small></div><span class="${c.done ? "amt-pos" : ""}">${c.done ? "✓ +" + c.reward : "+" + c.reward}</span></li>`).join("")}</ul>` : `<p class="muted" style="margin:0">No challenges this week.</p>`}
+    </div>
+    <div class="card" style="margin-top:14px"><h3>👥 Invite friends</h3>
+      <p class="muted" style="margin:0 0 8px">Your friend gets <b>25 AFtokens</b> when they sign up with your link. You get <b>50 AFtokens</b> once they've played an hour on one of our servers.</p>
+      <div class="row" style="gap:8px;align-items:center"><input readonly value="${esc(inviteLink)}" style="flex:1;min-width:0"><button class="btn sm" id="dash-copy">Copy link</button></div>
+      <small class="muted">Invited: ${myRef?.invited ?? 0} · Rewarded: ${myRef?.rewarded ?? 0}</small>
+    </div>
+    ${rows.length ? `<div class="card" style="margin-top:14px"><h3>My servers</h3><ul class="wh-list">${rows.map(r => `<li><span><b>${esc(SRV_LABEL[r.server] || r.server)}</b></span><small>${r.kills} kills · ${r.deaths} deaths · ${r.ai_kills} AI kills · longest ${Math.round(r.longest)} m</small></li>`).join("")}</ul></div>` : ""}
+    <div class="card" style="margin-top:14px"><h3>🎯 Open bounties</h3>${(bounties.data || []).length ? `<ul class="wh-list">${bounties.data.map(b => `<li><span><b>${esc(b.target_name)}</b> · ${esc(SRV_LABEL[b.server_id] || b.server_id)}</span><small>${b.pot} AFtokens · ${b.start_left > 0 ? "starts in " + Math.ceil(b.start_left / 60) + " min" : Math.ceil(b.remaining_left / 60) + " min left"}</small></li>`).join("")}</ul>` : `<p class="muted" style="margin:0">No open bounties right now.</p>`}</div>
+    <div class="card" style="margin-top:14px"><h3>📜 Recent AFtokens</h3>${(led.data || []).length ? `<ul class="wh-list">${led.data.map(l => `<li><div>${esc(l.reason)}<small>${new Date(l.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</small></div><span class="${l.amount >= 0 ? "amt-pos" : "amt-neg"}">${l.amount >= 0 ? "+" : ""}${l.amount}</span></li>`).join("")}</ul>` : `<p class="muted" style="margin:0">No AFtokens yet.</p>`}</div>`;
+  $("#dash-copy").onclick = () => { navigator.clipboard.writeText(inviteLink); toast("Invite link copied"); };
+}
+
+const views = ["dashboard","cards","crates","members","home","servers","rules","legends","wheel","feed","inbox","support","modshop","team","account","terms","privacy","refunds", ...LIVE_TABS.map(t => t.id), ...CONFIG.servers.map(s => "server-" + s.key)];
+function route(){
+  const v = views.includes(location.hash.slice(1)) ? location.hash.slice(1) : "home";
+  const section = v.startsWith("live-") ? "live" : v.startsWith("server-") ? "servers" : v === "crates" || v === "cards" ? "wheel" : v;
+  $$(".view").forEach(el => el.classList.toggle("active", el.id === "v-"+section));
+  $$(".nav a[data-v]").forEach(a => a.classList.toggle("active", a.dataset.v === section));
+  $$(".subview").forEach(el => el.classList.toggle("active", el.id === "sv-"+v));
+  $$(".subnav a").forEach(a => a.classList.toggle("active", a.dataset.sub === v));
+  $(".nav").classList.remove("open");
+  if (v.startsWith("server-")) { $("#sv-server-detail").classList.add("active"); renderServerDetail(v.slice(7)); }
+  if (v === "servers") fillNextEventLines();
+  if (v === "account") renderAccount();
+  if (v === "dashboard") renderDashboard();
+  if (v === "modshop") renderModShop();
+  if (v === "feed") { renderFeed(); renderMemberSide("#feed-side", true); }
+  if (v === "members") renderMembers();
+  if (v === "inbox") renderInbox();
+  if (v === "wheel") { renderWheel(); startDrops(); }
+  if (v === "crates") { renderCrates(); startDrops(); }
+  if (v === "cards") { renderCardsPage(); startDrops(); }
+  if (v === "live-killfeed") startKillfeed();
+  if (v === "live-wipes") startWipes();
+  if (v === "live-leaderboard") startLeaderboard();
+  window.scrollTo(0,0);
+}
+window.addEventListener("hashchange", route); route();
+loadMilestone();
