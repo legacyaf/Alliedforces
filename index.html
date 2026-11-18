@@ -1751,16 +1751,25 @@ function renderLbFilters(){
 async function fetchKills(since){
   const out = [];
   for (let from = 0; from < 10000; from += 1000) {
-    let q = sb.from("killfeed").select("server,content,embeds,created_at").gte("created_at", new Date(since).toISOString()).order("created_at", { ascending: false }).range(from, from + 999);
-    if (lbServer !== "all") q = q.eq("server", lbServer);
-    const { data, error } = await q;
+    const { data, error } = await sb.from("killfeed").select("server,content,embeds,created_at").gte("created_at", new Date(since).toISOString()).order("created_at", { ascending: false }).range(from, from + 999);
     if (error) throw error;
     out.push(...data);
     if (data.length < 1000) break;
   }
   return out;
 }
-let lbMode = "ingame";
+// One download (all servers, back to the earliest period any filter needs) is reused for 60 seconds.
+let kfCache = { at: 0, since: Infinity, rows: null };
+function kfNeededSince(){
+  return Math.min(Date.now() - 30 * 864e5, ...CONFIG.wipes.map(w => wipeState(w).last));
+}
+async function fetchKillsCached(){
+  const need = kfNeededSince();
+  if (kfCache.rows && Date.now() - kfCache.at < 60000 && kfCache.since <= need) return kfCache.rows;
+  const rows = await fetchKills(need);
+  kfCache = { at: Date.now(), since: need, rows };
+  return rows;
+}let lbMode = "ingame";
 function renderLbMode(){
   let m = document.getElementById("lb-mode");
   if (!m) { m = document.createElement("div"); m.id = "lb-mode"; m.className = "subnav"; $("#lb-body").before(m); }
@@ -1776,16 +1785,14 @@ async function loadLeaderboard(){
   const body = $("#lb-body");
   $("#lb-periods").innerHTML = "";
   if (!sb) { $("#lb-servers").innerHTML = ""; body.innerHTML = `<div class="kf-empty">Leaderboards are coming soon.</div>`; return; }
-  body.innerHTML = `<div class="kf-empty">Loading the in-game leaderboard…</div>`;
-  const { data, error } = await sb.from("af_leaderboard").select("*").in("server_id", LB_SERVERS).order("kills", { ascending: false }).limit(1000);
-  if (error) { body.innerHTML = `<div class="kf-empty">Couldn't load the leaderboard: ${esc(error.message)}</div>`; return; }
-  const all = (data || []).filter(r => LB_SERVERS.includes(r.server_id));
-  const servers = [...new Set(all.map(r => r.server_id))].sort();
-  if (!servers.length) { $("#lb-servers").innerHTML = ""; body.innerHTML = `<div class="kf-empty">No in-game stats yet. Play on the server and check back.</div>`; return; }
-  if (!igServer || !servers.includes(igServer)) igServer = servers[0];
-  $("#lb-servers").innerHTML = servers.map(s => `<button class="chip${s === igServer ? " active" : ""}" data-igs="${esc(s)}">${esc(s)}</button>`).join("");
+  if (!igServer || !LB_SERVERS.includes(igServer)) igServer = LB_SERVERS[0];
+  $("#lb-servers").innerHTML = LB_SERVERS.map(s => `<button class="chip${s === igServer ? " active" : ""}" data-igs="${esc(s)}">${esc(s)}</button>`).join("");
   $$("[data-igs]").forEach(b => b.onclick = () => { igServer = b.dataset.igs; loadLeaderboard(); });
-  const rows = all.filter(r => r.server_id === igServer);
+  body.innerHTML = `<div class="kf-empty">Loading the in-game leaderboard…</div>`;
+  const { data, error } = await sb.from("af_leaderboard").select("*").eq("server_id", igServer).order("kills", { ascending: false }).limit(100);
+  if (error) { body.innerHTML = `<div class="kf-empty">Couldn't load the leaderboard: ${esc(error.message)}</div>`; return; }
+  const rows = data || [];
+  if (!rows.length) { body.innerHTML = `<div class="kf-empty">No in-game stats yet on ${esc(igServer)}. Play on the server and check back.</div>`; return; }
   const kd = p => Number(p.kd || 0).toFixed(2);
   const hm = s => `${Math.floor((s || 0) / 3600)}h ${Math.floor(((s || 0) % 3600) / 60)}m`;
   const me = n => myIgn && n.toLowerCase() === myIgn.toLowerCase();
@@ -1803,19 +1810,19 @@ async function loadLeaderboard(){
       ${rows.map((p, i) => `<tr class="${rowCls(i, p.name)}"><td>${i + 1}</td><td class="name">${esc(p.name)}${me(p.name) ? `<span class="lb-you">YOU</span>` : ""}</td><td><b>${p.kills}</b></td><td>${p.deaths}</td><td>${kd(p)}</td><td>${p.ai_kills || 0}</td><td>${p.zombie_kills || 0}</td><td>${p.longest_kill ? Math.round(p.longest_kill) + "m" : "—"}</td><td>${hm(p.playtime_seconds)}</td></tr>`).join("")}
       </tbody></table>
     </div>`;
-}
-
-/* Open bounties (pushed by the game servers every minute). Shown above the in-game leaderboard, with a per-server filter. */
+}/* Open bounties (pushed by the game servers when they change). Shown above the in-game leaderboard, with a per-server filter. */
 let bountyServer = "all";
+let bountyCache = { at: 0, rows: null };
 async function loadBounties(){
   if (!sb) return;
   let box = document.getElementById("lb-bounties");
   if (!box) { box = document.createElement("div"); box.id = "lb-bounties"; $("#lb-body").before(box); }
-  let q = sb.from("af_open_bounties").select("*").in("server_id", LB_SERVERS).order("pot", { ascending: false }).limit(100);
-  if (bountyServer !== "all") q = q.eq("server_id", bountyServer);
-  const { data, error } = await q;
-  if (error) { box.innerHTML = ""; return; }
-  const rows = data || [];
+  if (!bountyCache.rows || Date.now() - bountyCache.at > 60000) {
+    const { data, error } = await sb.from("af_open_bounties").select("*").in("server_id", LB_SERVERS).order("pot", { ascending: false }).limit(100);
+    if (error) { box.innerHTML = ""; return; }
+    bountyCache = { at: Date.now(), rows: data || [] };
+  }
+  const rows = bountyCache.rows.filter(b => bountyServer === "all" || b.server_id === bountyServer);
   const mins = s => Math.max(1, Math.ceil((s || 0) / 60)) + " min";
   const timing = b => b.start_left > 0 ? "starts in " + mins(b.start_left) : mins(b.remaining_left) + " left";
   const chips = ["all", ...LB_SERVERS].map(k => `<button class="chip${k === bountyServer ? " active" : ""}" data-bs="${esc(k)}">${k === "all" ? "All servers" : esc(k)}</button>`).join("");
@@ -1829,12 +1836,16 @@ async function loadBounties(){
       </tbody></table>` : `<p class="lb-note">No open bounties on ${bountyServer === "all" ? "either server" : esc(bountyServer)} right now.</p>`}
     </div>`;
   box.querySelectorAll("[data-bs]").forEach(b => b.onclick = () => { bountyServer = b.dataset.bs; loadBounties(); });
-}async function loadKillfeedBoard(){
+}
+async function loadKillfeedBoard(){
   const body = $("#lb-body");
   if (!sb) { body.innerHTML = `<div class="kf-empty">Leaderboards are coming soon.</div>`; return; }
   body.innerHTML = `<div class="kf-empty">Counting bodies…</div>`;
   let rows;
-  try { rows = await fetchKills(lbStart()); }
+  try {
+    const since = lbStart();
+    rows = (await fetchKillsCached()).filter(r => new Date(r.created_at).getTime() >= since && (lbServer === "all" || r.server === lbServer));
+  }
   catch (err) { body.innerHTML = `<div class="kf-empty">Couldn't load the leaderboard: ${esc(err.message)}</div>`; return; }
 
   const players = new Map(), weapons = new Map(), shots = [];
@@ -3016,7 +3027,7 @@ async function renderWheel(){
       ${user ? `<button class="btn wh-spin" id="wh-spin" ${canSpin ? "" : "disabled"}>Spin · ${whSettings.spin_cost} AFtokens</button>`
              : `<button class="btn discord-btn wh-spin" id="wh-signin">${DISCORD_SVG} Sign in to spin</button>`}
       <div class="wh-sub">${esc(why)}</div>
-      <div class="wh-rule">AFtokens are earned by winning wars and events. They can't be bought, sold or cashed out. Item prizes are handed out in game by AF staff.</div>
+      <div class="wh-rule">AFtokens are earned by winning wars and events. They can't be bought, sold or cashed out. Item prizes are handed out in game by AF staff, or you can sell them for AFtokens (75% of the prize's value, sales are final).</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:18px">
       ${user ? `<div class="card">
@@ -3072,9 +3083,10 @@ async function spinWheel(){
 }
 function pickClaimServer(claimId, itemName, justWon = false, onDone = null){
   const done = () => (onDone || renderWheel)();
-  openModal(`<div class="wh-win">${justWon ? `<div style="font-size:2.4rem">🎉</div><div class="big">You won ${esc(itemName)}!</div>` : `<h3>Where should we deliver ${esc(itemName)}?</h3>`}
-    <p class="muted">Pick the server you want it on. AF staff will hand it out in game. Make sure your in-game name is saved on your <a href="#account" id="wh-acc">Account</a> page.</p>
+  openModal(`<div class="wh-win">${justWon ? `<div style="font-size:2.4rem">🎉</div><div class="big">You won ${esc(itemName)}!</div>` : `<h3>What do you want to do with ${esc(itemName)}?</h3>`}
+    <p class="muted">Pick the server you want it on and AF staff will hand it out in game. Make sure your in-game name is saved on your <a href="#account" id="wh-acc">Account</a> page.</p>
     <div class="row" style="justify-content:center;margin:12px 0">${Object.entries(SRV_LABEL).map(([k, l]) => `<button class="btn" data-srv="${k}">${l}</button>`).join("")}</div>
+    <div id="wh-sellbox" style="text-align:center;margin-bottom:12px"></div>
     <button class="btn ghost sm" id="wh-later">Decide later</button><div id="wh-pmsg"></div></div>`);
   $("#wh-later").onclick = () => { closeModal(); done(); };
   $("#wh-acc").onclick = closeModal;
@@ -3082,6 +3094,17 @@ function pickClaimServer(claimId, itemName, justWon = false, onDone = null){
     const { error } = await sb.rpc("set_claim_server", { p_claim: claimId, p_server: b.dataset.srv });
     if (error) { $("#wh-pmsg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
     closeModal(); toast(`Got it — staff will deliver on ${SRV_LABEL[b.dataset.srv]}`); done();
+  });
+  sb.rpc("claim_sale_price", { p_claim: claimId }).then(({ data: price }) => {
+    const box = $("#wh-sellbox");
+    if (!price || !box) return;
+    box.innerHTML = `<p class="muted" style="margin:0 0 8px">Or sell it for <b>${price} AFtokens</b> (75% of the prize's value). Sales are final.</p><button class="btn ghost" id="wh-sell">Sell for ${price} AFtokens</button>`;
+    $("#wh-sell").onclick = async () => {
+      if (!(await confirmModal(`Sell ${itemName} for ${price} AFtokens?`, "Sales are final. Once sold, this prize can't be claimed for a server.", "Sell"))) return;
+      const { data, error } = await sb.rpc("sell_claim", { p_claim: claimId });
+      if (error) { const m = $("#wh-pmsg"); if (m) m.innerHTML = `<p class="msg err">${esc(error.message.replace(/^.*?:\s*/, ""))}</p>`; return; }
+      closeModal(); toast(`Sold for ${data.amount} AFtokens`); done();
+    };
   });
 }
 async function contributeChest(){
@@ -3176,6 +3199,7 @@ function openPrizeEditor(id){
       <div class="field"><label for="pz-weight">Weight (odds)</label><input id="pz-weight" type="number" min="1" max="10000" value="${p?.weight ?? 10}"></div></div>
     <div class="field" id="pz-item-f"><label for="pz-item">Item staff hand out</label><input id="pz-item" maxlength="100" value="${esc(p?.item_name || "")}" placeholder="e.g. M4-A1 with 3 mags"></div>
     <div class="field" id="pz-tok-f"><label for="pz-tok">AFtokens won</label><input id="pz-tok" type="number" min="0" value="${p?.token_amount ?? 10}"></div>
+    <div class="field"><label for="pz-worth">Worth in AFtokens (players can sell for 75%; 0 = not sellable)</label><input id="pz-worth" type="number" min="0" value="${p?.worth ?? 0}"></div>
     <div class="two"><div class="field"><label for="pz-color">Color</label><input id="pz-color" type="color" value="${esc(p?.color || "#8a5a22")}" style="height:44px;padding:4px"></div>
       <div class="field"><label for="pz-sort">Order on the wheel</label><input id="pz-sort" type="number" value="${p?.sort_order ?? whPrizes.length + 1}"></div></div>
     <label style="display:flex;gap:8px;align-items:center;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="pz-active" ${p?.active === false ? "" : "checked"}> On the wheel</label>
@@ -3189,6 +3213,7 @@ function openPrizeEditor(id){
     const row = { label, kind, weight: Math.max(1, parseInt($("#pz-weight").value, 10) || 1),
       item_name: kind === "item" ? ($("#pz-item").value.trim() || label) : null,
       token_amount: kind === "tokens" ? Math.max(0, parseInt($("#pz-tok").value, 10) || 0) : 0,
+      worth: Math.max(0, parseInt($("#pz-worth").value, 10) || 0),
       color: $("#pz-color").value, sort_order: parseInt($("#pz-sort").value, 10) || 100, active: $("#pz-active").checked };
     const { error } = p ? await sb.from("wheel_prizes").update(row).eq("id", p.id) : await sb.from("wheel_prizes").insert(row);
     if (error) { $("#pz-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
@@ -3286,7 +3311,7 @@ async function renderCrates(){
         ${user ? `<div class="cr-left">${crateLeft(c)} of ${c.daily_limit} left today</div>` : ""}
       </button>`;
     }).join("") || `<div class="kf-empty">No crates yet.</div>`}</div>
-    <div class="wh-rule" style="margin-top:18px">Crates are opened with AFtokens, which are earned by winning wars and events — they can't be bought, sold or cashed out. Every result is picked on the server and the odds are shown on each crate. Item prizes are handed out in game by AF staff.</div>
+    <div class="wh-rule" style="margin-top:18px">Crates are opened with AFtokens, which are earned by winning wars and events — they can't be bought, sold or cashed out. Every result is picked on the server and the odds are shown on each crate. Item prizes are handed out in game by AF staff, or you can sell them for AFtokens (75% of the prize's value, sales are final).</div>
     ${amAdmin ? `<div id="cr-staff" style="margin-top:22px"></div>` : ""}`;
   box.querySelectorAll("[data-crate]").forEach(b => b.onclick = () => { crOpen = +b.dataset.crate; renderCrateDetail(); window.scrollTo(0, $("#v-wheel").offsetTop); });
   if (amAdmin) renderCrateStaff();
@@ -3512,6 +3537,7 @@ function openCrateItemEditor(id, crateId){
         <option value="nothing" ${i?.kind === "nothing" ? "selected" : ""}>Nothing</option></select></div></div>
     <div class="field" id="ie-item-f"><label for="ie-item">Item staff hand out</label><input id="ie-item" maxlength="300" value="${esc(i?.item_name || "")}" placeholder="e.g. SVD with 2 mags and PSO scope"></div>
     <div class="field" id="ie-tok-f"><label for="ie-tok">AFtokens won</label><input id="ie-tok" type="number" min="0" value="${i?.token_amount ?? 10}"></div>
+    <div class="field"><label for="ie-worth">Worth in AFtokens (players can sell for 75%; 0 = not sellable)</label><input id="ie-worth" type="number" min="0" value="${i?.worth ?? 0}"></div>
     <div class="field"><label for="ie-w">Weight (odds)</label><input id="ie-w" type="number" min="1" max="1000000" value="${i?.weight ?? 10}"></div>
     <label style="display:flex;gap:8px;align-items:center;margin-bottom:14px;cursor:pointer"><input type="checkbox" id="ie-active" ${i?.active === false ? "" : "checked"}> In the crate</label>
     <div class="row"><button class="btn" id="ie-save">Save item</button><button class="btn ghost" id="ie-x">Cancel</button></div><div id="ie-msg"></div>`);
@@ -3524,7 +3550,8 @@ function openCrateItemEditor(id, crateId){
     const row = { crate_id: cid, label, rarity: $("#ie-rar").value, kind, emoji: $("#ie-emo").value.trim() || null,
       weight: Math.max(1, parseInt($("#ie-w").value, 10) || 1),
       item_name: kind === "item" ? ($("#ie-item").value.trim() || label) : null,
-      token_amount: kind === "tokens" ? Math.max(0, parseInt($("#ie-tok").value, 10) || 0) : 0, active: $("#ie-active").checked };
+      token_amount: kind === "tokens" ? Math.max(0, parseInt($("#ie-tok").value, 10) || 0) : 0,
+      worth: Math.max(0, parseInt($("#ie-worth").value, 10) || 0), active: $("#ie-active").checked };
     const { error } = i ? await sb.from("crate_items").update(row).eq("id", i.id) : await sb.from("crate_items").insert(row);
     if (error) { $("#ie-msg").innerHTML = `<p class="msg err">${esc(error.message)}</p>`; return; }
     closeModal(); toast("Item saved"); renderCrates();
