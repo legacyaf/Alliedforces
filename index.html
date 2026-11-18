@@ -3192,7 +3192,7 @@ async function renderWheelStaff(){
 // Fills a shop dropdown from the Chernarus shop (prices pushed by the game server).
 async function loadShopOptions(sel, current){
   const el = $(sel); if (!el) return;
-  const { data } = await sb.from("af_shop_items").select("class_name,display_name,price").eq("server_id", "Chernarus").order("display_name");
+  const { data } = await sb.from("af_shop_items").select("class_name,display_name,price").eq("server_id", "Nasdara").order("display_name");
   (data || []).forEach(s => {
     const o = document.createElement("option");
     o.value = s.class_name;
