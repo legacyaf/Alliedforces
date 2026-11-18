@@ -3103,7 +3103,7 @@ function pickClaimServer(claimId, itemName, justWon = false, onDone = null){
     $("#wh-sell").onclick = async () => {
       if (!(await confirmModal(`Sell ${itemName} for ${price} AFtokens?`, "Sales are final. Once sold, this prize can't be claimed for a server.", "Sell"))) return;
       const { data, error } = await sb.rpc("sell_claim", { p_claim: claimId });
-      if (error) { const m = $("#wh-pmsg"); if (m) m.innerHTML = `<p class="msg err">${esc(error.message.replace(/^.*?:\s*/, ""))}</p>`; return; }
+      if (error) { toast(error.message.replace(/^.*?:\s*/, "")); return; }
       closeModal(); toast(`Sold for ${data.amount} AFtokens`); done();
     };
   });
