@@ -4798,7 +4798,7 @@ async function renderDashboard(){
   if (!el) return;
   if (!user) { el.innerHTML = `<div class="card"><p class="muted" style="margin:0"><a href="#account">Sign in</a> to see your dashboard.</p></div>`; return; }
   el.innerHTML = `<p class="muted">Loading…</p>`;
-  const [wal, stats, bounties, fac, led, pend, prof, ref] = await Promise.all([
+  const [wal, stats, bounties, fac, led, pend, prof, ref, chal] = await Promise.all([
     sb.from("token_wallets").select("balance").eq("user_id", user.id).maybeSingle(),
     sb.rpc("my_game_stats"),
     sb.from("af_open_bounties").select("*").order("pot", { ascending: false }).limit(8),
@@ -4806,8 +4806,11 @@ async function renderDashboard(){
     sb.from("token_ledger").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(8),
     sb.from("prize_claims").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("status", "pending"),
     sb.from("profiles").select("steam_id,ingame_name").eq("id", user.id).maybeSingle(),
-    sb.rpc("my_referral")
+    sb.rpc("my_referral"),
+    sb.rpc("my_challenges")
   ]);
+  const challenges = chal.data || [];
+  const fmtProgress = c => c.metric === "playtime_seconds" ? `${(c.progress / 3600).toFixed(1)} / ${(c.target / 3600).toFixed(0)} h` : `${c.progress} / ${c.target}`;
   const myRef = ref.data;
   const inviteLink = `${location.origin}${location.pathname}?ref=${myRef?.code || ""}`;
   const rows = stats.data || [];
@@ -4827,6 +4830,10 @@ async function renderDashboard(){
       <div class="card"><small class="muted">Playtime</small><h3 style="margin:4px 0">${playHrs} h</h3></div>
       <div class="card"><small class="muted">Prizes waiting</small><h3 style="margin:4px 0">🎁 ${pend.count || 0}</h3><a href="#wheel" class="muted" style="font-size:.85rem">Open the Arcade</a></div>
       <div class="card"><small class="muted">Faction</small><h3 style="margin:4px 0">${f ? esc(f.name) : "None"}</h3>${f ? `<small class="muted">War chest: ${f.chest} AFtokens</small>` : `<a href="factions.html" class="muted" style="font-size:.85rem">Join a faction</a>`}</div>
+    </div>
+    <div class="card" style="margin-top:14px"><h3>🏆 Weekly challenges</h3>
+      <p class="muted" style="margin:0 0 8px">Resets every Monday (UTC). Rewards are paid automatically.</p>
+      ${challenges.length ? `<ul class="wh-list">${challenges.map(c => `<li><div>${esc(c.title)}<small>${fmtProgress(c)}</small></div><span class="${c.done ? "amt-pos" : ""}">${c.done ? "✓ +" + c.reward : "+" + c.reward}</span></li>`).join("")}</ul>` : `<p class="muted" style="margin:0">No challenges this week.</p>`}
     </div>
     <div class="card" style="margin-top:14px"><h3>👥 Invite friends</h3>
       <p class="muted" style="margin:0 0 8px">Your friend gets <b>25 AFtokens</b> when they sign up with your link. You get <b>50 AFtokens</b> once they've played an hour on one of our servers.</p>
